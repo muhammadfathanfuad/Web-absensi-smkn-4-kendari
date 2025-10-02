@@ -1,0 +1,61 @@
+//
+// app.scss
+//
+
+// Core files
+@import "./node_modules/bootstrap/scss/functions";
+@import "./node_modules/bootstrap/scss/variables";
+
+@import "config/variables";
+@import "config/variables-dark";
+@import "config/theme-mode";
+
+@import "./node_modules/bootstrap/scss/bootstrap";
+
+// Structure
+@import "structure/general";
+@import "structure/topbar";
+@import "structure/sidebar";
+@import "structure/footer";
+@import "structure/page-title";
+
+// Bootstrap
+@import "components/accordion";
+@import "components/alerts";
+@import "components/avatar";
+@import "components/backgrounds";
+@import "components/badge";
+@import "components/breadcrumb";
+@import "components/buttons";
+@import "components/card";
+@import "components/dropdown";
+@import "components/forms";
+@import "components/helper";
+@import "components/list-group";
+@import "components/modal";
+@import "components/nav";
+@import "components/pagination";
+@import "components/popover";
+@import "components/print";
+@import "components/progress";
+@import "components/reboot";
+@import "components/switch";
+@import "components/tables";
+@import "components/type";
+@import "components/tooltip";
+@import "components/widgets";
+
+
+// Plugin
+@import "plugins/simplebar";
+@import "plugins/dropzone";
+@import "plugins/editors";
+@import "plugins/gridjs";
+@import "plugins/apexcharts";
+@import "plugins/google-map";
+@import "plugins/vector-map";
+@import "plugins/flatpicker";
+
+// Pages
+@import "pages/icon-demo";
+@import "pages/authentication";

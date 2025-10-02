@@ -1,0 +1,99 @@
+// 
+// _theme-mode.scss
+// 
+
+
+:root {
+    --#{$prefix}logo-lg-height: 26px;
+    --#{$prefix}logo-sm-height: 24px;
+
+    --#{$prefix}sidebar-width: 250px;
+    --#{$prefix}sidebar-width-sm: 75px;
+    --#{$prefix}sidebar-item-icon-size: 18px;
+    --#{$prefix}sidebar-item-font-size: 15px;
+    --#{$prefix}sidebar-item-padding-x: 15px;
+    --#{$prefix}sidebar-item-padding-y: 10px;
+    --#{$prefix}sidebar-item-margin-y: 2px;
+
+    --#{$prefix}topbar-height: 70px;
+    --#{$prefix}footer-height: 60px;
+
+    --#{$prefix}input-border-color: #d8dfe7;
+    --#{$prefix}input-focus-border-color: #b0b0bb;
+}
+
+
+/* Dark Mode only */
+html[data-bs-theme="dark"],
+[data-bs-theme="dark"] {
+
+    --#{$prefix}border-color: #2f3944;
+
+    --#{$prefix}light: #{$body-tertiary-bg-dark};
+    --#{$prefix}dark: #{$body-tertiary-color-dark};
+
+    --#{$prefix}light-rgb: #{to-rgb($body-tertiary-bg-dark)};
+    --#{$prefix}dark-rgb: #{to-rgb($body-tertiary-color-dark)};
+
+    // Heading Variable
+    --#{$prefix}headings-color: #{$body-color-dark};
+
+    --#{$prefix}input-border-color: #3a4551;
+    --#{$prefix}input-focus-border-color: #4a5663;
+}
+
+
+/* Sidebar Light */
+html[data-sidebar-color="light"] {
+    --#{$prefix}sidebar-bg: #ffffff;
+    --#{$prefix}sidebar-item-color: #6e708c;
+    --#{$prefix}sidebar-item-hover-bg: #f4f3f6;
+    --#{$prefix}sidebar-item-hover-color: #3d4756;
+    --#{$prefix}sidebar-border-color: #eaedf1;
+}
+
+
+/* Sidebar Dark */
+html[data-sidebar-color="dark"] {
+    --#{$prefix}sidebar-bg: #393f4a;
+    --#{$prefix}sidebar-item-color: #afb9cf;
+    --#{$prefix}sidebar-item-hover-bg: #4697ce;
+    --#{$prefix}sidebar-item-hover-color: #{$white};
+    --#{$prefix}sidebar-border-color: #2f3944;
+}
+
+
+/* Sidebar Dark (Dark Mode Only) */
+html[data-bs-theme="dark"][data-sidebar-color="dark"],
+html[data-bs-theme="dark"][data-sidebar-color="light"] {
+    --#{$prefix}sidebar-bg: #282f36;
+    --#{$prefix}sidebar-item-color: #afb9cf;
+    --#{$prefix}sidebar-item-hover-bg: #303943;
+    --#{$prefix}sidebar-item-hover-color: #{$white};
+    --#{$prefix}sidebar-border-color: #2f3944;
+}
+
+
+/* Topbar Light */
+html[data-topbar-color="light"] {
+    --#{$prefix}topbar-bg: #ffffff;
+    --#{$prefix}topbar-item-color: #707793;
+    --#{$prefix}topbar-search-bg: #f8f7fa;
+}
+
+
+/* Topbar Dark */
+html[data-topbar-color="dark"] {
+    --#{$prefix}topbar-bg: #393f4a;
+    --#{$prefix}topbar-item-color: #afb9cf;
+    --#{$prefix}topbar-search-bg: #424957;
+}
+
+
+/* Topbar Dark (Dark Mode Only) */
+html[data-bs-theme="dark"][data-topbar-color="dark"],
+html[data-bs-theme="dark"][data-topbar-color="light"] {
+    --#{$prefix}topbar-bg: #282f36;
+    --#{$prefix}topbar-item-color: #afb9cf;
+    --#{$prefix}topbar-search-bg: #303943;
+}

@@ -1,0 +1,582 @@
+//
+// _vertical.scss
+//
+
+// Logo
+.logo-box {
+     position: sticky;
+     overflow: hidden;
+     text-align: center;
+     white-space: nowrap;
+     transition: all 0.3s ease-in-out;
+     line-height: $topbar-height;
+     padding: 0 calc($sidebar-width-sm * 0.5 - $logo-sm-height * 0.5);
+
+     .logo-sm {
+          display: none;
+          height: $logo-sm-height;
+     }
+
+     .logo-lg {
+          height: $logo-lg-height;
+     }
+
+     .logo-light {
+          display: none;
+     }
+
+     .logo-dark {
+          display: block;
+     }
+}
+
+
+// Main Nav
+.app-sidebar {
+     top: 0;
+     bottom: 0;
+     z-index: 1010;
+     margin-left: 0;
+     position: fixed;
+     transition: all 0.3s ease-in-out;
+     width: $sidebar-width;
+     font-family: $font-family-secondary;
+     background: $sidebar-bg;
+     // background-image: url("../images/bg-pattern.svg") no-repeat;
+     min-width: $sidebar-width;
+     padding-bottom: $spacer;
+     border-right: $card-border-width solid $sidebar-border-color;
+     border-left: $card-border-width solid $sidebar-border-color;
+
+     .scrollbar {
+          height: calc(100% - $topbar-height);
+     }
+
+     .menu-arrow {
+          &::after {
+               right: calc($sidebar-item-padding-x * 1.5);
+               display: flex;
+               content: "\ea4a";
+               font-family: boxicons;
+               margin-left: auto;
+               position: absolute;
+               transition: transform 0.2s;
+               color: inherit;
+               font-size: calc($sidebar-item-font-size * 1.25);
+               opacity: 0.6;
+          }
+
+          &[aria-expanded="true"] {
+               &::after {
+                    transform: rotate(-180deg);
+               }
+
+               &::before {
+                    opacity: 1;
+               }
+          }
+     }
+
+     .menu-title {
+          cursor: default;
+          font-size: 11px;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: $sidebar-item-color;
+          opacity: .6;
+          font-weight: $font-weight-semibold;
+          padding: $sidebar-item-padding-y calc($sidebar-item-padding-x * 1.25);
+          transition: all 0.3s ease-in-out;
+          height: 36px;
+     }
+
+     .navbar-nav {
+          margin: 0 15px;
+
+          .nav-item {
+               padding: calc($sidebar-item-padding-y * 0.1) 0;
+
+               .nav-link {
+                    display: flex;
+                    gap: 12px;
+                    line-height: 1;
+                    font-weight: 400;
+                    align-items: center;
+                    white-space: nowrap;
+                    transition: all 0.3s ease-in-out;
+                    border-radius: 8px;
+                    color: $sidebar-item-color;
+                    font-size: $sidebar-item-font-size;
+                    padding: $sidebar-item-padding-y $sidebar-item-padding-x;
+                    margin: $sidebar-item-margin-y 0;
+
+                    &.show,
+                    &:active,
+                    &.active,
+                    &:hover,
+                    &:focus {
+                         color: $sidebar-item-hover-color;
+                    }
+
+                    &.active {
+                         background-color: $sidebar-item-hover-bg;
+                         font-weight: $font-weight-medium;
+                    }
+
+                    .nav-icon {
+                         display: flex;
+                         align-items: center;
+                         justify-content: center;
+                         font-size: $sidebar-item-icon-size;
+                    }
+
+                    .badge {
+                         margin-left: auto;
+                    }
+               }
+          }
+
+          .sub-navbar-nav {
+               flex-direction: column;
+               padding-left: $sidebar-item-padding-x;
+
+               .menu-arrow {
+                    &::after {
+                         right: 0;
+                    }
+               }
+
+               .sub-nav-item {
+                    padding: calc($sidebar-item-padding-y * 0.5) $sidebar-item-padding-x;
+
+                    .sub-nav-link {
+                         display: flex;
+                         align-items: center;
+                         position: relative;
+                         white-space: nowrap;
+                         transition: all 0.3s ease-in-out;
+                         color: $sidebar-item-color;
+                         font-size: calc($sidebar-item-font-size * 0.95);
+                         padding: calc($sidebar-item-padding-y * 0.25) $sidebar-item-padding-x;
+
+                         &.active {
+                              font-weight: $font-weight-medium;
+                         }
+
+                         .badge {
+                              margin-left: auto;
+                         }
+
+                         &.active,
+                         &:active,
+                         &:hover,
+                         &:focus {
+                              color: $sidebar-item-hover-color;
+
+                              &::before {
+                                   background-color: $sidebar-item-hover-color;
+                                   opacity: 1;
+                              }
+                         }
+
+                    }
+               }
+
+               .sub-navbar-nav {
+                    padding-left: calc($sidebar-width-sm - $sidebar-item-padding-x * 5.25);
+               }
+          }
+
+          .disabled {
+               opacity: 0.5;
+               pointer-events: none;
+               cursor: default;
+          }
+     }
+}
+
+// Sidenav Condensed
+html[data-sidebar-size="condensed"] {
+
+     .app-sidebar {
+          position: absolute;
+          width: $sidebar-width-sm;
+          min-width: $sidebar-width-sm;
+
+          .logo-box {
+               top: 0;
+               z-index: 1020 !important;
+               background: $sidebar-bg;
+
+               .logo-lg {
+                    display: none;
+               }
+
+               .logo-sm {
+                    display: inline-block;
+               }
+
+          }
+
+          .menu-title {
+               height: 0;
+               opacity: 0;
+               padding: 0;
+          }
+
+          .badge {
+               display: none;
+          }
+
+          .simplebar-mask,
+          .simplebar-content-wrapper {
+               overflow: visible !important;
+          }
+
+          .simplebar-scrollbar {
+               display: none !important;
+          }
+
+          .simplebar-offset {
+               bottom: 0 !important;
+          }
+
+          // Sidenav Menu
+          .navbar-nav {
+               padding: 10px;
+               margin: 0;
+
+               .nav-link {
+                    justify-content: center;
+
+                    .nav-text,
+                    &.menu-arrow::after {
+                         display: none;
+                    }
+
+                    .nav-icon {
+                         font-size: 22px !important;
+                    }
+               }
+
+               .collapse,
+               .collapsing {
+                    display: none;
+                    height: auto !important;
+               }
+
+               .sub-nav-item,
+               .nav-item {
+                    position: relative;
+                    white-space: nowrap;
+
+                    &:hover {
+
+                         >.collapse,
+                         >.collapsing {
+                              display: block;
+                              left: 100%;
+                              margin-top: -4px;
+                              position: absolute;
+                              height: inherit !important;
+                              transition: none !important;
+
+                              >.sub-navbar-nav {
+                                   padding-left: 0;
+                                   background: $dropdown-bg;
+                                   box-shadow: var(--#{$prefix}box-shadow);
+                                   width: calc($sidebar-width - $sidebar-width-sm);
+                                   border: $card-border-width solid $card-border-color;
+
+                                   >.sub-nav-item {
+                                        padding: 0;
+
+                                        >.sub-nav-link {
+                                             padding: calc($sidebar-item-padding-y * 0.75) $sidebar-item-padding-x;
+                                             z-index: 5;
+
+                                             >.nav-text {
+                                                  display: block;
+                                             }
+                                        }
+
+                                        >.collapse,
+                                        >.collapsing {
+                                             top: 0;
+                                        }
+                                   }
+
+                                   .sub-nav-item {
+                                        .sub-nav-link {
+                                             color: $dropdown-color;
+
+                                             &[aria-expanded="true"],
+                                             &.active,
+                                             &.show,
+                                             &:focus,
+                                             &:hover {
+                                                  color: var(--#{$prefix}primary);
+                                             }
+                                        }
+
+                                        .collapse,
+                                        .collapsing {
+                                             top: 0;
+                                        }
+                                   }
+                              }
+                         }
+                    }
+               }
+
+               >.nav-item {
+
+                    &:hover {
+
+                         >.nav-link {
+
+                              &::before {
+                                   content: "";
+                                   inset: 0px;
+                                   position: absolute;
+                                   width: $sidebar-width;
+                              }
+
+                              >.nav-text {
+                                   display: flex;
+                                   align-items: center;
+                                   position: absolute;
+                                   left: calc($sidebar-width-sm - 2px - 20px);
+                                   background: $dropdown-bg;
+                                   color: $dropdown-color;
+                                   line-height: $sidebar-item-icon-size;
+                                   width: calc($sidebar-width - $sidebar-width-sm);
+                                   padding: $sidebar-item-padding-y $sidebar-item-padding-x;
+                                   border: $card-border-width solid $card-border-color;
+                                   box-shadow: var(--#{$prefix}box-shadow);
+                                   font-weight: $font-weight-medium;
+                              }
+                         }
+                    }
+
+                    .nav-text,
+                    .sub-navbar-nav {
+                         margin-left: 10px;
+
+                         .sub-navbar-nav {
+                              margin-left: 0;
+                         }
+                    }
+               }
+
+               .sub-nav-item {
+                    .menu-arrow {
+                         &::after {
+                              right: 10px;
+                              transform: rotate(-90deg);
+                         }
+                    }
+
+                    .nav-text {
+                         margin-left: 0;
+                    }
+
+                    .badge {
+                         display: block;
+                    }
+               }
+          }
+     }
+
+     .app-topbar {
+          padding-left: $sidebar-width-sm;
+     }
+
+     .page-content {
+          margin-left: $sidebar-width-sm;
+          min-height: 1300px;
+     }
+}
+
+// Sidebar sm hover Toggle Menu Button
+.button-sm-hover {
+     border: 0;
+     top: 17px;
+     z-index: 1;
+     right: 10px;
+     display: none;
+     text-align: end;
+     position: absolute;
+     border-radius: 50%;
+     background: transparent;
+     transition: all 0.2s ease-in-out;
+     color: $sidebar-item-color;
+     padding: 0;
+
+     .button-sm-hover-icon {
+          width: 35px;
+          height: 35px;
+          display: flex;
+          font-size: 22px;
+          border-radius: 50%;
+          align-items: center;
+          justify-content: center;
+     }
+
+     &.show,
+     &.active,
+     &:active,
+     &:hover,
+     &:focus {
+          color: $sidebar-item-hover-color;
+          background-color: $sidebar-item-hover-bg;
+     }
+}
+
+// Small Hover
+html[data-sidebar-size="sm-hover"] {
+
+     .app-topbar {
+          padding-left: $sidebar-width-sm;
+     }
+
+     .page-content {
+          margin-left: $sidebar-width-sm;
+          position: relative;
+     }
+
+     .button-toggle-menu {
+          display: none;
+     }
+
+     .app-sidebar:not(:hover) {
+          width: $sidebar-width-sm;
+          min-width: $sidebar-width-sm;
+
+          .logo-box {
+               .logo-lg {
+                    display: none;
+               }
+
+               .logo-sm {
+                    display: inline-block;
+               }
+          }
+
+          .nav-item {
+
+               .nav-link {
+                    justify-content: center;
+
+                    .nav-text,
+                    .badge {
+                         display: none;
+                    }
+
+                    &.menu-arrow {
+                         &::after {
+                              display: none;
+                         }
+                    }
+               }
+
+               .collapse,
+               .collapsing {
+                    display: none;
+               }
+          }
+
+          .menu-title {
+               transition: all 0.3s ease-in-out;
+               height: 0;
+               opacity: 0;
+               padding: 0;
+          }
+
+          .simplebar-track.simplebar-vertical {
+               visibility: hidden !important;
+          }
+     }
+
+     .app-sidebar {
+          width: $sidebar-width;
+          min-width: $sidebar-width;
+
+          .logo-box {
+               text-align: left;
+          }
+
+          &:hover {
+               .button-sm-hover {
+                    display: block;
+
+                    .button-sm-hover-icon {
+                         transform: rotateY(180deg);
+                         transition: all 0.3s ease-in-out;
+                    }
+               }
+
+          }
+
+          .simplebar-track.simplebar-horizontal {
+               visibility: hidden !important;
+          }
+     }
+}
+
+// Small Hover Active
+html[data-sidebar-size="sm-hover-active"] {
+     .button-toggle-menu {
+          display: none;
+     }
+
+     .app-sidebar {
+          .logo-box {
+               text-align: left;
+          }
+
+          .button-sm-hover {
+               display: block;
+
+               .button-sm-hover-icon {
+                    transform-style: preserve-3d;
+                    transition: all 0.3s ease-in-out;
+               }
+          }
+     }
+}
+
+// SideNav Hidden (Mobile View)
+html[data-sidebar-size="hidden"] {
+     .app-sidebar {
+          margin-left: calc($sidebar-width * -1);
+     }
+
+     .page-content {
+          margin-left: 0;
+     }
+
+     &.sidebar-enable {
+          .app-sidebar {
+               margin-left: 0;
+               z-index: 1055;
+          }
+     }
+}
+
+// Sidenav Dark and Brand
+html[data-bs-theme="dark"],
+html[data-sidebar-color="dark"],
+html[data-sidebar-color="brand"] {
+     .app-sidebar {
+          .logo-box {
+               .logo-light {
+                    display: block;
+               }
+
+               .logo-dark {
+                    display: none;
+               }
+          }
+     }
+}

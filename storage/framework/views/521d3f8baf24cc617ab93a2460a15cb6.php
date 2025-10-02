@@ -1,0 +1,2 @@
+
+<?php echo $__env->make('layouts.vertical', ['subtitle' => 'status_absensi'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\Taplox-Laravel\resources\views/status_absensi.blade.php ENDPATH**/ ?>

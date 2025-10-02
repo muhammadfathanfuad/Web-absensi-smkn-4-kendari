@@ -1,0 +1,1 @@
+@extends('layouts.vertical-guru', ['subtitle' => 'scan-qr'])

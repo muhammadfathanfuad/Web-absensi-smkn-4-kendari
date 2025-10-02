@@ -1,0 +1,52 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "axios": "^1.7.4",
+    "concurrently": "^9.0.1",
+    "laravel-vite-plugin": "^1.0",
+    "vite": "^5.0"
+  },
+  "dependencies": {
+    "apexcharts": "^3.44.2",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^3.9.1",
+    "choices.js": "^10.1.0",
+    "clipboard": "^2.0.11",
+    "countup.js": "^2.3.2",
+    "d3": "^7.6.1",
+    "d3-selection": "^3.0.0",
+    "daterangepicker": "^3.1.0",
+    "dayjs": "^1.11.5",
+    "dragula": "^3.7.3",
+    "dropzone": "^5.9.0",
+    "flatpickr": "^4.6.13",
+    "fullcalendar": "^5.11.3",
+    "gmaps": "^0.4.25",
+    "gridjs": "^5.1.0",
+    "gumshoejs": "^5.1.2",
+    "iconify-icon": "^2.1.0",
+    "inputmask": "^5.0.7",
+    "jsvectormap": "^1.6.0",
+    "moment": "^2.29.4",
+    "multi.js": "^0.5.3",
+    "node-waves": "^0.7.6",
+    "nouislider": "^15.6.1",
+    "prismjs": "^1.29.0",
+    "quill": "^1.3.7",
+    "rater-js": "^1.0.1",
+    "sass": "^1.82.0",
+    "simplebar": "^5.3.9",
+    "sweetalert2": "^11.5.1",
+    "swiper": "^8.4.4",
+    "toastify-js": "^1.12.0",
+    "typeahead.js": "^0.11.1",
+    "vanilla-wizard": "^0.0.7",
+    "wnumb": "^1.2.0"
+  }
+}
