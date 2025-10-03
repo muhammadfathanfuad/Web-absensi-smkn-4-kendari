@@ -1,8 +1,8 @@
-@extends('layouts.vertical-guru')
 
-@section('title', 'Pemindai Kode QR')
 
-@section('content')
+<?php $__env->startSection('title', 'Pemindai Kode QR'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="card">
     <div class="card-body">
         <h4 class="card-title">Pemindai Kode QR</h4>
@@ -18,9 +18,9 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
@@ -113,4 +113,5 @@
         }
     });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.vertical-guru', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/scan-qr.blade.php ENDPATH**/ ?>

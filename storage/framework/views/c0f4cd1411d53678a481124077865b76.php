@@ -29,6 +29,9 @@
         </div>
 
     </div>
-    </body>
+
+    <?php echo $__env->make('layouts.partials.vendor-scripts', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+
+    <?php echo $__env->yieldPushContent('scripts'); ?> </body>
 
 </html><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/layouts/vertical-guru.blade.php ENDPATH**/ ?>

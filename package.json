@@ -30,6 +30,7 @@
     "gmaps": "^0.4.25",
     "gridjs": "^5.1.0",
     "gumshoejs": "^5.1.2",
+    "html5-qrcode": "^2.3.8",
     "iconify-icon": "^2.1.0",
     "inputmask": "^5.0.7",
     "jsvectormap": "^1.6.0",
