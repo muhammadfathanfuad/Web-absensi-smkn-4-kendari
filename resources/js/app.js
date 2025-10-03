@@ -410,3 +410,23 @@ class ThemeLayout {
 }
 
 new ThemeLayout().init();
+
+// Import library Flatpickr yang sudah terinstall di project Anda
+import flatpickr from 'flatpickr';
+// Import stylesheet untuk Flatpickr agar tampilannya bagus
+import 'flatpickr/dist/flatpickr.min.css';
+// Import bahasa Indonesia untuk kalender
+import { Indonesian } from "flatpickr/dist/l10n/id.js";
+
+
+
+
+// Kode ini akan mencari div dengan id 'calendar-widget'.
+// Jika ada, maka kalender akan dibuat di dalamnya.
+// Ini mencegah error di halaman lain yang tidak punya kalender.
+if (document.querySelector("#calendar-widget")) {
+    flatpickr("#calendar-widget", {
+        inline: true,       // Tampilkan kalender secara langsung
+        locale: Indonesian, // Gunakan bahasa Indonesia
+    });
+}

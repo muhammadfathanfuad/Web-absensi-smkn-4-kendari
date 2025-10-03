@@ -1,6 +1,6 @@
-@extends('layouts.vertical-guru', ['title' => 'Jadwal Mengajar'])
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
     <!-- Mulai Konten Halaman -->
     <div class="row">
         <div class="col-12">
@@ -74,7 +74,7 @@
             <!-- Card Jadwal Hari Ini -->
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Jadwal Hari Ini: {{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY') }}</h5>
+                    <h5 class="card-title">Jadwal Hari Ini: <?php echo e(\Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY')); ?></h5>
                     <p class="card-subtitle mb-2 text-muted">Berikut adalah jadwal mengajar Anda untuk hari ini.</p>
 
                     <div class="table-responsive">
@@ -162,4 +162,6 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.vertical-guru', ['title' => 'Jadwal Mengajar'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/jadwal-mengajar.blade.php ENDPATH**/ ?>
