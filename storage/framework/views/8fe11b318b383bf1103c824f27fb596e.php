@@ -1,8 +1,6 @@
-@extends('layouts.vertical-guru', ['subtitle' => 'Test'])
+<?php $__env->startSection('content'); ?>
 
-@section('content')
-
-@include('layouts.partials.page-title', ['title' => 'Taplox', 'subtitle' => 'Test'])
+<?php echo $__env->make('layouts.partials.page-title', ['title' => 'Taplox', 'subtitle' => 'Test'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
 <div class="row">
     <!-- Card 1 -->
@@ -465,8 +463,9 @@
         </div> <!-- end card -->
     </div> <!-- end col -->
 </div> <!-- end row -->
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('scripts')
-@vite(['resources/js/pages/dashboard.js'])
-@endsection
+<?php $__env->startSection('scripts'); ?>
+<?php echo app('Illuminate\Foundation\Vite')(['resources/js/pages/dashboard.js']); ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.vertical-guru', ['subtitle' => 'Test'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/dashboard.blade.php ENDPATH**/ ?>

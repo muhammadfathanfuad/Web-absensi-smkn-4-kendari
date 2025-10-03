@@ -9,4 +9,4 @@
 <meta name="theme-color" content="#ffffff">
 
 <!-- App favicon -->
-<link rel="shortcut icon" href="/images/favicon.ico">
+<link rel="shortcut icon" href="/images/favicon.ico"><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/layouts/partials/title-meta.blade.php ENDPATH**/ ?>

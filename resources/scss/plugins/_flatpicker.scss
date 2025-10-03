@@ -1,7 +1,12 @@
 //
-// flatpickr.scss
+// _flatpicker.scss
 //
 
+/*
+================================================================
+ GAYA BAWAAN TEMPLATE (Menggunakan Variabel Dinamis)
+================================================================
+*/
 .flatpickr-calendar {
     background: $card-bg;
     box-shadow: $box-shadow;
@@ -18,7 +23,6 @@
     }
 
     &.arrowBottom {
-
         &:before,
         &:after {
             border-top-color: $card-bg;
@@ -31,7 +35,6 @@
 }
 
 .flatpickr-day {
-
     &.selected,
     &.startRange,
     &.endRange,
@@ -54,15 +57,14 @@
         border-color: $primary;
     }
 
-    &.selected.startRange+.endRange:not(:nth-child(7n+1)),
-    &.startRange.startRange+.endRange:not(:nth-child(7n+1)),
-    &.endRange.startRange+.endRange:not(:nth-child(7n+1)) {
+    &.selected.startRange + .endRange:not(:nth-child(7n + 1)),
+    &.startRange.startRange + .endRange:not(:nth-child(7n + 1)),
+    &.endRange.startRange + .endRange:not(:nth-child(7n + 1)) {
         box-shadow: -10px 0 0 $primary;
     }
 }
 
 .flatpickr-time {
-
     input:hover,
     .flatpickr-am-pm:hover,
     input:focus,
@@ -101,7 +103,6 @@ span.flatpickr-weekday,
 }
 
 .flatpickr-day {
-
     &.disabled,
     &.disabled:hover,
     &.prevMonthDay,
@@ -129,7 +130,8 @@ span.flatpickr-weekday,
     }
 }
 
-.flatpickr-calendar.showTimeInput.hasTime .flatpickr-time, .flatpickr-calendar.hasTime .flatpickr-time {
+.flatpickr-calendar.showTimeInput.hasTime .flatpickr-time,
+.flatpickr-calendar.hasTime .flatpickr-time {
     border-top: 1px solid $card-bg;
 }
 
@@ -140,10 +142,27 @@ span.flatpickr-weekday,
 }
 
 .flatpickr-day.inRange {
-    box-shadow: -5px 0 0 $dropdown-link-hover-bg, 5px 0 0 $dropdown-link-hover-bg;
+    box-shadow: -5px 0 0 $dropdown-link-hover-bg,
+        5px 0 0 $dropdown-link-hover-bg;
 }
 
 .flatpickr-day.flatpickr-disabled,
 .flatpickr-day.flatpickr-disabled:hover {
     color: $dropdown-link-disabled-color;
+}
+
+/*
+================================================================
+PERBAIKAN UNTUK MEMBUAT KALENDER RESPONSIVE
+================================================================
+*/
+.flatpickr-calendar.inline {
+    width: 100% !important;
+    box-shadow: none;
+}
+
+.dayContainer {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
 }
