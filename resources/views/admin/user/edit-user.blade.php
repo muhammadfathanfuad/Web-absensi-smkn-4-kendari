@@ -1,9 +1,167 @@
-<?php $__env->startSection('content'); ?>
+@extends('layouts.vertical-admin', ['subtitle' => 'manage-user'])
 
-<?php echo $__env->make('layouts.partials.page-title', ['title' => 'Taplox', 'subtitle' => 'Test'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+@section('content')
+@section('css')
+    @vite(['node_modules/gridjs/dist/theme/mermaid.min.css'])
+@endsection
+
+@include('layouts.partials.page-title', ['title' => 'absensi', 'subtitle' => 'Test'])
 
 <div class="row">
-    <!-- Card 1 -->
+    <div class="card">
+        <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Basic Example</h5>
+            </div>
+
+            <div class="card-body">
+                <div>
+                    <div>
+                        <div class="mb-3">
+                            <label for="simpleinput" class="form-label">Text</label>
+                            <input type="text" id="simpleinput" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="example-email" class="form-label">Email</label>
+                            <input type="email" id="example-email" name="example-email" class="form-control"
+                                placeholder="Email">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="example-password" class="form-label">Password</label>
+                            <input type="password" id="example-password" class="form-control" value="password">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="example-palaceholder" class="form-label">Placeholder</label>
+                            <input type="text" id="example-palaceholder" class="form-control"
+                                placeholder="placeholder">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="example-textarea" class="form-label">Text
+                                area</label>
+                            <textarea class="form-control" id="example-textarea" rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Input Sizing</h5>
+            </div>
+
+            <div class="card-body">
+                <div>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <input class="form-control form-control-lg" type="text" placeholder=".form-control-lg"
+                            aria-label=".form-control-lg example">
+                        <input class="form-control" type="text" placeholder="Default input"
+                            aria-label="default input example">
+                        <input class="form-control form-control-sm" type="text" placeholder=".form-control-sm"
+                            aria-label=".form-control-sm example">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Disabled Input</h5>
+            </div>
+
+            <div class="card-body">
+                <div>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <input class="form-control" type="text" placeholder="Disabled input"
+                            aria-label="Disabled input example" disabled>
+                        <input class="form-control" type="text" value="Disabled readonly input"
+                            aria-label="Disabled input example" disabled readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Checkbox</h5>
+            </div>
+
+            <div class="card-body">
+                <h5>Default</h5>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="customCheck1">
+                        <label class="form-check-label" for="customCheck1">Check this custom
+                            checkbox</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="customCheck2">
+                        <label class="form-check-label" for="customCheck2">Check this custom
+                            checkbox</label>
+                    </div>
+                </div>
+
+                <h5>Inline</h5>
+                <div class="mb-3">
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" id="customCheck3">
+                        <label class="form-check-label" for="customCheck3">Check this custom
+                            checkbox</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" id="customCheck4">
+                        <label class="form-check-label" for="customCheck4">Check this custom
+                            checkbox</label>
+                    </div>
+                </div>
+
+                <!-- Colors-->
+                <h5>Colors</h5>
+                <div class="form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor1" checked="">
+                    <label class="form-check-label" for="customCheckcolor1">Default
+                        Checkbox</label>
+                </div>
+                <div class="form-check form-checkbox-success mb-2">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor2" checked="">
+                    <label class="form-check-label" for="customCheckcolor2">Success
+                        Checkbox</label>
+                </div>
+                <div class="form-check form-checkbox-info mb-2">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor3" checked="">
+                    <label class="form-check-label" for="customCheckcolor3">Info
+                        Checkbox</label>
+                </div>
+                <div class="form-check form-checkbox-secondary mb-2">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor6" checked="">
+                    <label class="form-check-label" for="customCheckcolor6">Secondary
+                        Checkbox</label>
+                </div>
+                <div class="form-check form-checkbox-warning mb-2">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor4" checked="">
+                    <label class="form-check-label" for="customCheckcolor4">Warning
+                        Checkbox</label>
+                </div>
+                <div class="form-check form-checkbox-danger mb-2">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor5" checked="">
+                    <label class="form-check-label" for="customCheckcolor5">Danger
+                        Checkbox</label>
+                </div>
+                <div class="form-check form-checkbox-dark">
+                    <input type="checkbox" class="form-check-input" id="customCheckcolor7" checked="">
+                    <label class="form-check-label" for="customCheckcolor7">Dark
+                        Checkbox</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    {{-- <!-- Card 1 -->
     <div class="col-md-6 col-xl-3">
         <div class="card">
             <div class="card-body">
@@ -113,11 +271,11 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 </div>
 
 
-<div class="row">
+{{-- <div class="row">
     <div class="col-lg-6">
         <div class="card card-height-100">
             <div class="card-header d-flex align-items-center justify-content-between gap-2">
@@ -462,10 +620,10 @@
             </div>
         </div> <!-- end card -->
     </div> <!-- end col -->
-</div> <!-- end row -->
-<?php $__env->stopSection(); ?>
+</div> <!-- end row --> --}}
+@endsection
 
-<?php $__env->startSection('scripts'); ?>
-<?php echo app('Illuminate\Foundation\Vite')(['resources/js/pages/dashboard.js']); ?>
-<?php $__env->stopSection(); ?>
-<?php echo $__env->make('layouts.vertical-guru', ['subtitle' => 'Test'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/guru/dashboard.blade.php ENDPATH**/ ?>
+@section('scripts')
+@vite(['resources/js/pages/dashboard.js'])
+@vite(['resources/js/admin/tabel.js'])
+@endsection
