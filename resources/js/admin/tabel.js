@@ -47,20 +47,23 @@ class GridDatatable {
 
                         // Ubah tombol 'Edit' untuk memicu modal dan kirim data user melalui atribut 'data-user'
                         return gridjs.html(`
-                            <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#exampleModalCenteredScrollable"
-                                    data-user='${JSON.stringify(user)}'>
-                                    Edit
-                                </button>
-                                <a href="/admin/users/${
-                                    user.id
-                                }/delete" class="btn btn-sm btn-outline-danger">
-                                    Hapus
-                                </a>
-                            </div>
-                        `);
+                        <div class="d-flex gap-2 justify-content-center">
+        
+                        <button class="btn btn-sm btn-outline-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editUserModal"
+                            data-user='${JSON.stringify(user)}'>
+                            Edit
+                        </button>
+
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${
+                            user.id
+                        }">
+                            Hapus
+                        </button>
+
+                    </div>
+                `);
                     },
                 },
             ],
@@ -82,9 +85,7 @@ class GridDatatable {
 
         // Event listener untuk membuka modal dan mengisi form edit
         document.addEventListener("DOMContentLoaded", function () {
-            const editUserModal = document.getElementById(
-                "exampleModalCenteredScrollable"
-            );
+            const editUserModal = document.getElementById("editUserModal");
             if (editUserModal) {
                 editUserModal.addEventListener(
                     "show.bs.modal",
