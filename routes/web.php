@@ -3,11 +3,15 @@
 use App\Http\Controllers\RoutingController;
 use Illuminate\Support\Facades\Route;
 
+// Import controller yang baru kita buat
+use App\Http\Controllers\Guru\DashboardController;
+use App\Http\Controllers\Guru\AbsensiController;
+use App\Http\Controllers\Guru\PengumumanController;
+
 require __DIR__ . '/auth.php';
 
-Route::get('/dashboard', function () {
-    return view('guru.dashboard');
-})->name('home');
+// Route '/dashboard' sekarang memanggil DashboardController
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
 Route::get('/scan-qr', function () {
     return view('guru.scan-qr');
@@ -17,9 +21,9 @@ Route::get('/jadwal-mengajar', function () {
     return view('guru.jadwal-mengajar');
 })->name('jadwal-mengajar');
 
-Route::get('/status-absensi', function () {
-    return view('guru.status-absensi');
-})->name('status-absensi');
+// Route '/status-absensi' sekarang memanggil AbsensiController
+Route::get('/status-absensi', [AbsensiController::class, 'index'])->name('status-absensi');
+Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('Pengumuman');
 
 
 Route::group(['prefix' => '/', 'middleware' => 'auth'], function () {
