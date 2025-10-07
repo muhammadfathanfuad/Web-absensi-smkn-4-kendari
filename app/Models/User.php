@@ -44,6 +44,14 @@ class User extends Authenticatable
         // jika nama kolom Anda 'password' untuk hashing otomatis.
     ];
 
+    /**
+     * Get the password for the user.
+     */
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_roles');

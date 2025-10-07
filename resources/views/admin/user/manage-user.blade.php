@@ -13,7 +13,7 @@
                 <h5 class="card-title">Data User</h5>
                 <div class="d-flex justify-content-between align-items-center mb-0">
                     <p class="text-muted mb-0">
-                        Data Guru dan siswa
+                        Data Semua Warga Sekolah
                     </p>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
                         Tambah User
@@ -99,6 +99,13 @@
                         <div class="mb-3">
                             <label for="editUserPassword" class="form-label">Password (Opsional)</label>
                             <input type="password" class="form-control" id="editUserPassword" name="password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserStatus" class="form-label">Status</label>
+                            <select class="form-select" id="editUserStatus" name="status" required>
+                                <option value="active">Active</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                     </form>
