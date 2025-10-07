@@ -61,6 +61,9 @@
                     video.play();
                     requestAnimationFrame(tick);
 
+                    // Membalikkan video (flip horizontal)
+                    video.style.transform = 'scaleX(-1)';  // Membalikkan video
+
                 } catch (err) {
                     console.error("ERROR saat mengakses kamera: ", err);
                     resultContainer.textContent = "Gagal mengakses kamera. Pastikan Anda memberikan izin dan menggunakan koneksi HTTPS.";
