@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('css'); ?>
     <?php echo app('Illuminate\Foundation\Vite')(['node_modules/gridjs/dist/theme/mermaid.min.css']); ?>
 <?php $__env->stopSection(); ?>
