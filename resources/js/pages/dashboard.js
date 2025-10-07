@@ -1,209 +1,140 @@
-/**
- * Theme: Taplox- Responsive Bootstrap 5 Admin Dashboard
- * Module/App: Dashboard
- */
+import ApexCharts from 'apexcharts';
 
-//
-//Sales Report -chart
-//
-import ApexCharts from "apexcharts";
-window.ApexCharts= ApexCharts
-
-import jsVectorMap from 'jsvectormap'
-import 'jsvectormap/dist/maps/world-merc.js'
-import 'jsvectormap/dist/maps/world.js'
-
-var options = {
-    series: [{
-        name: "Page Views",
-        type: "bar",
-        data: [34, 65, 46, 68, 49, 61, 42, 44, 78, 52, 63, 67],
-    },
-    {
-        name: "Clicks",
-        type: "area",
-        data: [8, 12, 7, 17, 21, 11, 5, 9, 7, 29, 12, 35],
-    },
-    {
-        name: "Conversion Ratio",
-        type: "area",
-        data: [12, 16, 11, 22, 28, 25, 15, 29, 35, 45, 42, 48],
-    }
-    ],
-    chart: {
-        height: 313,
-        type: "line",
-        toolbar: {
-            show: false,
-        },
-    },
-    stroke: {
-        dashArray: [0, 0, 2],
-        width: [0, 2, 2],
-        curve: 'smooth'
-    },
-    fill: {
-        opacity: [1, 1, 1],
-        type: ['solid', 'gradient', 'gradient'],
-        gradient: {
-            type: "vertical",
-            inverseColors: false,
-            opacityFrom: 0.5,
-            opacityTo: 0,
-            stops: [0, 90]
-        },
-    },
-    markers: {
-        size: [0, 0],
-        strokeWidth: 2,
-        hover: {
-            size: 4,
-        },
-    },
-    xaxis: {
-        categories: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
-        axisTicks: {
-            show: false,
-        },
-        axisBorder: {
-            show: false,
-        },
-    },
-    yaxis: {
-        min: 0,
-        axisBorder: {
-            show: false,
+// Fungsi untuk mendapatkan warna tema dari atribut HTML
+function getChartColorsArray(chartId) {
+    const chartElement = document.getElementById(chartId);
+    if (chartElement) {
+        const colors = chartElement.dataset.colors;
+        if (colors) {
+            return JSON.parse(colors);
         }
-    },
-    grid: {
-        show: true,
-        strokeDashArray: 3,
-        xaxis: {
-            lines: {
-                show: false,
+    }
+    // Warna default jika tidak ada yang diset
+    return ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6'];
+}
+
+// 1. Chart Jam Mengajar Hari Ini (Radial Bar)
+const jamMengajarChartEl = document.getElementById('jamMengajarChart');
+if (jamMengajarChartEl) {
+    const colors = getChartColorsArray('jamMengajarChart');
+    const options = {
+        series: [50], // Persentase dari controller (contoh 50%)
+        chart: {
+            height: 250,
+            type: 'radialBar',
+        },
+        plotOptions: {
+            radialBar: {
+                hollow: {
+                    size: '70%',
+                },
+                dataLabels: {
+                    name: {
+                        show: false,
+                    },
+                    value: {
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        offsetY: 10,
+                        formatter: function (val) {
+                            return val + "%";
+                        }
+                    }
+                }
             },
+        },
+        colors: colors,
+        stroke: {
+            lineCap: 'round'
+        },
+        labels: ['Selesai'],
+    };
+
+    const chart = new ApexCharts(jamMengajarChartEl, options);
+    chart.render();
+}
+
+
+// 2. Chart Riwayat Mengajar Bulan Ini (Area Chart)
+const riwayatMengajarChartEl = document.getElementById('riwayatMengajarChart');
+if (riwayatMengajarChartEl) {
+    const colors = getChartColorsArray('riwayatMengajarChart');
+    const options = {
+        series: [{
+            name: 'Total Jam Mengajar',
+            data: [18, 20, 15, 22] // Data dari controller
+        }],
+        chart: {
+            height: 300,
+            type: 'area',
+            toolbar: {
+                show: false
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2,
+        },
+        colors: colors,
+        xaxis: {
+            categories: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'], // Kategori dari controller
         },
         yaxis: {
-            lines: {
-                show: true,
+            title: {
+                text: 'Jumlah Jam'
+            }
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        tooltip: {
+            x: {
+                format: 'dd/MM/yy HH:mm'
             },
         },
-        padding: {
-            top: 0,
-            right: -2,
-            bottom: 0,
-            left: 10,
-        },
-    },
-    legend: {
-        show: true,
-        horizontalAlign: "center",
-        offsetX: 0,
-        offsetY: 5,
-        markers: {
-            width: 9,
-            height: 9,
-            radius: 6,
-        },
-        itemMargin: {
-            horizontal: 10,
-            vertical: 0,
-        },
-    },
-    plotOptions: {
-        bar: {
-            columnWidth: "30%",
-            barHeight: "70%",
-            borderRadius: 3,
-        },
-    },
-    colors: ["#1a80f8", "#17c553", "#7942ed"],
-    tooltip: {
-        shared: true,
-        y: [{
-            formatter: function (y) {
-                if (typeof y !== "undefined") {
-                    return y.toFixed(1) + "k";
-                }
-                return y;
-            },
-        },
-        {
-            formatter: function (y) {
-                if (typeof y !== "undefined") {
-                    return y.toFixed(1) + "k";
-                }
-                return y;
-            },
-        },
-        ],
-    },
+    };
+
+    const chart = new ApexCharts(riwayatMengajarChartEl, options);
+    chart.render();
 }
 
-var chart = new ApexCharts(
-    document.querySelector("#dash-performance-chart"),
-    options
-);
-
-chart.render();
-
-
-
-
-class VectorMap {
-
-
-    initWorldMapMarker() {
-        const map = new jsVectorMap({
-            map: 'world',
-            selector: '#world-map-markers',
-            zoomOnScroll: true,
-            zoomButtons: false,
-            markersSelectable: true,
-            markers: [
-                { name: "Canada", coords: [56.1304, -106.3468] },
-                { name: "Brazil", coords: [-14.2350, -51.9253] },
-                { name: "Russia", coords: [61, 105] },
-                { name: "China", coords: [35.8617, 104.1954] },
-                { name: "United States", coords: [37.0902, -95.7129] }
-            ],
-            markerStyle: {
-                initial: { fill: "#7f56da" },
-                selected: { fill: "#1bb394" }
-            },
-            labels: {
-                markers: {
-                    render: marker => marker.name
-                }
-            },
-            regionStyle: {
-                initial: {
-                    fill: 'rgba(169,183,197, 0.3)',
-                    fillOpacity: 1,
+// 3. Chart Statistik Kehadiran Siswa (Donut Chart)
+const statistikKehadiranChartEl = document.getElementById('statistikKehadiranChart');
+if (statistikKehadiranChartEl) {
+    const colors = getChartColorsArray('statistikKehadiranChart');
+    const options = {
+        series: [350, 45, 15, 5], // Data dari controller (Hadir, Sakit, Izin, Alpha)
+        chart: {
+            height: 250,
+            type: 'donut',
+        },
+        labels: ['Hadir', 'Sakit', 'Izin', 'Alpha'],
+        colors: colors,
+        legend: {
+            position: 'bottom'
+        },
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    width: 200
                 },
-            },
-        });
-    }
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }]
+    };
 
-    init() {
-        this.initWorldMapMarker();
-    }
-
+    const chart = new ApexCharts(statistikKehadiranChartEl, options);
+    chart.render();
 }
-
-document.addEventListener('DOMContentLoaded', function (e) {
-    new VectorMap().init();
-});
