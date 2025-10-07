@@ -8,6 +8,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Guru\DashboardController;
 use App\Http\Controllers\Guru\AbsensiController;
 use App\Http\Controllers\Guru\PengumumanController;
+use App\Http\Controllers\Murid\DashboardMuridController;
+use App\Http\Controllers\Murid\JadwalPelajaranController;
 
 require __DIR__ . '/auth.php';
 
@@ -29,6 +31,9 @@ Route::get('/jadwal-mengajar', function () {
 // Route '/status-absensi' sekarang memanggil AbsensiController
 Route::get('/status-absensi', [AbsensiController::class, 'index'])->name('status-absensi');
 Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('Pengumuman');
+
+Route::get('/dashboard-murid', [DashboardMuridController::class, 'index'])->name('dashboard-murid');
+Route::get('/jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran');
 
 // route admin
 Route::get('/dashboard-admin', function () {

@@ -4,7 +4,11 @@
 <head>
     @include('layouts.partials/title-meta')
 
+    {{-- Memuat CSS utama terlebih dahulu --}}
     @include('layouts.partials/head-css')
+    
+    {{-- Baru memuat CSS khusus dari halaman lain --}}
+    @yield('css')
 </head>
 
 <body @yield('body-attribuet')>
@@ -13,6 +17,7 @@
 
     @include('layouts.partials/vendor-scripts')
 
-</body>
+    @yield('scripts')
 
+</body>
 </html>
