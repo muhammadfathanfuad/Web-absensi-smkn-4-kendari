@@ -54,23 +54,25 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            // Cari user berdasarkan ID sebelum validasi
+            $user = User::findOrFail($id);
+
             // Validasi input dengan pengecualian pada user yang sedang diupdate
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email,' . $id, // Pengecualian untuk email yang sedang diupdate
-                'phone' => 'required|string|max:15|unique:users,phone,' . $id, // Pengecualian untuk phone yang sedang diupdate
-                'username' => 'required|string|max:255|unique:users,username,' . $id, // Pengecualian untuk username yang sedang diupdate
+                'email' => 'required|email|unique:users,email,' . $user->id, // Pengecualian untuk email yang sedang diupdate
+                'phone' => 'required|string|max:15|unique:users,phone,' . $user->id, // Pengecualian untuk phone yang sedang diupdate
+                'username' => 'required|string|max:255|unique:users,username,' . $user->id, // Pengecualian untuk username yang sedang diupdate
                 'password' => 'nullable|string|min:8', // password bisa diabaikan
+                'status' => 'required|in:active,suspended',
             ]);
-
-            // Cari user berdasarkan ID
-            $user = User::findOrFail($id);
 
             // Update data user
             $user->full_name = $validated['name'];
             $user->email = $validated['email'];
             $user->phone = $validated['phone'];
             $user->username = $validated['username'];
+            $user->status = $validated['status'];
 
             // Update password hanya jika diisi
             if (!empty($validated['password'])) {
@@ -102,6 +104,9 @@ class UserController extends Controller
 
             // Mengembalikan response sukses yang konsisten
             return response()->json(['success' => true, 'message' => 'User berhasil dihapus!']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Jika user tidak ditemukan
+            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
         } catch (\Exception $e) {
             // Jika user tidak ditemukan atau error lainnya
             return response()->json(['success' => false, 'message' => 'Gagal menghapus user: ' . $e->getMessage()], 500);

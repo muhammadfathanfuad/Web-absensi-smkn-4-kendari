@@ -9,7 +9,7 @@ class GridDatatable {
         const mount = document.getElementById("table-search");
         if (!mount) return;
 
-        new gridjs.Grid({
+        window.gridInstance = new gridjs.Grid({
             columns: [
                 "Name",
                 "Email",
@@ -33,11 +33,15 @@ class GridDatatable {
                     },
                 },
                 {
+                    name: "ID",
+                    hidden: true,
+                },
+                {
                     name: "Aksi",
                     formatter: (cell, row) => {
                         // Ambil semua data dari baris saat ini
                         const user = {
-                            id: row.cells[3].data, // Asumsi username unik sebagai ID, atau ambil dari data server jika ada ID
+                            id: row.cells[5].data, // ID from hidden column
                             name: row.cells[0].data,
                             email: row.cells[1].data,
                             phone: row.cells[2].data,
@@ -78,6 +82,7 @@ class GridDatatable {
                         u.phone ?? "-",
                         u.username ?? "-",
                         u.status ?? "-",
+                        u.id, // Add id for actions
                     ]),
             },
             language: { search: { placeholder: " Ketik untuk mencari…" } },
@@ -101,14 +106,16 @@ class GridDatatable {
                             editUserModal.querySelector(".modal-body");
 
                         // Isi form di dalam modal
-                        modalBody.querySelector("#simpleinput").value =
+                        modalBody.querySelector("#editUserName").value =
                             user.name;
-                        modalBody.querySelector("#example-email").value =
+                        modalBody.querySelector("#editUserEmail").value =
                             user.email;
-                        modalBody.querySelector("#example-nohp").value =
+                        modalBody.querySelector("#editUserPhone").value =
                             user.phone;
-                        modalBody.querySelector("#simpleinput").value =
+                        modalBody.querySelector("#editUserUsername").value =
                             user.username;
+                        modalBody.querySelector("#editUserStatus").value =
+                            user.status;
 
                         // Kamu bisa set form action dengan ID user yang sesuai
                         const form = editUserModal.querySelector("form");
@@ -117,6 +124,98 @@ class GridDatatable {
                 );
             }
         });
+    }
+
+    // Fungsi untuk me-refresh tabel
+    refreshTable() {
+        if (window.gridInstance) {
+            window.gridInstance.forceRender(); // Memaksa render ulang tabel
+        }
+    }
+
+    // Fungsi untuk menambahkan user
+    addUser() {
+        const addUserForm = document.getElementById("addUserForm");
+        addUserForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const formData = new FormData(addUserForm);
+
+            fetch(addUserForm.action, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    bootstrap.Modal.getInstance(
+                        document.getElementById("addUserModal")
+                    ).hide();
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        addUserForm.reset();
+                        window.gridInstance.forceRender(); // Refresh tabel setelah menambah user
+                    }
+                })
+                .catch(console.error);
+        });
+    }
+
+    // Fungsi untuk mengedit user
+    editUser() {
+        const editUserForm = document.getElementById("editUserForm");
+        editUserForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const userId = document.getElementById("editUserId").value;
+            const formData = new FormData(editUserForm);
+            formData.append("_method", "PUT"); // Method spoofing
+
+            fetch(`/admin/users/${userId}`, {
+                method: "POST", // POST method with method spoofing
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                },
+                body: formData,
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    bootstrap.Modal.getInstance(editUserModal).hide();
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        window.gridInstance.forceRender(); // Refresh tabel setelah update user
+                    }
+                })
+                .catch(console.error);
+        });
+    }
+
+    // Fungsi untuk menghapus user
+    deleteUser() {
+        const deleteModal = new bootstrap.Modal(
+            document.getElementById("deleteUserModal")
+        );
+
+        document
+            .getElementById("confirmDeleteButton")
+            .addEventListener("click", function () {
+                const userId = document.getElementById("deleteUserId").value;
+                fetch(`/admin/users/${userId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    },
+                })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        deleteModal.hide();
+                        showNotification(data.message, data.success);
+                        if (data.success) {
+                            window.gridInstance.forceRender(); // Refresh tabel setelah hapus user
+                        }
+                    })
+                    .catch(console.error);
+            });
     }
 }
 
