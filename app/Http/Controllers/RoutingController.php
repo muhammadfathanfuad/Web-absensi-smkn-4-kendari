@@ -29,3 +29,5 @@ class RoutingController extends Controller
         return view($first . '.' . $second);
     }
 }
+
+

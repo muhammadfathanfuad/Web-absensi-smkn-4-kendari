@@ -4,6 +4,15 @@ use App\Http\Controllers\RoutingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
+// Import controller yang baru kita buat
+use App\Http\Controllers\Guru\DashboardController;
+use App\Http\Controllers\Guru\AbsensiController;
+use App\Http\Controllers\Guru\PengumumanController;
+
+require __DIR__ . '/auth.php';
+
+// Route '/dashboard' sekarang memanggil DashboardController
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 // route guru
 Route::get('/dashboard', function () {
     return view('guru.dashboard');
@@ -17,9 +26,9 @@ Route::get('/jadwal-mengajar', function () {
     return view('guru.jadwal-mengajar');
 })->name('jadwal-mengajar');
 
-Route::get('/status-absensi', function () {
-    return view('guru.status-absensi');
-})->name('status-absensi');
+// Route '/status-absensi' sekarang memanggil AbsensiController
+Route::get('/status-absensi', [AbsensiController::class, 'index'])->name('status-absensi');
+Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('Pengumuman');
 
 // route admin
 Route::get('/dashboard-admin', function () {
