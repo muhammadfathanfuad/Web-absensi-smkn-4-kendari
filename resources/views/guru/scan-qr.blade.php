@@ -132,6 +132,27 @@
                     }
                 } catch (e) {
                     nisnToSubmit = decodedText;
+                    scanBtn.style.display = 'none';
+                    video.hidden = false;
+                    resultContainer.textContent = "Arahkan kamera ke kode QR...";
+
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: 'environment'
+                        }
+                    });
+
+                    video.srcObject = stream;
+                    video.play();
+                    requestAnimationFrame(tick);
+
+                    // Membalikkan video (flip horizontal)
+                    video.style.transform = 'scaleX(-1)';  // Membalikkan video
+
+                } catch (err) {
+                    console.error("ERROR saat mengakses kamera: ", err);
+                    resultContainer.textContent = "Gagal mengakses kamera. Pastikan Anda memberikan izin dan menggunakan koneksi HTTPS.";
+                    scanBtn.style.display = 'block';
                 }
 
                 const now = new Date().getTime();
