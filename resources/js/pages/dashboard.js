@@ -13,12 +13,13 @@ function getChartColorsArray(chartId) {
     return ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6'];
 }
 
-// 1. Chart Jam Mengajar Hari Ini (Radial Bar)
+// 1. Chart Jam Mengajar Hari Ini (Radial Bar) - DINAMIS
 const jamMengajarChartEl = document.getElementById('jamMengajarChart');
-if (jamMengajarChartEl) {
+if (jamMengajarChartEl && typeof jamMengajarData !== 'undefined') { // Pastikan variabel ada
     const colors = getChartColorsArray('jamMengajarChart');
     const options = {
-        series: [50], // Persentase dari controller (contoh 50%)
+        // Menggunakan persentase dari controller
+        series: [jamMengajarData.persentase],
         chart: {
             height: 250,
             type: 'radialBar',
@@ -55,15 +56,13 @@ if (jamMengajarChartEl) {
 }
 
 
-// 2. Chart Riwayat Mengajar Bulan Ini (Area Chart)
+// 2. Chart Riwayat Mengajar Bulan Ini (Area Chart) - DINAMIS
 const riwayatMengajarChartEl = document.getElementById('riwayatMengajarChart');
-if (riwayatMengajarChartEl) {
+if (riwayatMengajarChartEl && typeof riwayatMengajarData !== 'undefined') { // Pastikan variabel ada
     const colors = getChartColorsArray('riwayatMengajarChart');
     const options = {
-        series: [{
-            name: 'Total Jam Mengajar',
-            data: [18, 20, 15, 22] // Data dari controller
-        }],
+        // Menggunakan data series dari controller
+        series: riwayatMengajarData.series,
         chart: {
             height: 300,
             type: 'area',
@@ -80,7 +79,8 @@ if (riwayatMengajarChartEl) {
         },
         colors: colors,
         xaxis: {
-            categories: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'], // Kategori dari controller
+            // Menggunakan kategori dari controller
+            categories: riwayatMengajarData.categories,
         },
         yaxis: {
             title: {
@@ -107,17 +107,19 @@ if (riwayatMengajarChartEl) {
     chart.render();
 }
 
-// 3. Chart Statistik Kehadiran Siswa (Donut Chart)
+// 3. Chart Statistik Kehadiran Siswa (Donut Chart) - DINAMIS
 const statistikKehadiranChartEl = document.getElementById('statistikKehadiranChart');
-if (statistikKehadiranChartEl) {
+if (statistikKehadiranChartEl && typeof statistikKehadiranData !== 'undefined') { // Pastikan variabel ada
     const colors = getChartColorsArray('statistikKehadiranChart');
     const options = {
-        series: [350, 45, 15, 5], // Data dari controller (Hadir, Sakit, Izin, Alpha)
+        // Menggunakan data series dari controller
+        series: statistikKehadiranData.series,
         chart: {
             height: 250,
             type: 'donut',
         },
-        labels: ['Hadir', 'Sakit', 'Izin', 'Alpha'],
+        // Menggunakan labels dari controller
+        labels: statistikKehadiranData.labels,
         colors: colors,
         legend: {
             position: 'bottom'

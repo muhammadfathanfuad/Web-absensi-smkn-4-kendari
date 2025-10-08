@@ -10,40 +10,30 @@ class ClassSessionsTableSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = Carbon::now();
-
         DB::table('class_sessions')->insert([
+            // Sesi untuk jadwal pertama (timetable_id 1) hari ini
             [
-                'timetable_id'      => 1, // pastikan ada
-                'date'              => '2025-08-01',
-                'start_time_actual' => '08:00:00',
-                'end_time_actual'   => '09:30:00',
-                'status'            => 'completed',
-                'qr_token'          => 'sampleqrtoken12345',
-                'qr_expires_at'     => '2025-08-01 09:00:00',
-                'opened_by'         => 2,  // pastikan user id=2 ada
-                'closed_by'         => 2,
-                // 'last_activity'     => $now->timestamp,
-                // 'ip_address'        => '127.0.0.1',
-                // 'user_agent'        => 'seeder/1.0',
-                'created_at'        => $now,
-                'updated_at'        => $now,
+                'timetable_id' => 1,
+                'date' => Carbon::today()->toDateString(),
+                'status' => 'completed', // Anggap sesi ini sudah selesai
+                'start_time_actual' => '07:00:00',
+                'end_time_actual' => '08:30:00',
+                'opened_by' => 2, // Dibuka oleh guru (user_id = 2)
+                'closed_by' => 2, // Ditutup oleh guru
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
+            // Sesi untuk jadwal kedua (timetable_id 2) hari ini
             [
-                'timetable_id'      => 2,
-                'date'              => '2025-08-02',
-                'start_time_actual' => '10:00:00',
-                'end_time_actual'   => '11:30:00',
-                'status'            => 'scheduled',
-                'qr_token'          => 'sampleqrtoken67890',
-                'qr_expires_at'     => '2025-08-02 11:00:00',
-                'opened_by'         => 2,
-                'closed_by'         => 2,
-                // 'last_activity'     => $now->timestamp,
-                // 'ip_address'        => '127.0.0.1',
-                // 'user_agent'        => 'seeder/1.0',
-                'created_at'        => $now,
-                'updated_at'        => $now,
+                'timetable_id' => 2,
+                'date' => Carbon::today()->toDateString(),
+                'status' => 'scheduled', // Sesi ini dijadwalkan tapi belum dimulai
+                'start_time_actual' => null,
+                'end_time_actual' => null,
+                'opened_by' => null,
+                'closed_by' => null,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
     }

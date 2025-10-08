@@ -1,124 +1,86 @@
 
 
 <?php $__env->startSection('content'); ?>
+    <?php echo $__env->make('layouts.partials.page-title', ['title' => 'Status Absensi', 'subtitle' => 'Guru'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
-<?php
-    // Definisikan status dan warna badge di sini agar mudah dikelola
-    $statusMap = [
-        'H' => ['text' => 'Hadir', 'color' => 'success'],
-        'S' => ['text' => 'Sakit', 'color' => 'warning'],
-        'I' => ['text' => 'Izin', 'color' => 'info'],
-        'A' => ['text' => 'Alpha', 'color' => 'danger'],
-        null => ['text' => 'Belum Absen', 'color' => 'secondary'],
-    ];
-?>
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title mb-4">Rekap Kehadiran Siswa</h4>
 
-<?php echo $__env->make('layouts.partials.page-title', ['title' => 'Status Absensi', 'subtitle' => 'Guru'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            
+            <form action="<?php echo e(route('guru.status-absensi')); ?>" method="GET">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="subject_id" class="form-label">Pilih Mata Pelajaran</label>
+                        <select name="subject_id" id="subject_id" class="form-select">
+                            <option value="">Semua Mapel</option>
+                            <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($subject->id); ?>" <?php echo e($selectedSubjectId == $subject->id ? 'selected' : ''); ?>>
+                                    <?php echo e($subject->name); ?>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                
-                <form action="<?php echo e(route('status-absensi')); ?>" method="GET">
-                    <div class="row align-items-end">
-                        <div class="col-md-4">
-                            <label for="kelas_id" class="form-label">Pilih Kelas</label>
-                            <select class="form-select" id="kelas_id" name="kelas_id">
-                                <option selected disabled>-- Semua Kelas --</option>
-                                <?php $__currentLoopData = $kelas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($k['id']); ?>"><?php echo e($k['nama']); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="mapel_id" class="form-label">Pilih Mata Pelajaran</label>
-                            <select class="form-select" id="mapel_id" name="mapel_id">
-                                <option selected disabled>-- Semua Mapel --</option>
-                                 <?php $__currentLoopData = $mapel; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($m['id']); ?>"><?php echo e($m['nama']); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">Cari</button>
-                        </div>
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
                     </div>
-                </form>
-                
+                    <div class="col-md-5">
+                        <label for="date" class="form-label">Pilih Tanggal</label>
+                        <input type="date" class="form-control" id="date" name="date" value="<?php echo e($selectedDate); ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </div>
+            </form>
 
-                <hr class="my-4">
+            <hr>
 
-                
-                <h4 class="card-title mb-4">Daftar Hadir Siswa</h4>
-
-                <div class="table-responsive">
-                    <table class="table table-centered table-nowrap table-hover mb-0">
-                        <thead class="table-light">
+            
+            <div class="table-responsive mt-4">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>NIS</th>
+                            <th>Nama Siswa</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Jam Masuk</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $__empty_1 = true; $__currentLoopData = $attendances; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $absen): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
-                                <th style="width: 5%;">No.</th>
-                                <th>NIS</th>
-                                <th>Nama Siswa</th>
-                                <th>Jenis Kelamin</th>
-                                <th class="text-center">Status</th>
-                                <th>Keterangan</th>
-                                <th class="text-center">Aksi</th>
+                                <td><?php echo e($loop->iteration); ?></td>
+                                <td><?php echo e($absen->student->nis ?? 'N/A'); ?></td>
+                                <td><?php echo e($absen->student->user->full_name ?? 'N/A'); ?></td>
+                                <td><?php echo e($absen->classSession->timetable->subject->name ?? 'N/A'); ?></td>
+                                <td><?php echo e($absen->check_in_time ?? '-'); ?></td>
+                                <td>
+                                    
+                                    <?php if($absen->status == 'S'): ?>
+                                        <span class="badge bg-soft-warning text-warning">Sakit</span>
+                                    <?php elseif($absen->status == 'I'): ?>
+                                        <span class="badge bg-soft-info text-info">Izin</span>
+                                    <?php elseif($absen->status == 'T' || ($absen->notes === 'Terlambat' && $absen->status !== 'H')): ?>
+                                        
+                                        <span class="badge bg-soft-danger text-danger">Terlambat</span>
+                                    <?php elseif($absen->status == 'H'): ?>
+                                        <span class="badge bg-soft-success text-success">Hadir</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-soft-secondary text-secondary"><?php echo e($absen->status); ?></span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php $__empty_1 = true; $__currentLoopData = $students; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $student): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                <tr>
-                                    <td><?php echo e($loop->iteration); ?></td>
-                                    <td><?php echo e($student['nis']); ?></td>
-                                    <td><?php echo e($student['nama']); ?></td>
-                                    <td><?php echo e($student['jk']); ?></td>
-                                    <td class="text-center">
-                                        <?php
-                                            $status = $student['status'] ?? null;
-                                            $statusInfo = $statusMap[$status];
-                                        ?>
-                                        <span class="badge bg-soft-<?php echo e($statusInfo['color']); ?> text-<?php echo e($statusInfo['color']); ?> fs-12">
-                                            <?php echo e($statusInfo['text']); ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <tr>
+                                <td colspan="6" class="text-center">Tidak ada data absensi untuk filter yang dipilih.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
 
-                                        </span>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td class="text-center">
-                                        
-                                        <?php if($student['status'] !== 'H'): ?>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-warning">Sakit</button>
-                                                <button type="button" class="btn btn-outline-info">Izin</button>
-                                            </div>
-                                        <?php else: ?>
-                                            -
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                <tr>
-                                    <td colspan="7" class="text-center">Silakan pilih filter untuk menampilkan data siswa.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="d-flex justify-content-end mt-4">
-                    
-                    <button type="submit" class="btn btn-success">Selesaikan Sesi Absensi</button>
-                </div>
-                
-
-            </div> <!-- end card-body-->
-        </div> <!-- end card-->
-    </div> <!-- end col-->
-</div>
-<!-- end row-->
-
+        </div>
+    </div>
 <?php $__env->stopSection(); ?>
-
-
-<?php echo $__env->make('layouts.vertical-guru', ['subtitle' => 'Absensi'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/status-absensi.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.vertical-guru', ['subtitle' => 'Status Absensi'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/status-absensi.blade.php ENDPATH**/ ?>
