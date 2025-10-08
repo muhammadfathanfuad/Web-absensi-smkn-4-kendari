@@ -2,28 +2,34 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
-    public function run()
+    public function run(): void
     {
+        // Urutan ini SANGAT PENTING untuk menghindari error relasi
         $this->call([
+            // 1. Data master yang tidak bergantung pada data lain
             RolesTableSeeder::class,
+            RoomsTableSeeder::class,
+            SubjectsTableSeeder::class,
+            TermsTableSeeder::class,
+
+            // 2. Data pengguna
             UsersTableSeeder::class,
+
+            // 3. Data yang bergantung pada pengguna (user)
             UserRolesTableSeeder::class,
             TeachersTableSeeder::class,
+
+            // 4. Data yang bergantung pada data master dan guru
             ClassesTableSeeder::class,
+
+            // 5. Data yang bergantung pada pengguna (user) dan kelas
             StudentsTableSeeder::class,
-            TermsTableSeeder::class,
-            SubjectsTableSeeder::class,
+
+            // 6. Data relasi jadwal
             ClassSubjectsTableSeeder::class,
             TimetablesTableSeeder::class,
             ClassSessionsTableSeeder::class,

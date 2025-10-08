@@ -10,19 +10,32 @@ class UserRolesTableSeeder extends Seeder
 {
     public function run()
     {
-        // Mengambil role yang sudah ada
-        $admin = Role::where('name', 'admin')->first();
-        $teacher = Role::where('name', 'teacher')->first();
-        $student = Role::where('name', 'student')->first();
+        // Temukan roles berdasarkan nama
+        $adminRole = Role::where('name', 'admin')->first();
+        $teacherRole = Role::where('name', 'teacher')->first();
+        $studentRole = Role::where('name', 'student')->first();
 
-        // Menambahkan roles untuk user
+        // Temukan user berdasarkan username yang BENAR
         $adminUser = User::where('username', 'admin')->first();
-        $adminUser->roles()->attach($admin->id);
+        $teacherUser = User::where('username', 'budi.guru')->first();
+        $studentUser1 = User::where('username', 'ahmad.budi')->first();
+        $studentUser2 = User::where('username', 'siti.aminah')->first();
 
-        $teacherUser = User::where('username', 'guru_math')->first();
-        $teacherUser->roles()->attach($teacher->id);
+        // Hubungkan role ke user (dengan pengecekan)
+        if ($adminUser && $adminRole) {
+            $adminUser->roles()->attach($adminRole->id);
+        }
 
-        $studentUser = User::where('username', 'murid_a')->first();
-        $studentUser->roles()->attach($student->id);
+        if ($teacherUser && $teacherRole) {
+            $teacherUser->roles()->attach($teacherRole->id);
+        }
+
+        if ($studentUser1 && $studentRole) {
+            $studentUser1->roles()->attach($studentRole->id);
+        }
+        
+        if ($studentUser2 && $studentRole) {
+            $studentUser2->roles()->attach($studentRole->id);
+        }
     }
 }
