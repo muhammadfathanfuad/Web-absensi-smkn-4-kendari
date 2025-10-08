@@ -24,31 +24,27 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- Contoh Data Jadwal --}}
-                                <tr>
-                                    <td>07:00 - 08:30</td>
-                                    <td>Matematika</td>
-                                    <td>XII RPL 1</td>
-                                    <td><span class="badge bg-soft-success text-success">Selesai</span></td>
-                                </tr>
-                                <tr>
-                                    <td>08:30 - 10:00</td>
-                                    <td>Bahasa Indonesia</td>
-                                    <td>XI TKJ 2</td>
-                                    <td><span class="badge bg-soft-warning text-warning">Berlangsung</span></td>
-                                </tr>
-                                <tr>
-                                    <td>10:30 - 12:00</td>
-                                    <td>Dasar Desain Grafis</td>
-                                    <td>X MM 1</td>
-                                    <td><span class="badge bg-soft-secondary text-secondary">Akan Datang</span></td>
-                                </tr>
-                                <tr>
-                                    <td>13:00 - 14:30</td>
-                                    <td>Pemrograman Web</td>
-                                    <td>XII RPL 1</td>
-                                    <td><span class="badge bg-soft-secondary text-secondary">Akan Datang</span></td>
-                                </tr>
+                                {{-- Data Jadwal Dinamis --}}
+                                @forelse ($jadwalMengajar as $jadwal)
+                                    <tr>
+                                        <td>{{ $jadwal['jam'] }}</td>
+                                        <td>{{ $jadwal['mapel'] }}</td>
+                                        <td>{{ $jadwal['kelas'] }}</td>
+                                        <td>
+                                            @if ($jadwal['status'] == 'Selesai')
+                                                <span class="badge bg-soft-success text-success">{{ $jadwal['status'] }}</span>
+                                            @elseif ($jadwal['status'] == 'Berlangsung')
+                                                <span class="badge bg-soft-warning text-warning">{{ $jadwal['status'] }}</span>
+                                            @else
+                                                <span class="badge bg-soft-secondary text-secondary">{{ $jadwal['status'] }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">Tidak ada jadwal mengajar hari ini.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -69,7 +65,8 @@
                     </div>
                 </div>
                  <div class="card-footer bg-transparent border-top-0 text-center">
-                    <h5 class="text-muted">Total 4 Jam dari 8 Jam Hari Ini</h5>
+                    {{-- Label Jam Mengajar Dinamis --}}
+                    <h5 class="text-muted">{{ $jamMengajarData['label'] }}</h5>
                 </div>
             </div>
         </div>
@@ -108,27 +105,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                 {{-- Contoh Data Siswa Izin --}}
-                                <tr>
-                                    <td>Ahmad Budi</td>
-                                    <td>XII RPL 1</td>
-                                    <td><span class="badge bg-soft-info text-info">Izin</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Siti Aminah</td>
-                                    <td>XI TKJ 2</td>
-                                    <td><span class="badge bg-soft-warning text-warning">Sakit</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Joko Susilo</td>
-                                    <td>X MM 1</td>
-                                    <td><span class="badge bg-soft-info text-info">Izin</span></td>
-                                </tr>
-                                 <tr>
-                                    <td>Putri Lestari</td>
-                                    <td>XII RPL 1</td>
-                                    <td><span class="badge bg-soft-warning text-warning">Sakit</span></td>
-                                </tr>
+                                 {{-- Data Siswa Izin Dinamis --}}
+                                @forelse ($siswaIzin as $izin)
+                                    <tr>
+                                        <td>{{ $izin['nama'] }}</td>
+                                        <td>{{ $izin['kelas'] }}</td>
+                                        <td>
+                                            @if ($izin['keterangan'] == 'Sakit')
+                                                <span class="badge bg-soft-warning text-warning">{{ $izin['keterangan'] }}</span>
+                                            @else
+                                                <span class="badge bg-soft-info text-info">{{ $izin['keterangan'] }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                     <tr>
+                                        <td colspan="3" class="text-center">Tidak ada siswa yang izin hari ini.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -154,28 +148,22 @@
                     <h4 class="card-title mb-0">Pengumuman</h4>
                 </div>
                 <div class="card-body" style="max-height: 220px; overflow-y: auto;">
-                    <div class="d-flex mb-3">
-                        <div class="flex-shrink-0">
-                             <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle text-center">
-                                <iconify-icon icon="solar:megaphone-bold" class="fs-24 text-primary avatar-title"></iconify-icon>
+                    {{-- Pengumuman Dinamis --}}
+                    @forelse ($pengumuman as $item)
+                        <div class="d-flex mb-3">
+                            <div class="flex-shrink-0">
+                                 <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle text-center">
+                                    <iconify-icon icon="{{ $item['icon'] }}" class="fs-24 text-primary avatar-title"></iconify-icon>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ $item['judul'] }}</h6>
+                                <small class="text-muted">{{ $item['tanggal'] }}</small>
                             </div>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="mb-0">Rapat Dewan Guru</h6>
-                            <small class="text-muted">10 Oktober 2025 - 08:00</small>
-                        </div>
-                    </div>
-                     <div class="d-flex">
-                        <div class="flex-shrink-0">
-                            <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle text-center">
-                                <iconify-icon icon="solar:calendar-bold" class="fs-24 text-primary avatar-title"></iconify-icon>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="mb-0">Kegiatan Class Meeting</h6>
-                            <small class="text-muted">15 Desember 2025</small>
-                        </div>
-                    </div>
+                    @empty
+                        <p class="text-center">Tidak ada pengumuman.</p>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -183,6 +171,12 @@
 @endsection
 
 @section('scripts')
-    {{-- Pastikan Anda mengupdate file JS ini untuk menginisialisasi chart baru --}}
+    {{-- Meneruskan data dinamis ke JavaScript --}}
+    <script>
+        // Data dari controller yang akan digunakan oleh JavaScript
+        var jamMengajarData = @json($jamMengajarData);
+        var riwayatMengajarData = @json($riwayatMengajarData);
+        var statistikKehadiranData = @json($statistikKehadiranData);
+    </script>
     @vite(['resources/js/pages/dashboard.js'])
 @endsection

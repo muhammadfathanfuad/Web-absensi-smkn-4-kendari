@@ -8,36 +8,58 @@ use Carbon\Carbon;
 
 class TimetablesTableSeeder extends Seeder
 {
-    public function run(): void
+    public function run()
     {
-        $now = Carbon::now();
+        // Hari ini adalah Selasa, jadi day_of_week = 2
+        $todayDayOfWeek = 2;
 
         DB::table('timetables')->insert([
             [
-                'term_id' => 1, // 2025/2026 – Ganjil
-                'class_id' => 1, // X IPA 1
-                'subject_id' => 1, // Matematika
-                'teacher_id' => 2, // Gantilah dengan ID yang valid
-                'day_of_week' => 1, // Senin
-                'start_time' => '08:00:00',
-                'end_time' => '09:30:00',
-                'room_id' => null, // Asumsi ruang kelas tidak wajib
-                'is_active' => true,
-                'created_at' => $now,
-                'updated_at' => $now
+                'term_id' => 1,
+                'class_id' => 1,      // Kelas XII RPL 1
+                'subject_id' => 3,    // Pemrograman Web
+                'teacher_id' => 2,    // Budi Guru
+                'day_of_week' => $todayDayOfWeek,
+                'start_time' => '07:00:00',
+                'end_time' => '08:30:00',
             ],
             [
-                'term_id' => 1, // 2025/2026 – Ganjil
-                'class_id' => 2, // X IPA 2
-                'subject_id' => 3, // Fisika
-                'teacher_id' => 2, // Gantilah dengan ID yang valid
-                'day_of_week' => 2, // Selasa
+                'term_id' => 1,
+                'class_id' => 2,      // Kelas XI TKJ 2
+                'subject_id' => 1,    // Matematika
+                'teacher_id' => 2,    // Budi Guru
+                'day_of_week' => $todayDayOfWeek,
                 'start_time' => '10:00:00',
-                'end_time' => '11:30:00',
-                'room_id' => null, // Asumsi ruang kelas tidak wajib
-                'is_active' => true,
-                'created_at' => $now,
-                'updated_at' => $now
+                'end_time' => '12:40:00',
+            ],
+
+            [
+                'term_id' => 1,
+                'class_id' => 2,      // Kelas XI TKJ 2
+                'subject_id' => 3,    // Bahasa Indonesia
+                'teacher_id' => 2,    // Budi Guru
+                'day_of_week' => 3,   // Hari Rabu
+                'start_time' => '09:00:00',
+                'end_time' => '10:30:00',
+            ],
+
+            [
+                'term_id' => 1,
+                'class_id' => 2,      // Kelas XI TKJ 2
+                'subject_id' => 2,    // Web
+                'teacher_id' => 2,    // Budi Guru
+                'day_of_week' => 3,   // Hari Rabu
+                'start_time' => '10:30:00',
+                'end_time' => '12:30:00',
+            ],
+            [
+                'term_id' => 1,
+                'class_id' => 2,      // Kelas XI TKJ 2
+                'subject_id' => 2,    // Web
+                'teacher_id' => 2,    // Budi Guru
+                'day_of_week' => 3,   // Hari Rabu
+                'start_time' => '12:30:00',
+                'end_time' => '15:30:00',
             ],
         ]);
     }

@@ -31,11 +31,11 @@
                          </span>
                          <span class="nav-text"> Manajemen User</span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'jadwal-mengajar')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('any', 'jadwal-pelajaran')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>
-                         <span class="nav-text"> Jadwal Mengajar </span>
+                         <span class="nav-text"> Jadwal Pelajaran </span>
                     </a>
                     <a class="nav-link" href="<?php echo e(route('any', 'status-absensi')); ?>">
                          <span class="nav-icon">

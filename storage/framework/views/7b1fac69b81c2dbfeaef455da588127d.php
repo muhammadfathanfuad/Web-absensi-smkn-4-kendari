@@ -1,165 +1,79 @@
 <?php $__env->startSection('content'); ?>
-    <!-- Mulai Konten Halaman -->
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box">
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="javascript: void(0);">Guru</a></li>
-                        <li class="breadcrumb-item active">Jadwal Mengajar</li>
-                    </ol>
-                </div>
-                <h4 class="page-title">Jadwal Mengajar</h4>
+    <?php echo $__env->make('layouts.partials.page-title', ['title' => 'Jadwal Mengajar', 'subtitle' => 'Guru'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+
+    
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Jadwal Hari Ini (<?php echo e(\Carbon\Carbon::now()->translatedFormat('l, j F Y')); ?>)</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Jam</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Kelas</th>
+                            <th>Ruangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $__empty_1 = true; $__currentLoopData = $jadwalHariIni; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <tr>
+                                <td><?php echo e(\Carbon\Carbon::parse($jadwal->start_time)->format('H:i')); ?> - <?php echo e(\Carbon\Carbon::parse($jadwal->end_time)->format('H:i')); ?></td>
+                                <td><?php echo e($jadwal->subject->name ?? 'N/A'); ?></td>
+                                <td><?php echo e($jadwal->classroom->name ?? 'N/A'); ?></td>
+                                
+                                <td><?php echo e($jadwal->classroom->room->name ?? '-'); ?></td>
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <tr>
+                                <td colspan="4" class="text-center">Tidak ada jadwal mengajar hari ini.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    <!-- Akhir Judul Halaman -->
 
-    <div class="row">
-        <!-- Kolom Kiri: Pemberitahuan dan Kalender -->
-        <div class="col-xl-4 col-lg-5">
-
-            <!-- Card Pemberitahuan -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Pemberitahuan</h5>
-                    
-                    <div class="d-flex align-items-start mb-3">
-                        <div class="flex-shrink-0">
-                           <i class="ri-calendar-event-fill fs-20 text-primary"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-2">
-                            <h6 class="mb-0 fs-14">Rapat Awal Semester</h6>
-                            <p class="mb-0 text-muted fs-12">Pemberitahuan rapat akan dilaksanakan pada...</p>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-start mb-3">
-                        <div class="flex-shrink-0">
-                           <i class="ri-task-fill fs-20 text-success"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-2">
-                            <h6 class="mb-0 fs-14">Pengumpulan Nilai Akhir</h6>
-                            <p class="mb-0 text-muted fs-12">Harap segera menyelesaikan pengisian nilai...</p>
-                        </div>
-                    </div>
-                     <div class="d-flex align-items-start">
-                        <div class="flex-shrink-0">
-                           <i class="ri-information-fill fs-20 text-warning"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-2">
-                            <h6 class="mb-0 fs-14">Update Sistem Absensi</h6>
-                            <p class="mb-0 text-muted fs-12">Sistem akan di-maintenance pada hari sabtu...</p>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Card Kalender -->
-            <div class="card">
-                <div class="card-body">
-                     <h5 class="card-title mb-3">Kalender</h5>
-                    <!-- Kalender akan di-generate oleh JavaScript di sini -->
-                    <div id="calendar-widget"></div>
-                </div>
-            </div>
-
+    
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Jadwal Semester Ini</h4>
         </div>
-
-        <!-- Kolom Kanan: Jadwal Hari Ini dan Semester -->
-        <div class="col-xl-8 col-lg-7">
-            <!-- Card Jadwal Hari Ini -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Jadwal Hari Ini: <?php echo e(\Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY')); ?></h5>
-                    <p class="card-subtitle mb-2 text-muted">Berikut adalah jadwal mengajar Anda untuk hari ini.</p>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover table-centered mb-0">
-                            <thead>
-                                <tr>
-                                    <th>JAM KE-</th>
-                                    <th>WAKTU</th>
-                                    <th>KELAS</th>
-                                    <th>MATA PELAJARAN</th>
-                                    <th>STATUS</th>
-                                    <th>AKSI</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>07:00 - 07:45</td>
-                                    <td>XII RPL</td>
-                                    <td>Basis Data</td>
-                                    <td><span class="badge bg-soft-warning text-warning">Belum Absen</span></td>
-                                    <td>
-                                        <a href="#" class="btn btn-primary btn-sm">Absensi</a>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>07:45 - 08:30</td>
-                                    <td>XII RPL</td>
-                                    <td>Basis Data</td>
-                                    <td><span class="badge bg-soft-success text-success">Berlangsung</span></td>
-                                    <td>
-                                        <a href="#" class="btn btn-info btn-sm">Lihat Detail</a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+        <div class="card-body">
+            <?php $__currentLoopData = $days; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dayNumber => $dayName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php if(isset($semuaJadwal[$dayNumber]) && $semuaJadwal[$dayNumber]->count() > 0): ?>
+                    <div class="mb-4">
+                        <h5><?php echo e($dayName); ?></h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Jam</th>
+                                        <th>Mata Pelajaran</th>
+                                        <th>Kelas</th>
+                                        <th>Ruangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $semuaJadwal[$dayNumber]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <tr>
+                                            <td><?php echo e(\Carbon\Carbon::parse($jadwal->start_time)->format('H:i')); ?> - <?php echo e(\Carbon\Carbon::parse($jadwal->end_time)->format('H:i')); ?></td>
+                                            <td><?php echo e($jadwal->subject->name ?? 'N/A'); ?></td>
+                                            <td><?php echo e($jadwal->classroom->name ?? 'N/A'); ?></td>
+                                            
+                                            <td><?php echo e($jadwal->classroom->room->name ?? '-'); ?></td>
+                                        </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Card Jadwal Semester Ini -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Jadwal Mengajar Semester Ini</h5>
-                <p class="card-subtitle mb-2 text-muted">Jadwal lengkap untuk semester Ganjil 2025/2026.</p>
-
-                    <div class="table-responsive">
-                        <table class="table table-striped table-centered mb-0">
-                            <thead>
-                                <tr>
-                                    <th>HARI</th>
-                                    <th>JAM KE-</th>
-                                    <th>WAKTU</th>
-                                    <th>KELAS</th>
-                                    <th>MATA PELAJARAN</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Senin</td>
-                                    <td>3-4</td>
-                                    <td>08:30 - 10:00</td>
-                                    <td>XI TKJ 2</td>
-                                    <td>Jaringan Dasar</td>
-                                </tr>
-                                <tr>
-                                    <td>Selasa</td>
-                                    <td>1-2</td>
-                                    <td>07:00 - 08:30</td>
-                                    <td>X RPL 1</td>
-                                    <td>Dasar Pemrograman</td>
-                                </tr>
-                                <tr>
-                                    <td>Jumat</td>
-                                    <td>1-2</td>
-                                    <td>07:00 - 08:30</td>
-                                    <td>XII RPL</td>
-                                    <td>Basis Data</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                <?php endif; ?>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
 <?php $__env->stopSection(); ?>
-
-<?php echo $__env->make('layouts.vertical-guru', ['title' => 'Jadwal Mengajar'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/jadwal-mengajar.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.vertical-guru', ['subtitle' => 'Jadwal Mengajar'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/guru/jadwal-mengajar.blade.php ENDPATH**/ ?>
