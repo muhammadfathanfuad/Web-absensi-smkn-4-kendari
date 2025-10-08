@@ -1,10 +1,12 @@
-<?php $__env->startSection('css'); ?>
-    <?php echo app('Illuminate\Foundation\Vite')(['node_modules/gridjs/dist/theme/mermaid.min.css']); ?>
-    <?php echo app('Illuminate\Foundation\Vite')(['node_modules/select2/dist/css/select2.min.css']); ?>
-<?php $__env->stopSection(); ?>
+@extends('layouts.vertical-admin', ['subtitle' => 'manajemen-pengguna'])
 
-<?php $__env->startSection('content'); ?>
-    <?php echo $__env->make('layouts.partials.page-title', ['title' => 'Manajemen', 'subtitle' => 'Manajemen Pengguna'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+@section('css')
+    @vite(['node_modules/gridjs/dist/theme/mermaid.min.css'])
+    @vite(['node_modules/select2/dist/css/select2.min.css'])
+@endsection
+
+@section('content')
+    @include('layouts.partials.page-title', ['title' => 'Manajemen', 'subtitle' => 'Manajemen Pengguna'])
 
     <div class="row">
         <div class="card">
@@ -100,8 +102,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addUserForm" action="<?php echo e(route('users.store')); ?>" method="POST">
-                        <?php echo csrf_field(); ?>
+                    <form id="addUserForm" action="{{ route('users.store') }}" method="POST">
+                        @csrf
                         <div class="mb-3">
                             <label for="addUserName" class="form-label">Nama</label>
                             <input type="text" class="form-control" id="addUserName" name="name" required>
@@ -139,8 +141,8 @@
                 </div>
                 <div class="modal-body">
                     <form id="editUserForm" data-action="/admin/user" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('PUT'); ?>
+                        @csrf
+                        @method('PUT')
                         <input type="hidden" id="editUserId" name="id">
                         <div class="mb-3">
                             <label for="editUserName" class="form-label">Nama</label>
@@ -223,8 +225,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addGuruForm" action="<?php echo e(route('guru.store')); ?>" method="POST">
-                        <?php echo csrf_field(); ?>
+                    <form id="addGuruForm" action="{{ route('guru.store') }}" method="POST">
+                        @csrf
                         <div class="mb-3">
                             <label for="addGuruUser" class="form-label">Username Guru</label>
                             <input type="text" class="form-control" id="addGuruUser" name="user_username" required>
@@ -257,8 +259,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addMuridForm" action="<?php echo e(route('murid.store')); ?>" method="POST">
-                        <?php echo csrf_field(); ?>
+                    <form id="addMuridForm" action="{{ route('murid.store') }}" method="POST">
+                        @csrf
                         <div class="mb-3">
                             <label for="addMuridUser" class="form-label">Username Murid</label>
                             <input type="text" class="form-control" id="addMuridUser" name="user_username" required>
@@ -298,8 +300,8 @@
                 </div>
                 <div class="modal-body">
                     <form id="editGuruForm" data-action="/admin/guru" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('PUT'); ?>
+                        @csrf
+                        @method('PUT')
                         <input type="hidden" id="editGuruId" name="id">
                         <div class="mb-3">
                             <label for="editGuruUserName" class="form-label">Nama Guru</label>
@@ -334,8 +336,8 @@
                 </div>
                 <div class="modal-body">
                     <form id="editMuridForm" data-action="/admin/murid" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('PUT'); ?>
+                        @csrf
+                        @method('PUT')
                         <input type="hidden" id="editMuridId" name="id">
                         <div class="mb-3">
                             <label for="editMuridUserName" class="form-label">Nama Murid</label>
@@ -405,11 +407,11 @@
             </div>
         </div>
     </div>
-<?php $__env->stopSection(); ?>
+@endsection
 
-<?php $__env->startSection('scripts'); ?>
-    <?php echo app('Illuminate\Foundation\Vite')(['resources/js/admin/tabel.js']); ?>
-    <?php echo app('Illuminate\Foundation\Vite')(['node_modules/select2/dist/js/select2.min.js']); ?>
+@section('scripts')
+    @vite(['resources/js/admin/tabel.js'])
+    @vite(['node_modules/select2/dist/js/select2.min.js'])
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -446,7 +448,7 @@
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         }
                     });
                     const data = await response.json();
@@ -485,7 +487,7 @@
                     const response = await fetch(`/admin/users/${userId}`, {
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: formData
                     });
@@ -559,7 +561,7 @@
                     const response = await fetch(`/admin/users/${userId}`, {
                         method: 'DELETE',
                         headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         }
                     });
                     const data = await response.json();
@@ -578,6 +580,4 @@
 
         });
     </script>
-<?php $__env->stopSection(); ?>
-
-<?php echo $__env->make('layouts.vertical-admin', ['subtitle' => 'manajemen-pengguna'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/admin/user/manage-user.blade.php ENDPATH**/ ?>
+@endsection
