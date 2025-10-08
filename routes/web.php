@@ -10,6 +10,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Guru\DashboardController;
 use App\Http\Controllers\Guru\AbsensiController;
 use App\Http\Controllers\Guru\PengumumanController;
+use App\Http\Controllers\Murid\DashboardMuridController;
+use App\Http\Controllers\Murid\JadwalPelajaranController;
+use App\Http\Controllers\Murid\ScanQRController;
 use App\Http\Controllers\Guru\JadwalController;
 
 require __DIR__ . '/auth.php';
@@ -31,6 +34,11 @@ Route::get('/scan-qr', [AbsensiController::class, 'showScanner'])->name('guru.ab
 // API untuk memproses scan (dipanggil oleh JavaScript)
 Route::post('/scan-qr/process', [AbsensiController::class, 'processScan'])->name('guru.absensi.process');
 
+Route::get('/dashboard-murid', [DashboardMuridController::class, 'index'])->name('dashboard-murid');
+Route::get('/jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran');
+Route::get('/tampilan-qr', [ScanQRController::class, 'index'])->name('tampilan-qr');
+Route::get('/riwayat-absensi', [DashboardMuridController::class, 'absensi'])->name('riwayat-absensi');
+Route::get('/pengumuman-murid', [DashboardMuridController::class, 'pengumuman'])->name('pengumuman-murid');
 // API untuk checkout otomatis (dipanggil oleh JavaScript)
 
 // API untuk filter hasil pindaian (dipanggil oleh JavaScript)

@@ -1,12 +1,12 @@
 <div class="app-sidebar">
      <!-- Sidebar Logo -->
      <div class="logo-box">
-          <a href="{{ route('any', 'index') }}" class="logo-dark">
+          <a href="<?php echo e(route('any', 'index')); ?>" class="logo-dark">
                <img src="/images/logo-sm.png" class="logo-sm" alt="logo sm">
                <img src="/images/logo-dark.png" class="logo-lg" alt="logo dark">
           </a>
 
-          <a href="{{ route('any', 'index') }}" class="logo-light">
+          <a href="<?php echo e(route('any', 'index')); ?>" class="logo-light">
                <img src="/images/logo-sm.png" class="logo-sm" alt="logo sm">
                <img src="/images/logo-light.png" class="logo-lg" alt="logo light">
           </a>
@@ -19,38 +19,32 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('dashboard-murid') }}">
+                    <a class="nav-link" href="<?php echo e(route('any', 'dashboard-admin')); ?>">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>
                          <span class="nav-text"> Dashboard </span>
                     </a>
-                    <a class="nav-link" href="{{ route('tampilan-qr') }}">
+                    <a class="nav-link" href="<?php echo e(route('any', 'manage-user')); ?>">
                          <span class="nav-icon">
-                              <i class='bx  bx-qr-scan'  ></i> 
+                                <i class='bx  bx-user-circle'  ></i>    
                          </span>
-                         <span class="nav-text"> QR Code </span>
+                         <span class="nav-text"> Manajemen User</span>
                     </a>
-                    <a class="nav-link" href="{{ route('jadwal-pelajaran') }}">
+                    <a class="nav-link" href="<?php echo e(route('any', 'jadwal-mengajar')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>
-                         <span class="nav-text"> Jadwal Pelajaran </span>
+                         <span class="nav-text"> Jadwal Mengajar </span>
                     </a>
-                    <a class="nav-link" href="{{ route('riwayat-absensi') }}">
+                    <a class="nav-link" href="<?php echo e(route('any', 'status-absensi')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-history'  ></i>    
                          </span>
-                         <span class="nav-text"> Riwayat Absensi </span>
-                    </a>
-                    <a class="nav-link" href="{{ route('pengumuman-murid') }}">
-                         <span class="nav-icon">
-                              <i class='bx  bx-bell'  ></i>       
-                         </span>
-                         <span class="nav-text"> Pengumuman </span>
+                         <span class="nav-text"> Status Absensi </span>
                     </a>
                </li>
 
           </ul>
      </div>
-</div>
+</div><?php /**PATH C:\Coding\Web-absensi-smkn-4-kendari\resources\views/layouts/partials/sidebar-admin.blade.php ENDPATH**/ ?>
