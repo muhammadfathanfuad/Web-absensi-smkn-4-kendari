@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 // use App\Models\Jadwal;
 // use App\Models\Pengumuman;
 
-class DashboardMuridController extends Controller
+class ScanQRController extends Controller
 {
     /**
      * Menampilkan halaman dashboard utama untuk murid.
@@ -17,13 +17,28 @@ class DashboardMuridController extends Controller
      */
     public function index()
     {
-        // Di sini Anda bisa menambahkan logika untuk mengambil data
-        // yang dibutuhkan di halaman dashboard, misalnya:
-        // $pengumumanTerbaru = Pengumuman::latest()->first();
-        // $jadwalHariIni = Jadwal::where('hari', now()->dayOfWeek)->get();
+        // 1. Ambil data murid
+        $murid = (object)[
+            'nama' => 'Fathan',
+            'nisn' => '124510190',
+            'kelas' => 'XI RPL',
+            'foto' => 'images/users/avatar-1.jpg'
+        ];
 
-        // Untuk saat ini, kita hanya menampilkan view-nya saja
-        return view('murid.dashboard');
+        // 2. Ubah data murid menjadi sebuah string JSON.
+        // Kita hanya akan memasukkan data yang penting untuk di-scan.
+        $muridDataForQr = [
+            'nama' => $murid->nama,
+            'nisn' => $murid->nisn,
+            'kelas' => $murid->kelas
+        ];
+        $muridJson = json_encode($muridDataForQr);
+
+        // 3. Kirim data murid (untuk tampilan) dan data JSON (untuk QR code) ke view
+        return view('murid.qr-absensi', [
+            'murid' => $murid,
+            'muridJson' => $muridJson
+        ]);
     }
 
     /**
@@ -40,7 +55,7 @@ class DashboardMuridController extends Controller
         // return view('murid.jadwal-pelajaran', compact('jadwal'));
         
         // Karena view belum dibuat, kita arahkan ke dashboard saja sebagai placeholder
-        return view('murid.dashboard')->with('info', 'Halaman Jadwal Pelajaran sedang dalam pengembangan.');
+        return view('jadwal-pelajaran')->with('info', 'Halaman Jadwal Pelajaran sedang dalam pengembangan.');
     }
 
     /**
@@ -56,7 +71,7 @@ class DashboardMuridController extends Controller
         
         // return view('murid.status-absensi', compact('riwayatAbsensi'));
         
-        return view('murid.riwayat-absensi');
+        return view('murid.dashboard')->with('info', 'Halaman Status Absensi sedang dalam pengembangan.');
     }
 
     /**
@@ -65,13 +80,13 @@ class DashboardMuridController extends Controller
      *
      * @return \Illuminate\View\View
      */
-     public function pengumuman()
+    public function pengumuman()
     {
-        // Di sini Anda bisa mengambil data pengumuman dari database
-        // $pengumuman = Pengumuman::latest()->get();
+        // Logika untuk mengambil semua pengumuman
+        // $pengumuman = Pengumuman::all();
+        
         // return view('murid.pengumuman', compact('pengumuman'));
-
-        return view('murid.pengumuman-murid');
+        
+        return view('murid.dashboard')->with('info', 'Halaman Pengumuman sedang dalam pengembangan.');
     }
-
 }

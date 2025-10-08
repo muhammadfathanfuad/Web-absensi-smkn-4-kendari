@@ -25,11 +25,11 @@
                          </span>
                          <span class="nav-text"> Dashboard </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'scan-qr')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('tampilan-qr')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-qr-scan'  ></i> 
                          </span>
-                         <span class="nav-text"> ScanQR </span>
+                         <span class="nav-text"> QR Code </span>
                     </a>
                     <a class="nav-link" href="<?php echo e(route('jadwal-pelajaran')); ?>">
                          <span class="nav-icon">
@@ -37,11 +37,17 @@
                          </span>
                          <span class="nav-text"> Jadwal Pelajaran </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'status-absensi')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('riwayat-absensi')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-history'  ></i>    
                          </span>
-                         <span class="nav-text"> Status Absensi </span>
+                         <span class="nav-text"> Riwayat Absensi </span>
+                    </a>
+                    <a class="nav-link" href="<?php echo e(route('pengumuman-murid')); ?>">
+                         <span class="nav-icon">
+                              <i class='bx  bx-bell'  ></i>       
+                         </span>
+                         <span class="nav-text"> Pengumuman </span>
                     </a>
                </li>
 

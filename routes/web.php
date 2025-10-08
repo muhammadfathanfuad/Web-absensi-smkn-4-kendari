@@ -10,6 +10,7 @@ use App\Http\Controllers\Guru\AbsensiController;
 use App\Http\Controllers\Guru\PengumumanController;
 use App\Http\Controllers\Murid\DashboardMuridController;
 use App\Http\Controllers\Murid\JadwalPelajaranController;
+use App\Http\Controllers\Murid\ScanQRController;
 
 require __DIR__ . '/auth.php';
 
@@ -34,7 +35,9 @@ Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('Pengumu
 
 Route::get('/dashboard-murid', [DashboardMuridController::class, 'index'])->name('dashboard-murid');
 Route::get('/jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran');
-
+Route::get('/tampilan-qr', [ScanQRController::class, 'index'])->name('tampilan-qr');
+Route::get('/riwayat-absensi', [DashboardMuridController::class, 'absensi'])->name('riwayat-absensi');
+Route::get('/pengumuman-murid', [DashboardMuridController::class, 'pengumuman'])->name('pengumuman-murid');
 // route admin
 Route::get('/dashboard-admin', function () {
     return view('admin.dashboard');
