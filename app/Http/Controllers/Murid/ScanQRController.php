@@ -27,12 +27,12 @@ class ScanQRController extends Controller
 
         // 2. Ubah data murid menjadi sebuah string JSON.
         // Kita hanya akan memasukkan data yang penting untuk di-scan.
-        $muridDataForQr = [
+        $MuridDataForQr = [
             'nama' => $murid->nama,
             'nisn' => $murid->nisn,
             'kelas' => $murid->kelas
         ];
-        $muridJson = json_encode($muridDataForQr);
+        $muridJson = json_encode($MuridDataForQr);
 
         // 3. Kirim data murid (untuk tampilan) dan data JSON (untuk QR code) ke view
         return view('murid.qr-absensi', [
