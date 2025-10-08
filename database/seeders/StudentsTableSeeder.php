@@ -3,18 +3,23 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Student;
+use Illuminate\Support\Facades\DB;
 
 class StudentsTableSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        Student::create([
-            'user_id' => 3, // ID dari user murid
-            'nis' => 'S12345',
-            'class_id' => 2, // ID kelas
-            'guardian_name' => 'Bapak A',
-            'guardian_phone' => '085678901234'
+        DB::table('students')->insert([
+            [
+                'user_id' => 3, // Merujuk ke Ahmad Budi
+                'nis' => '124510190',
+                'class_id' => 1, // Masuk ke kelas XII RPL 1
+            ],
+            [
+                'user_id' => 4, // Merujuk ke Siti Aminah
+                'nis' => '12346',
+                'class_id' => 2, // Masuk ke kelas XI TKJ 2
+            ],
         ]);
     }
 }
