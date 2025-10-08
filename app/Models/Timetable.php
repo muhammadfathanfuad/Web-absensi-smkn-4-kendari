@@ -4,7 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Classroom;
+// --- PERUBAHAN DI SINI ---
+use App\Models\Classroom; // Ganti dari 'Classes' menjadi 'Classroom'
 
 class Timetable extends Model
 {
@@ -15,8 +16,10 @@ class Timetable extends Model
         return $this->belongsTo(Term::class);
     }
 
-    public function classRoom()
+    // --- DAN JUGA DI SINI ---
+    public function classroom()
     {
+        // Pastikan ini merujuk ke model 'Classroom' yang benar
         return $this->belongsTo(Classroom::class, 'class_id');
     }
 
@@ -27,7 +30,7 @@ class Timetable extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(Teacher::class);
+        return $this->belongsTo(Teacher::class, 'teacher_id', 'user_id');
     }
 
     public function sessions()
@@ -35,5 +38,3 @@ class Timetable extends Model
         return $this->hasMany(ClassSession::class);
     }
 }
-
-

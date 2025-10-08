@@ -1,15 +1,143 @@
 import gridjs from "gridjs/dist/gridjs.umd.js";
 
+// Helper untuk mendapatkan token CSRF, sudah benar.
+const getCsrfToken = () => {
+    return document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+};
+
+// Fungsi notifikasi
+function showNotification(message, isSuccess = true) {
+    const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
+    document.getElementById('notificationMessage').innerText = message;
+    notificationModal.show();
+}
+
 class GridDatatable {
-    init() {
-        this.GridjsTableInit();
+    constructor() {
+        this.gridInstanceGuru = null;
+        this.gridInstanceMurid = null;
+        this.gridInstanceUser = null;
+
+        // Panggil method untuk inisialisasi semua yang dibutuhkan
+        document.addEventListener("DOMContentLoaded", () => {
+            this.initTables();
+            this.initEventListeners();
+        });
     }
 
-    GridjsTableInit() {
+    // Fungsi untuk menginisialisasi semua tabel
+    initTables() {
+        this.initGuruTable();
+        this.initStudentTable();
+        this.initUserTable();
+    }
+
+    // Fungsi untuk menginisialisasi tabel Guru
+    initGuruTable() {
+        const mount = document.getElementById("table-guru");
+        if (!mount) return;
+
+        this.gridInstanceGuru = new gridjs.Grid({
+            columns: [
+                "Name",
+                "NIP",
+                "Department",
+                "Title",
+                {
+                    name: "Data",
+                    hidden: true,
+                },
+                {
+                    name: "Aksi",
+                    formatter: (cell, row) => {
+                        const guru = row.cells[4].data;
+
+                        return gridjs.html(`
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editGuruModal"
+                                    data-guru='${JSON.stringify(guru)}'>
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-guru-btn" data-id="${
+                                    guru.id
+                                }">
+                                    Hapus
+                                </button>
+                            </div>
+                        `);
+                    },
+                },
+            ],
+            pagination: { limit: 5 },
+            search: true,
+            server: {
+                url: "/admin/guru",
+                then: (data) => data,
+            },
+            language: { search: { placeholder: " Ketik untuk mencari…" } },
+        }).render(mount);
+    }
+
+    // Fungsi untuk menginisialisasi tabel Murid
+    initStudentTable() {
+        const mount = document.getElementById("table-murid");
+        if (!mount) return;
+
+        this.gridInstanceMurid = new gridjs.Grid({
+            columns: [
+                "Name",
+                "NIS",
+                "Kelas",
+                "Nama Wali",
+                "Telepon Wali",
+                {
+                    name: "Data",
+                    hidden: true,
+                },
+                {
+                    name: "Aksi",
+                    formatter: (cell, row) => {
+                        const murid = row.cells[5].data;
+
+                        return gridjs.html(`
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editMuridModal"
+                                    data-murid='${JSON.stringify(murid)}'>
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-murid-btn" data-id="${
+                                    murid.id
+                                }">
+                                    Hapus
+                                </button>
+                            </div>
+                        `);
+                    },
+                },
+            ],
+            pagination: { limit: 5 },
+            search: true,
+            server: {
+                url: "/admin/murid",
+                then: (data) => data,
+            },
+            language: { search: { placeholder: " Ketik untuk mencari…" } },
+        }).render(mount);
+    }
+
+    // Fungsi untuk menginisialisasi tabel User
+    initUserTable() {
         const mount = document.getElementById("table-search");
         if (!mount) return;
 
-        window.gridInstance = new gridjs.Grid({
+        this.gridInstanceUser = new gridjs.Grid({
             columns: [
                 "Name",
                 "Email",
@@ -22,11 +150,10 @@ class GridDatatable {
                             cell === "active"
                                 ? "btn btn-soft-success rounded-pill"
                                 : "btn btn-soft-danger rounded-pill";
-
                         return gridjs.html(`
                             <div class="text-center">
                                 <button class="${statusClass} btn-sm px-3 py-1 text-capitalize" disabled>
-                                ${cell}
+                                    ${cell}
                                 </button>
                             </div>
                         `);
@@ -39,35 +166,29 @@ class GridDatatable {
                 {
                     name: "Aksi",
                     formatter: (cell, row) => {
-                        // Ambil semua data dari baris saat ini
                         const user = {
-                            id: row.cells[5].data, // ID from hidden column
+                            id: row.cells[5].data,
                             name: row.cells[0].data,
                             email: row.cells[1].data,
                             phone: row.cells[2].data,
                             username: row.cells[3].data,
                             status: row.cells[4].data,
                         };
-
-                        // Ubah tombol 'Edit' untuk memicu modal dan kirim data user melalui atribut 'data-user'
                         return gridjs.html(`
-                        <div class="d-flex gap-2 justify-content-center">
-        
-                        <button class="btn btn-sm btn-outline-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#editUserModal"
-                            data-user='${JSON.stringify(user)}'>
-                            Edit
-                        </button>
-
-                        <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${
-                            user.id
-                        }">
-                            Hapus
-                        </button>
-
-                    </div>
-                `);
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editUserModal"
+                                    data-user='${JSON.stringify(user)}'>
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-user-btn" data-id="${
+                                    user.id
+                                }">
+                                    Hapus
+                                </button>
+                            </div>
+                        `);
                     },
                 },
             ],
@@ -82,141 +203,169 @@ class GridDatatable {
                         u.phone ?? "-",
                         u.username ?? "-",
                         u.status ?? "-",
-                        u.id, // Add id for actions
+                        u.id,
                     ]),
             },
             language: { search: { placeholder: " Ketik untuk mencari…" } },
         }).render(mount);
 
-        // Event listener untuk membuka modal dan mengisi form edit
-        document.addEventListener("DOMContentLoaded", function () {
-            const editUserModal = document.getElementById("editUserModal");
-            if (editUserModal) {
-                editUserModal.addEventListener(
-                    "show.bs.modal",
-                    function (event) {
-                        const button = event.relatedTarget;
-                        // Ekstrak data dari atribut data-user
-                        const user = JSON.parse(
-                            button.getAttribute("data-user")
-                        );
+        // Ekspor instance untuk auto reload dari blade
+        window.gridInstance = this.gridInstanceUser;
+    }
 
-                        // Dapatkan elemen form
-                        const modalBody =
-                            editUserModal.querySelector(".modal-body");
+    initEventListeners() {
+        this.handleFormSubmit("addGuruForm", () =>
+            this.gridInstanceGuru.forceRender()
+        );
+        this.handleFormSubmit("addMuridForm", () =>
+            this.gridInstanceMurid.forceRender()
+        );
+        this.handleFormSubmit("addUserForm", () =>
+            this.gridInstanceUser.forceRender()
+        );
+        this.handleFormSubmit(
+            "editGuruForm",
+            () => this.gridInstanceGuru.forceRender(),
+            "PUT"
+        );
+        this.handleFormSubmit(
+            "editMuridForm",
+            () => this.gridInstanceMurid.forceRender(),
+            "PUT"
+        );
+        this.handleFormSubmit(
+            "editUserForm",
+            () => this.gridInstanceUser.forceRender(),
+            "PUT"
+        );
 
-                        // Isi form di dalam modal
-                        modalBody.querySelector("#editUserName").value =
-                            user.name;
-                        modalBody.querySelector("#editUserEmail").value =
-                            user.email;
-                        modalBody.querySelector("#editUserPhone").value =
-                            user.phone;
-                        modalBody.querySelector("#editUserUsername").value =
-                            user.username;
-                        modalBody.querySelector("#editUserStatus").value =
-                            user.status;
-
-                        // Kamu bisa set form action dengan ID user yang sesuai
-                        const form = editUserModal.querySelector("form");
-                        form.action = `/admin/users/${user.id}`; // Pastikan form submit ke URL yang benar
-                    }
+        document.body.addEventListener("click", (event) => {
+            if (event.target.classList.contains("delete-guru-btn")) {
+                const guruId = event.target.dataset.id;
+                document.getElementById("deleteGuruId").value = guruId;
+                const deleteModal = new bootstrap.Modal(
+                    document.getElementById("deleteGuruModal")
                 );
+                deleteModal.show();
+            }
+            if (event.target.classList.contains("delete-murid-btn")) {
+                const muridId = event.target.dataset.id;
+                document.getElementById("deleteMuridId").value = muridId;
+                const deleteModal = new bootstrap.Modal(
+                    document.getElementById("deleteMuridModal")
+                );
+                deleteModal.show();
+            }
+            if (event.target.classList.contains("delete-user-btn")) {
+                const userId = event.target.dataset.id;
+                document.getElementById("deleteUserId").value = userId;
+                const deleteModal = new bootstrap.Modal(
+                    document.getElementById("deleteUserModal")
+                );
+                deleteModal.show();
             }
         });
+
+        this.handleDelete(
+            "confirmDeleteGuruButton",
+            "deleteGuruId",
+            "/admin/guru",
+            () => this.gridInstanceGuru.forceRender()
+        );
+        this.handleDelete(
+            "confirmDeleteMuridButton",
+            "deleteMuridId",
+            "/admin/murid",
+            () => this.gridInstanceMurid.forceRender()
+        );
+        this.handleDelete(
+            "confirmDeleteUserButton",
+            "deleteUserId",
+            "/admin/users",
+            () => this.gridInstanceUser.forceRender()
+        );
     }
 
-    // Fungsi untuk me-refresh tabel
-    refreshTable() {
-        if (window.gridInstance) {
-            window.gridInstance.forceRender(); // Memaksa render ulang tabel
-        }
-    }
+    handleFormSubmit(formId, callback, method = "POST") {
+        const form = document.getElementById(formId);
+        if (!form) return;
 
-    // Fungsi untuk menambahkan user
-    addUser() {
-        const addUserForm = document.getElementById("addUserForm");
-        addUserForm.addEventListener("submit", function (event) {
-            event.preventDefault();
-            const formData = new FormData(addUserForm);
+        form.addEventListener("submit", (event) => {
+            event.preventDefault(); // Pastikan form tidak melakukan reload default
+            const formData = new FormData(form);
+            let url = form.action;
+            let fetchMethod = "POST";
 
-            fetch(addUserForm.action, {
-                method: "POST",
+            if (method === "PUT") {
+                formData.append("_method", "PUT");
+                const resourceId = form.querySelector(
+                    'input[type="hidden"][name="id"]'
+                ).value;
+                url = `${form.dataset.action}/${resourceId}`;
+            }
+
+            fetch(url, {
+                method: fetchMethod,
                 body: formData,
                 headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    "X-CSRF-TOKEN": getCsrfToken(),
+                    Accept: "application/json",
                 },
             })
                 .then((response) => response.json())
                 .then((data) => {
-                    bootstrap.Modal.getInstance(
-                        document.getElementById("addUserModal")
-                    ).hide();
+                    if (data.errors) {
+                        data.message = 'Validasi gagal: ' + Object.values(data.errors).flat().join(', ');
+                        data.success = false;
+                    }
+                    const modal = form.closest(".modal");
+                    if (modal) {
+                        bootstrap.Modal.getInstance(modal).hide();
+                    }
+
                     showNotification(data.message, data.success);
                     if (data.success) {
-                        addUserForm.reset();
-                        window.gridInstance.forceRender(); // Refresh tabel setelah menambah user
+                        form.reset();
+                        callback(); // Panggil forceRender()
                     }
                 })
                 .catch(console.error);
         });
     }
 
-    // Fungsi untuk mengedit user
-    editUser() {
-        const editUserForm = document.getElementById("editUserForm");
-        editUserForm.addEventListener("submit", function (event) {
-            event.preventDefault();
-            const userId = document.getElementById("editUserId").value;
-            const formData = new FormData(editUserForm);
-            formData.append("_method", "PUT"); // Method spoofing
+    handleDelete(buttonId, inputId, baseUrl, callback) {
+        const confirmButton = document.getElementById(buttonId);
+        if (!confirmButton) return;
 
-            fetch(`/admin/users/${userId}`, {
-                method: "POST", // POST method with method spoofing
+        confirmButton.addEventListener("click", () => {
+            const resourceId = document.getElementById(inputId).value;
+            fetch(`${baseUrl}/${resourceId}`, {
+                method: "DELETE",
                 headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    "X-CSRF-TOKEN": getCsrfToken(),
+                    Accept: "application/json",
                 },
-                body: formData,
             })
                 .then((res) => res.json())
                 .then((data) => {
-                    bootstrap.Modal.getInstance(editUserModal).hide();
+                    if (data.errors) {
+                        data.message = 'Error: ' + Object.values(data.errors).flat().join(', ');
+                        data.success = false;
+                    }
+                    const modal = confirmButton.closest(".modal");
+                    if (modal) {
+                        bootstrap.Modal.getInstance(modal).hide();
+                    }
+
                     showNotification(data.message, data.success);
                     if (data.success) {
-                        window.gridInstance.forceRender(); // Refresh tabel setelah update user
+                        callback(); // Panggil forceRender()
                     }
                 })
                 .catch(console.error);
         });
     }
-
-    // Fungsi untuk menghapus user
-    deleteUser() {
-        const deleteModal = new bootstrap.Modal(
-            document.getElementById("deleteUserModal")
-        );
-
-        document
-            .getElementById("confirmDeleteButton")
-            .addEventListener("click", function () {
-                const userId = document.getElementById("deleteUserId").value;
-                fetch(`/admin/users/${userId}`, {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    },
-                })
-                    .then((res) => res.json())
-                    .then((data) => {
-                        deleteModal.hide();
-                        showNotification(data.message, data.success);
-                        if (data.success) {
-                            window.gridInstance.forceRender(); // Refresh tabel setelah hapus user
-                        }
-                    })
-                    .catch(console.error);
-            });
-    }
 }
 
-document.addEventListener("DOMContentLoaded", () => new GridDatatable().init());
+// Inisialisasi class
+new GridDatatable();

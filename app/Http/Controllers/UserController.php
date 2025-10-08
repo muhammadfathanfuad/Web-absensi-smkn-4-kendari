@@ -9,12 +9,31 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    public function index()
+    {
+        $users = User::select('id', 'full_name')->get();
+        return response()->json($users);
+    }
+
     public function table()
     {
         // Ambil kolom yang dibutuhkan saja
         $users = User::select('id', 'full_name', 'email', 'phone', 'username', 'status')->get();
 
         // Kembalikan JSON (array of objects)
+        return response()->json($users);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('q');
+        $users = User::where('full_name', 'like', '%' . $query . '%')
+            ->orWhere('email', 'like', '%' . $query . '%')
+            ->orWhere('username', 'like', '%' . $query . '%')
+            ->select('id', 'full_name', 'email', 'username')
+            ->limit(10)
+            ->get();
+
         return response()->json($users);
     }
 

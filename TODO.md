@@ -1,3 +1,4 @@
-- [x] Update manage-user.blade.php: Add status dropdown in edit modal with options active and suspend.
-- [x] Update UserController.php: Add status to validation and update the user status in update method.
-- [x] Update tabel.js: Fix field IDs in modal population and add status selection.
+- [x] Identifikasi masalah: refreshTable() di manage-user.blade.php menggunakan window.gridInstance yang tidak didefinisikan.
+- [x] Edit resources/js/admin/tabel.js untuk mengekspor this.gridInstanceUser ke window.gridInstance setelah render tabel user.
+- [ ] Test fitur auto reload di halaman manage user setelah operasi tambah, edit, atau hapus user.
+- [x] Perbaiki logika manage-user agar user tidak bisa didaftarkan sebagai guru dan murid sekaligus.
