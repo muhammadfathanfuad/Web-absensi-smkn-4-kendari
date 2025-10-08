@@ -31,11 +31,11 @@
                          </span>
                          <span class="nav-text"> Manajemen User</span>
                     </a>
-                    <a class="nav-link" href="{{ route('any', 'jadwal-mengajar') }}">
+                    <a class="nav-link" href="{{ route('any', 'jadwal-pelajaran') }}">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>
-                         <span class="nav-text"> Jadwal Mengajar </span>
+                         <span class="nav-text"> Jadwal Pelajaran </span>
                     </a>
                     <a class="nav-link" href="{{ route('any', 'status-absensi') }}">
                          <span class="nav-icon">
