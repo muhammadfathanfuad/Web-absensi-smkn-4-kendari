@@ -19,19 +19,19 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('any', 'dashboard-admin') }}">
+                    <a class="nav-link" href="{{ route('any', 'admin.dashboard') }}">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>
                          <span class="nav-text"> Dashboard </span>
                     </a>
-                    <a class="nav-link" href="{{ route('any', 'manage-user') }}">
+                    <a class="nav-link" href="{{ route('any', 'admin.manage-user') }}">
                          <span class="nav-icon">
                                 <i class='bx  bx-user-circle'  ></i>    
                          </span>
                          <span class="nav-text"> Manajemen User</span>
                     </a>
-                    <a class="nav-link" href="{{ route('any', 'jadwal-pelajaran') }}">
+                    <a class="nav-link" href="{{ route('any', 'admin.jadwal-pelajaran') }}">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>

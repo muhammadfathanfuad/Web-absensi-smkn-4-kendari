@@ -4,6 +4,7 @@ use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\UserController;
 
 // Import controller yang baru kita buat
@@ -14,94 +15,101 @@ use App\Http\Controllers\Guru\JadwalController;
 
 require __DIR__ . '/auth.php';
 
-// --- SEMUA ROUTE GURU SEKARANG DAPAT DIAKSES PUBLIK ---
-// Route '/dashboard' sekarang memanggil DashboardController
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
-// route guru
-Route::get('/dashboard', function () {
-    return view('guru.dashboard');
-})->name('home');
-
-// Dashboard (URL: /dashboard)
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('guru.dashboard');
-
-// Halaman Scan QR (URL: /scan-qr)
-Route::get('/scan-qr', [AbsensiController::class, 'showScanner'])->name('guru.absensi.scan');
-
-// API untuk memproses scan (dipanggil oleh JavaScript)
-Route::post('/scan-qr/process', [AbsensiController::class, 'processScan'])->name('guru.absensi.process');
-
-// API untuk checkout otomatis (dipanggil oleh JavaScript)
-
-// API untuk filter hasil pindaian (dipanggil oleh JavaScript)
-Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');
-
-// Halaman Status Absensi (URL: /status-absensi)
-Route::get('/status-absensi', [AbsensiController::class, 'showStatus'])->name('guru.status-absensi');
-
-// Halaman Jadwal Mengajar (URL: /jadwal-mengajar)
-Route::get('/jadwal-mengajar', [JadwalController::class, 'index'])->name('guru.jadwal-mengajar');
-
-// Halaman Pengumuman (URL: /pengumuman)
-Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('guru.pengumuman');
-
-
-// Arahkan halaman utama langsung ke dashboard guru
+// Root route
 Route::get('/', function () {
-    return redirect()->route('guru.dashboard');
-});
-// route admin
-Route::get('/dashboard-admin', function () {
-    return view('admin.dashboard');
-})->name('home');
-Route::get('/jadwal-pelajaran', function () {
-    return view('admin.jadwal-pelajaran');
-})->name('home');
-
-// routes/web.php
-Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
-Route::get('/admin/users/table', [UserController::class, 'table'])->name('users.table');
-
-// Menambahkan route untuk menambah user
-Route::post('/admin/users', [UserController::class, 'store'])->name('users.store');
-
-// Menambahkan route untuk update user
-Route::put('/admin/users/{id}', [UserController::class, 'update'])->name('users.update');
-
-// Menambahkan route untuk menghapus user
-Route::delete('/admin/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
-
-// Menambahkan route untuk search user
-Route::get('/admin/users/search', [UserController::class, 'search'])->name('users.search');
-
-// Route untuk halaman manage-user
-Route::get('/manage-user', function () {
-    $users = \App\Models\User::all();
-    return view('admin.manage-user', compact('users'));
-})->name('users.manage');
-
-// Route untuk guru
-Route::prefix('admin/guru')->group(function () {
-    Route::get('/', [TeacherController::class, 'index'])->name('guru.index');  // Menampilkan data guru
-    Route::post('/', [TeacherController::class, 'store'])->name('guru.store');  // Menambahkan guru
-    Route::put('{id}', [TeacherController::class, 'update'])->name('guru.update');  // Mengupdate guru
-    Route::delete('{id}', [TeacherController::class, 'destroy'])->name('guru.destroy');  // Menghapus guru
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->roles()->where('name', 'admin')->exists()) {
+            return redirect('/admin.dashboard');
+        } elseif ($user->roles()->where('name', 'teacher')->exists()) {
+            return redirect('/teacher/dashboard');
+        } elseif ($user->roles()->where('name', 'student')->exists()) {
+            return redirect('/student/dashboard');
+        }
+    }
+    return view('auth.signin');
 });
 
-// Route untuk murid
-Route::prefix('admin/murid')->group(function () {
-    Route::get('/', [StudentController::class, 'index'])->name('murid.index');  // Menampilkan data murid
-    Route::post('/', [StudentController::class, 'store'])->name('murid.store');  // Menambahkan murid
-    Route::put('{id}', [StudentController::class, 'update'])->name('murid.update');  // Mengupdate murid
-    Route::delete('{id}', [StudentController::class, 'destroy'])->name('murid.destroy');  // Menghapus murid
+// Public routes
+Route::get('/auth/signin', function () {
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->roles()->where('name', 'admin')->exists()) {
+            return redirect('/admin.dashboard');
+        } elseif ($user->roles()->where('name', 'teacher')->exists()) {
+            return redirect('/teacher/dashboard');
+        } elseif ($user->roles()->where('name', 'student')->exists()) {
+            return redirect('/student/dashboard');
+        }
+    }
+    return redirect('/login');
 });
 
-// Route untuk classes
-Route::get('/admin/classes', function () {
-    return \App\Models\Classroom::all(['id', 'name']);
-})->name('classes.index');
+// Admin routes
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    // Dashboard
+    Route::get('/admin/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
 
-// belom selesai
+    // Jadwal Pelajaran
+    Route::get('/jadwal-pelajaran', function () {
+        return view('admin.jadwal-pelajaran');
+    })->name('admin.jadwal-pelajaran');
+
+    // User management
+    Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/admin/users/table', [UserController::class, 'table'])->name('users.table');
+    Route::post('/admin/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/admin/user/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/admin/user/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::get('/admin/users/search', [UserController::class, 'search'])->name('users.search');
+    Route::get('/manage-user', function () {
+        $users = \App\Models\User::all();
+        return view('admin.manage-user', compact('users'));
+    })->name('users.manage');
+
+    // Guru management
+    Route::prefix('admin/guru')->group(function () {
+        Route::get('/', [TeacherController::class, 'index'])->name('guru.index');
+        Route::post('/', [TeacherController::class, 'store'])->name('guru.store');
+        Route::put('{id}', [TeacherController::class, 'update'])->name('guru.update');
+        Route::delete('{id}', [TeacherController::class, 'destroy'])->name('guru.destroy');
+    });
+
+    // Murid management
+    Route::prefix('admin/murid')->group(function () {
+        Route::get('/', [StudentController::class, 'index'])->name('murid.index');
+        Route::post('/', [StudentController::class, 'store'])->name('murid.store');
+        Route::put('{id}', [StudentController::class, 'update'])->name('murid.update');
+        Route::delete('{id}', [StudentController::class, 'destroy'])->name('murid.destroy');
+    });
+
+    // Classes
+    Route::get('/admin/classes', function () {
+        return \App\Models\Classroom::all(['id', 'name']);
+    })->name('classes.index');
+});
+
+// Teacher routes
+Route::middleware(['auth', 'role:teacher'])->group(function () {
+    Route::get('/teacher/dashboard', [DashboardController::class, 'index'])->name('guru.dashboard');
+    Route::get('/scan-qr', [AbsensiController::class, 'showScanner'])->name('guru.absensi.scan');
+    Route::post('/scan-qr/process', [AbsensiController::class, 'processScan'])->name('guru.absensi.process');
+    Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');
+    Route::get('/status-absensi', [AbsensiController::class, 'showStatus'])->name('guru.status-absensi');
+    Route::get('/jadwal-mengajar', [JadwalController::class, 'index'])->name('guru.jadwal-mengajar');
+    Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('guru.pengumuman');
+});
+
+// Student routes
+Route::middleware(['auth', 'role:student'])->group(function () {
+    Route::get('/student/dashboard', function () {
+        return view('student.dashboard');
+    })->name('student.dashboard');
+});
+
+// Catch-all routes
 Route::group(['prefix' => '/', 'middleware' => 'auth'], function () {
     Route::get('', [RoutingController::class, 'index'])->name('root');
     Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])->name('third');

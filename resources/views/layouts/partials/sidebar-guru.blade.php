@@ -19,7 +19,7 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('any', 'dashboard') }}">
+                    <a class="nav-link" href="{{ route('any', '/teacher/dashboard') }}">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>

@@ -28,12 +28,22 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request)
     {
-
         $request->authenticate();
 
-        $request->session()->regenerate();
+        session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        // Check user role and redirect accordingly
+        $user = Auth::user();
+        if ($user->roles()->where('name', 'admin')->exists()) {
+            return redirect('/admin/dashboard');
+        } elseif ($user->roles()->where('name', 'teacher')->exists()) {
+            return redirect('/teacher/dashboard');
+        } elseif ($user->roles()->where('name', 'student')->exists()) {
+            return redirect('/student/dashboard');
+        }
+
+        // Default redirect if no role found
+        return redirect(RouteServiceProvider::HOME);
     }
 
     /**
@@ -50,6 +60,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/auth/logout');
+        return redirect('/login');
     }
 }

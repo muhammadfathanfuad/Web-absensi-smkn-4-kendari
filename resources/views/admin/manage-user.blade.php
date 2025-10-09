@@ -484,7 +484,7 @@
                 formData.append('_method', 'PUT'); // Method spoofing
 
                 try {
-                    const response = await fetch(`/admin/users/${userId}`, {
+                    const response = await fetch(`/admin/user/${userId}`, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -558,7 +558,7 @@
                 const userId = document.getElementById('deleteUserId').value;
 
                 try {
-                    const response = await fetch(`/admin/users/${userId}`, {
+                    const response = await fetch(`/admin/user/${userId}`, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
