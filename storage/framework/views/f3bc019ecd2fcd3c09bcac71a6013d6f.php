@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Dashboard Murid'); ?>
 
 <?php $__env->startSection('content'); ?>

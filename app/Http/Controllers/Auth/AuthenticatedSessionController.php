@@ -34,12 +34,19 @@ class AuthenticatedSessionController extends Controller
 
         // Check user role and redirect accordingly
         $user = Auth::user();
+
+        // Check if user has any roles
+        if (!$user->roles()->exists()) {
+            Auth::logout();
+            return redirect('/login')->withErrors(['email' => 'Akun Anda belum diberi peran. Silakan hubungi administrator.']);
+        }
+
         if ($user->roles()->where('name', 'admin')->exists()) {
-            return redirect('/admin/dashboard');
+            return redirect()->route('admin.dashboard');
         } elseif ($user->roles()->where('name', 'teacher')->exists()) {
-            return redirect('/teacher/dashboard');
+            return redirect()->route('guru.dashboard');
         } elseif ($user->roles()->where('name', 'student')->exists()) {
-            return redirect('/student/dashboard');
+            return redirect()->route('student.dashboard');
         }
 
         // Default redirect if no role found

@@ -37,16 +37,6 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>" id="email" name="email" value="<?php echo e(old('email')); ?>"
                                     placeholder="Masukkan Email Anda">
-                                <?php $__errorArgs = ['email'];
-$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
-if ($__bag->has($__errorArgs[0])) :
-if (isset($message)) { $__messageOriginal = $message; }
-$message = $__bag->first($__errorArgs[0]); ?>
-                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
-                                <?php unset($message);
-if (isset($__messageOriginal)) { $message = $__messageOriginal; }
-endif;
-unset($__errorArgs, $__bag); ?>
                             </div>
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -70,6 +60,24 @@ unset($__errorArgs, $__bag); ?>
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Notifikasi -->
+<div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notifikasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="notificationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -99,6 +107,20 @@ document.getElementById('toggle-password').addEventListener('click', function() 
 
     }
 
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+
+    function showNotification(message, isSuccess = true) {
+        document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
+        document.getElementById('notificationMessage').innerText = message;
+        notificationModal.show();
+    }
+
+    <?php if($errors->has('email')): ?>
+        showNotification("<?php echo e($errors->first('email')); ?>", false);
+    <?php endif; ?>
 });
 
 </script>

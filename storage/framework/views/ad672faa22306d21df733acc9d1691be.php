@@ -435,31 +435,7 @@
                 }
             }
 
-            // LOGIKA TAMBAH USER
-            const addUserForm = document.getElementById('addUserForm');
-            addUserForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                const formData = new FormData(addUserForm);
 
-                try {
-                    const response = await fetch(addUserForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-                        }
-                    });
-                    const data = await response.json();
-                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-                    showNotification(data.message, data.success);
-                    if (data.success) {
-                        addUserForm.reset();
-                        refreshTable();
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            });
 
             // LOGIKA EDIT USER
             const editUserModal = document.getElementById('editUserModal');
@@ -551,28 +527,7 @@
                 document.getElementById('editMuridGuardianPhone').value = murid.guardian_phone || '';
             });
 
-            // LOGIKA HAPUS USER
-            document.getElementById('confirmDeleteUserButton').addEventListener('click', async function() {
-                const userId = document.getElementById('deleteUserId').value;
 
-                try {
-                    const response = await fetch(`/admin/user/${userId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-                        }
-                    });
-                    const data = await response.json();
-                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-                    deleteModal.hide();
-                    showNotification(data.message, data.success);
-                    if (data.success) {
-                        refreshTable();
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            });
 
 
 
