@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
 
 export default defineConfig({
     plugins: [
@@ -30,8 +30,7 @@ export default defineConfig({
                 "resources/js/pages/maps-russia.js",
                 "resources/js/pages/maps-iraq.js",
                 "resources/js/pages/maps-canada.js",
-                "resources/js/pages/chart.js"
-
+                "resources/js/pages/chart.js",
             ],
             refresh: true,
         }),

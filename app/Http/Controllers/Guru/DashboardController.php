@@ -7,12 +7,13 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Timetable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $teacherId = 2;
+        $teacherId = Auth::user()->id;
         $today = Carbon::now();
         $dayOfWeek = $today->dayOfWeekIso;
 

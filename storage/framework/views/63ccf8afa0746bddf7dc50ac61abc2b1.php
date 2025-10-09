@@ -1,8 +1,6 @@
-@extends('layouts.vertical', ['subtitle' => 'Dashboard'])
+<?php $__env->startSection('content'); ?>
 
-@section('content')
-
-@include('layouts.partials.page-title', ['title' => 'Taplox', 'subtitle' => 'Dashboard'])
+<?php echo $__env->make('layouts.partials.page-title', ['title' => 'Taplox', 'subtitle' => 'Dashboard'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 <div class="row">
     <!-- Card 1 -->
     <div class="col-md-6 col-xl-3">
@@ -464,8 +462,9 @@
         </div> <!-- end card -->
     </div> <!-- end col -->
 </div> <!-- end row -->
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('scripts')
-@vite(['resources/js/pages/dashboard.js'])
-@endsection
+<?php $__env->startSection('scripts'); ?>
+<?php echo app('Illuminate\Foundation\Vite')(['resources/js/pages/dashboard.js']); ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.vertical', ['subtitle' => 'Dashboard'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/index.blade.php ENDPATH**/ ?>

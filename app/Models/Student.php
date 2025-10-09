@@ -20,8 +20,6 @@ class Student extends Model
     ];
     use HasFactory;
 
-    // Definisikan 'user_id' sebagai primary key
-    protected $primaryKey = 'user_id';
 
     public function user()
     {

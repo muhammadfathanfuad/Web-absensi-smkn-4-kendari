@@ -19,7 +19,7 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="<?php echo e(route('any', 'dashboard')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('any', '/teacher/dashboard')); ?>">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>
@@ -42,6 +42,12 @@
                               <i class='bx  bx-history'  ></i>    
                          </span>
                          <span class="nav-text"> Status Absensi </span>
+                    </a>
+                    <a class="nav-link" href="<?php echo e(route('any', 'pengumuman')); ?>">
+                         <span class="nav-icon">
+                              <i class='bx  bx-bell'  ></i>       
+                         </span>
+                         <span class="nav-text"> Pengumuman </span>
                     </a>
                </li>
 
