@@ -11,21 +11,52 @@ use App\Models\Classroom;
 use App\Models\ClassSession;
 use App\Models\Attendance;
 use App\Models\Subject;
+use Illuminate\Support\Facades\Auth;
 
 class AbsensiController extends Controller
 {
     public function showScanner()
     {
-        $teacherId = 2; // Ganti dengan auth()->user()->id;
-        $dayOfWeek = today()->dayOfWeekIso;
+        $teacherId = Auth::user()->id;
+        $today = Carbon::now();
+        $dayOfWeek = $today->dayOfWeekIso;
 
-        $jadwalHariIni = Timetable::with(['subject', 'classroom'])
+        // 1. Mengambil jadwal hari ini untuk ditampilkan di dropdown
+        $jadwalHariIni = Timetable::with(['classroom', 'subject'])
             ->where('teacher_id', $teacherId)
             ->where('day_of_week', $dayOfWeek)
             ->orderBy('start_time', 'asc')
             ->get();
-        
+
         return view('guru.scan-qr', compact('jadwalHariIni'));
+    }
+
+        public function generateQrCode(Request $request)
+    {
+        // Validasi input timetable_id
+        $request->validate([
+            'timetable_id' => 'required|exists:timetables,id',
+        ]);
+
+        $timetable = Timetable::with('subject')->find($request->timetable_id);
+        $user = Auth::user()->load('teacher'); // Memuat data guru dari relasi
+
+        if (!$user->teacher) {
+            return response()->json(['error' => 'Data guru (NIP) tidak ditemukan.'], 404);
+        }
+
+        // 2. Data yang akan dimasukkan ke dalam QR Code
+        $qrData = [
+            'teacher_user_id' => $user->id,
+            'teacher_name' => $user->name,
+            'teacher_nip' => $user->teacher->nip,
+            'subject_id' => $timetable->subject->id,
+            'subject_name' => $timetable->subject->name,
+            'timetable_id' => $timetable->id,
+            'class_id' => $timetable->class_id
+        ];
+
+        return response()->json($qrData);
     }
 
     public function getScanResults($timetable_id)
