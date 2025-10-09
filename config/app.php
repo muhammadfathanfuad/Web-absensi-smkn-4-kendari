@@ -1,5 +1,7 @@
 <?php
 
+use PhpParser\Node\Stmt\TraitUseAdaptation\Alias;
+
 return [
 
     /*

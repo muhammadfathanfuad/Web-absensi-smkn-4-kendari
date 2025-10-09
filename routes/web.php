@@ -11,11 +11,51 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Guru\DashboardController;
 use App\Http\Controllers\Guru\AbsensiController;
 use App\Http\Controllers\Guru\PengumumanController;
+use App\Http\Controllers\Murid\DashboardMuridController;
+use App\Http\Controllers\Murid\JadwalPelajaranController;
+use App\Http\Controllers\Murid\ScanQRController;
 use App\Http\Controllers\Guru\JadwalController;
 
 require __DIR__ . '/auth.php';
 
-// Root route
+
+// Route '/dashboard' sekarang memanggil DashboardController
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
+// route guru
+Route::get('/dashboard', function () {
+    return view('guru.dashboard');
+})->name('home');
+
+// Dashboard (URL: /dashboard)
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('guru.dashboard');
+
+// Halaman Scan QR (URL: /scan-qr)
+Route::get('/scan-qr', [AbsensiController::class, 'showScanner'])->name('guru.absensi.scan');
+
+// API untuk memproses scan (dipanggil oleh JavaScript)
+Route::post('/scan-qr/process', [AbsensiController::class, 'processScan'])->name('guru.absensi.process');
+
+Route::get('/dashboard-murid', [DashboardMuridController::class, 'index'])->name('dashboard-murid');
+Route::get('/jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran');
+Route::get('/tampilan-qr', [ScanQRController::class, 'index'])->name('tampilan-qr');
+Route::get('/riwayat-absensi', [DashboardMuridController::class, 'absensi'])->name('riwayat-absensi');
+Route::get('/pengumuman-murid', [DashboardMuridController::class, 'pengumuman'])->name('pengumuman-murid');
+// API untuk checkout otomatis (dipanggil oleh JavaScript)
+
+// API untuk filter hasil pindaian (dipanggil oleh JavaScript)
+Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');
+
+// Halaman Status Absensi (URL: /status-absensi)
+Route::get('/status-absensi', [AbsensiController::class, 'showStatus'])->name('guru.status-absensi');
+
+// Halaman Jadwal Mengajar (URL: /jadwal-mengajar)
+Route::get('/jadwal-mengajar', [JadwalController::class, 'index'])->name('guru.jadwal-mengajar');
+
+// Halaman Pengumuman (URL: /pengumuman)
+Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('guru.pengumuman');
+
+
+// Arahkan halaman utama langsung ke dashboard guru
 Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
