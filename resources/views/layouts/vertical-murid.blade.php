@@ -11,7 +11,7 @@
 
     <div class="app-wrapper">
 
-        @include('layouts.partials/sidebar')
+        @include('layouts.partials/sidebar-murid')
 
         @include('layouts.partials/topbar')
 
