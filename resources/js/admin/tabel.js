@@ -281,7 +281,7 @@ class GridDatatable {
         this.handleDelete(
             "confirmDeleteUserButton",
             "deleteUserId",
-            "/admin/users",
+            "/admin/user",
             () => this.gridInstanceUser.forceRender()
         );
     }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Models\Teacher;
@@ -81,6 +82,10 @@ class StudentController extends Controller
                 'guardian_name' => $validated['guardian_name'],
                 'guardian_phone' => $validated['guardian_phone'],
             ]);
+
+            // Tetapkan role student ke user
+            $role = Role::where('name', 'student')->first();
+            $user->roles()->attach($role);
 
             return response()->json(['success' => true, 'message' => 'Murid berhasil ditambahkan!']);
         } catch (ValidationException $e) {

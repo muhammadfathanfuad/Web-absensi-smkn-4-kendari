@@ -20,11 +20,11 @@ Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
         if ($user->roles()->where('name', 'admin')->exists()) {
-            return redirect('/admin.dashboard');
+            return redirect()->route('admin.dashboard');
         } elseif ($user->roles()->where('name', 'teacher')->exists()) {
-            return redirect('/teacher/dashboard');
+            return redirect()->route('guru.dashboard');
         } elseif ($user->roles()->where('name', 'student')->exists()) {
-            return redirect('/student/dashboard');
+            return redirect()->route('student.dashboard');
         }
     }
     return view('auth.signin');
@@ -35,11 +35,11 @@ Route::get('/auth/signin', function () {
     if (Auth::check()) {
         $user = Auth::user();
         if ($user->roles()->where('name', 'admin')->exists()) {
-            return redirect('/admin.dashboard');
+            return redirect()->route('admin.dashboard');
         } elseif ($user->roles()->where('name', 'teacher')->exists()) {
-            return redirect('/teacher/dashboard');
+            return redirect()->route('guru.dashboard');
         } elseif ($user->roles()->where('name', 'student')->exists()) {
-            return redirect('/student/dashboard');
+            return redirect()->route('student.dashboard');
         }
     }
     return redirect('/login');
@@ -93,7 +93,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 // Teacher routes
 Route::middleware(['auth', 'role:teacher'])->group(function () {
-    Route::get('/teacher/dashboard', [DashboardController::class, 'index'])->name('guru.dashboard');
+    Route::get('/guru/dashboard', [DashboardController::class, 'index'])->name('guru.dashboard');
     Route::get('/scan-qr', [AbsensiController::class, 'showScanner'])->name('guru.absensi.scan');
     Route::post('/scan-qr/process', [AbsensiController::class, 'processScan'])->name('guru.absensi.process');
     Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');
@@ -111,7 +111,6 @@ Route::middleware(['auth', 'role:student'])->group(function () {
 
 // Catch-all routes
 Route::group(['prefix' => '/', 'middleware' => 'auth'], function () {
-    Route::get('', [RoutingController::class, 'index'])->name('root');
     Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])->name('third');
     Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])->name('second');
     Route::get('{any}', [RoutingController::class, 'root'])->name('any');

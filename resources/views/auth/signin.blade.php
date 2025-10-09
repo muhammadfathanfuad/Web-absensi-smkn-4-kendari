@@ -32,9 +32,6 @@ class="authentication-bg" style="background-image: url('/images/bg-signin.png');
                                 <label for="email" class="form-label">Email Terdaftar</label>
                                 <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}"
                                     placeholder="Masukkan Email Anda">
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
                             </div>
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -58,6 +55,24 @@ class="authentication-bg" style="background-image: url('/images/bg-signin.png');
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Notifikasi -->
+<div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notifikasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="notificationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -87,6 +102,20 @@ document.getElementById('toggle-password').addEventListener('click', function() 
 
     }
 
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+
+    function showNotification(message, isSuccess = true) {
+        document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
+        document.getElementById('notificationMessage').innerText = message;
+        notificationModal.show();
+    }
+
+    @if($errors->has('email'))
+        showNotification("{{ $errors->first('email') }}", false);
+    @endif
 });
 
 </script>

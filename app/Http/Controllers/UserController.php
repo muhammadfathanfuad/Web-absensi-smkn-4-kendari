@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Teacher;
+use App\Models\Student;
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
@@ -117,6 +119,11 @@ class UserController extends Controller
         try {
             // Cari user berdasarkan ID
             $user = User::findOrFail($id);
+
+            // Hapus data terkait
+            Teacher::where('user_id', $id)->delete();
+            Student::where('user_id', $id)->delete();
+            $user->roles()->detach();
 
             // Hapus user
             $user->delete();
