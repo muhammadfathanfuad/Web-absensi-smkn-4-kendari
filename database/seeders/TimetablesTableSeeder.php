@@ -11,7 +11,7 @@ class TimetablesTableSeeder extends Seeder
     public function run()
     {
         // Hari ini adalah Selasa, jadi day_of_week = 2
-        $todayDayOfWeek = 2;
+        $todayDayOfWeek = 5;
 
         DB::table('timetables')->insert([
             [
@@ -29,8 +29,8 @@ class TimetablesTableSeeder extends Seeder
                 'subject_id' => 1,    // Matematika
                 'teacher_id' => 2,    // Budi Guru
                 'day_of_week' => $todayDayOfWeek,
-                'start_time' => '10:00:00',
-                'end_time' => '12:40:00',
+                'start_time' => '02:00:00',
+                'end_time' => '05:40:00',
             ],
 
             [

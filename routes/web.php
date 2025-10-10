@@ -94,6 +94,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 // Teacher routes
 Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/guru/dashboard', [DashboardController::class, 'index'])->name('guru.dashboard');
+    Route::get('/scan-qr/generate', [AbsensiController::class, 'generateQrCode'])->name('guru.absensi.generate-qr');
     Route::get('/scan-qr', [AbsensiController::class, 'showScanner'])->name('guru.absensi.scan');
     Route::post('/scan-qr/process', [AbsensiController::class, 'processScan'])->name('guru.absensi.process');
     Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');

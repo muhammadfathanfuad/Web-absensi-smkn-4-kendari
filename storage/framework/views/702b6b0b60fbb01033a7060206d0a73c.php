@@ -435,31 +435,7 @@
                 }
             }
 
-            // LOGIKA TAMBAH USER
-            const addUserForm = document.getElementById('addUserForm');
-            addUserForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                const formData = new FormData(addUserForm);
 
-                try {
-                    const response = await fetch(addUserForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-                        }
-                    });
-                    const data = await response.json();
-                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-                    showNotification(data.message, data.success);
-                    if (data.success) {
-                        addUserForm.reset();
-                        refreshTable();
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            });
 
             // LOGIKA EDIT USER
             const editUserModal = document.getElementById('editUserModal');
@@ -482,7 +458,7 @@
                 formData.append('_method', 'PUT'); // Method spoofing
 
                 try {
-                    const response = await fetch(`/admin/users/${userId}`, {
+                    const response = await fetch(`/admin/user/${userId}`, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
@@ -551,28 +527,7 @@
                 document.getElementById('editMuridGuardianPhone').value = murid.guardian_phone || '';
             });
 
-            // LOGIKA HAPUS USER
-            document.getElementById('confirmDeleteUserButton').addEventListener('click', async function() {
-                const userId = document.getElementById('deleteUserId').value;
 
-                try {
-                    const response = await fetch(`/admin/users/${userId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-                        }
-                    });
-                    const data = await response.json();
-                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-                    deleteModal.hide();
-                    showNotification(data.message, data.success);
-                    if (data.success) {
-                        refreshTable();
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            });
 
 
 
@@ -580,4 +535,4 @@
     </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.vertical-admin', ['subtitle' => 'manajemen-pengguna'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/admin/user/manage-user.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.vertical-admin', ['subtitle' => 'manajemen-pengguna'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/admin/manage-user.blade.php ENDPATH**/ ?>

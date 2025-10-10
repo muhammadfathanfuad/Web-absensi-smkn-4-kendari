@@ -180,11 +180,14 @@
 
                               <div class="dropdown-divider my-1"></div>
 
-                              <a class="dropdown-item text-danger" href="<?php echo e(route ('second' , ['auth','signin'])); ?>">
-                                   <iconify-icon icon="solar:logout-3-outline"
-                                        class="align-middle me-2 fs-18"></iconify-icon><span
-                                        class="align-middle">Logout</span>
-                              </a>
+                              <form method="POST" action="<?php echo e(route('logout')); ?>">
+                                   <?php echo csrf_field(); ?>
+                                   <button type="submit" class="dropdown-item text-danger">
+                                        <iconify-icon icon="solar:logout-3-outline"
+                                             class="align-middle me-2 fs-18"></iconify-icon><span
+                                             class="align-middle">Logout</span>
+                                   </button>
+                              </form>
                          </div>
                     </div>
                </div>

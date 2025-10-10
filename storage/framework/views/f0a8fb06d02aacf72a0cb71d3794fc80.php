@@ -19,7 +19,7 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="<?php echo e(route('any', 'dashboard')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('any', '/guru/dashboard')); ?>">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>

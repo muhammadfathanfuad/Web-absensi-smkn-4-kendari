@@ -1,49 +1,74 @@
-@extends('layouts.vertical-guru', ['subtitle' => 'Scan QR Absensi'])
+@extends('layouts.vertical-guru', ['subtitle' => 'Buat QR Absensi'])
 
 @section('content')
-    {{-- ... (kode HTML tidak berubah) ... --}}
-    @include('layouts.partials.page-title', ['title' => 'Scan QR', 'subtitle' => 'Absensi'])
+    @include('layouts.partials.page-title', ['title' => 'Buat QR Absensi', 'subtitle' => 'Guru'])
 
     <div class="row">
-        <div class="col-lg-6">
+        {{-- Kolom untuk QR Code --}}
+        <div class="col-lg-5">
+            {{-- Card untuk memilih jadwal --}}
             <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Pilih Jadwal Mengajar</h4>
+                </div>
                 <div class="card-body">
-                    <h4 class="card-title mb-4">Pindai QR Code Siswa</h4>
-                    <div class="mb-3">
-                        <label for="timetable_id" class="form-label">Pilih Jadwal Mata Pelajaran</label>
-                        <select class="form-select" id="timetable_id" name="timetable_id">
-                            <option value="" selected disabled>-- Pilih Mapel --</option>
-                            @forelse ($jadwalHariIni as $jadwal)
-                                <option value="{{ $jadwal->id }}">{{ $jadwal->subject->name }} - {{ $jadwal->classroom->name }} ({{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }})</option>
-                            @empty
-                                <option disabled>Tidak ada jadwal mengajar hari ini.</option>
-                            @endforelse
-                        </select>
-                        <div class="invalid-feedback">Silakan pilih jadwal terlebih dahulu.</div>
-                    </div>
-                    <div id="reader" width="100%"></div>
+                    @if($jadwalHariIni->isEmpty())
+                        <div class="alert alert-warning text-center">
+                            Tidak ada jadwal mengajar untuk hari ini.
+                        </div>
+                    @else
+                        <div class="mb-3">
+                            <label for="jadwalSelect" class="form-label">Pilih Mata Pelajaran</label>
+                            <select class="form-select" id="jadwalSelect">
+                                <option selected disabled>-- Pilih Jadwal --</option>
+                                @foreach ($jadwalHariIni as $jadwal)
+                                    @php
+                                        $startTime = \Carbon\Carbon::parse($jadwal->start_time)->format('H:i');
+                                        $endTime = \Carbon\Carbon::parse($jadwal->end_time)->format('H:i');
+                                        $subject = $jadwal->subject->name ?? 'N/A';
+                                        $class = $jadwal->classroom->name ?? 'N/A';
+                                    @endphp
+                                    <option value="{{ $jadwal->id }}">{{ $startTime }} - {{ $endTime }} | {{ $subject }} | {{ $class }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Card untuk menampilkan QR Code --}}
+            <div class="card" id="qrCard" style="display: none;">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Scan untuk Absensi</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qrcode" class="d-flex justify-content-center p-3"></div>
+                    <p class="mt-2 text-muted" id="qrInfoText"></p>
+                    <button id="stopSession" class="btn btn-danger mt-2" style="display: none;">Hentikan Sesi Absensi</button>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card">
+        {{-- Kolom untuk Hasil Pindaian --}}
+        <div class="col-lg-7">
+            <div class="card" id="scanResultsCard" style="display: none;">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Hasil Pindaian Real-Time (<span id="scanCount">0</span> Siswa)</h4>
+                </div>
                 <div class="card-body">
-                    <h4 class="card-title mb-4">Hasil Pindaian Hari Ini</h4>
-                    <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
-                        <table class="table table-striped table-hover" id="scan-results-table">
-                            <thead class="table-light">
+                    <div class="table-responsive" style="max-height: 450px;">
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>Nama</th>
-                                    <th>Jam Masuk</th>
-                                    <th>Jam Keluar</th>
-                                    <th>Status</th>
+                                    <th>No.</th>
+                                    <th>Nama Siswa</th>
+                                    <th>NISN</th>
+                                    <th>Waktu Absen</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr id="initial-message-row">
-                                    <td colspan="5" class="text-center">Silakan pilih mata pelajaran untuk melihat data.</td>
+                            <tbody id="scanResultsBody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Pilih jadwal untuk memulai sesi absensi.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -53,142 +78,98 @@
         </div>
     </div>
 @endsection
+
 @push('scripts')
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const resultTableBody = document.querySelector("#scan-results-table tbody");
-            const timetableSelect = document.getElementById('timetable_id');
-            let rowCounter = 1;
-            let lastScannedData = null;
-            let lastScanTime = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            const jadwalSelect = document.getElementById('jadwalSelect');
+            const qrCard = document.getElementById('qrCard');
+            const qrcodeContainer = document.getElementById('qrcode');
+            const qrInfoText = document.getElementById('qrInfoText');
+            const scanResultsCard = document.getElementById('scanResultsCard');
+            const scanResultsBody = document.getElementById('scanResultsBody');
+            const scanCount = document.getElementById('scanCount');
+            const stopSessionBtn = document.getElementById('stopSession');
 
-            // ... (fungsi populateTable dan fetchScanResults tetap sama) ...
-            function populateTable(attendances) {
-                resultTableBody.innerHTML = '';
-                rowCounter = 1;
-                if (attendances.length === 0) {
-                    resultTableBody.innerHTML = `<tr id="initial-message-row"><td colspan="5" class="text-center">Belum ada pindaian untuk mapel ini.</td></tr>`;
-                    return;
-                }
-                attendances.forEach(absen => {
-                    const student = absen.student;
-                    const user = student ? student.user : null;
-                    if(!user) return;
-                    let statusBadge = '';
-                    if (absen.check_out_time) {
-                        statusBadge = `<span class="badge bg-soft-success text-success">Selesai</span>`;
-                    } else if (absen.status === 'T' || absen.notes === 'Terlambat') {
-                        statusBadge = `<span class="badge bg-soft-warning text-warning">Terlambat</span>`;
-                    } else {
-                        statusBadge = `<span class="badge bg-soft-info text-info">Sudah Masuk</span>`;
-                    }
-                    const newRow = `
-                        <tr id="nisn-${student.nis}">
-                            <td>${rowCounter++}</td>
-                            <td>${user.full_name}</td>
-                            <td class="jam-masuk">${absen.check_in_time}</td>
-                            <td class="jam-keluar">${absen.check_out_time ?? '-'}</td>
-                            <td class="status">${statusBadge}</td>
-                        </tr>
-                    `;
-                    resultTableBody.insertAdjacentHTML('beforeend', newRow);
-                });
-            }
-            function fetchScanResults() {
-                const timetableId = timetableSelect.value;
-                if (!timetableId) return;
-                let url = `{{ route('guru.absensi.results', ['timetable_id' => ':id']) }}`.replace(':id', timetableId);
-                fetch(url)
+            let qrcode = null;
+            let scanInterval = null; // Variabel untuk timer
+
+            // Fungsi untuk mengambil hasil pindaian
+            function fetchScanResults(timetableId) {
+                fetch(`/scan-qr/results/${timetableId}`)
                     .then(response => response.json())
-                    .then(data => populateTable(data))
-                    .catch(error => console.error('Error fetching scan results:', error));
-            }
+                    .then(data => {
+                        scanResultsBody.innerHTML = ''; // Kosongkan tabel
+                        scanCount.innerText = data.length; // Update jumlah siswa
 
-            // --- FUNGSI BARU UNTUK MEMBERSIHKAN TEKS DARI KODE HTML ---
-            function decodeHtmlEntities(text) {
-                const textarea = document.createElement('textarea');
-                textarea.innerHTML = text;
-                return textarea.value;
-            }
-
-            // --- FUNGSI onScanSuccessHandler YANG SUDAH DIPERBARUI ---
-            function onScanSuccessHandler(decodedText, decodedResult) {
-                let nisnToSubmit;
-
-                try {
-                    // 1. Bersihkan teks dari &quot; menjadi "
-                    const cleanText = decodeHtmlEntities(decodedText);
-                    
-                    // 2. Parse teks yang sudah bersih sebagai JSON
-                    const qrData = JSON.parse(cleanText);
-                    
-                    nisnToSubmit = qrData.nisn;
-                    
-                    if (!nisnToSubmit) {
-                        alert('Format QR Code tidak valid: Properti "nisn" tidak ditemukan.');
-                        return;
-                    }
-                } catch (e) {
-                    nisnToSubmit = decodedText;
-                    scanBtn.style.display = 'none';
-                    video.hidden = false;
-                    resultContainer.textContent = "Arahkan kamera ke kode QR...";
-
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: 'environment'
+                        if (data.length === 0) {
+                            scanResultsBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Belum ada siswa yang melakukan absensi.</td></tr>';
+                        } else {
+                            data.forEach(result => {
+                                const row = `<tr>
+                                    <td>${result.no}</td>
+                                    <td>${result.student_name}</td>
+                                    <td>${result.student_nisn}</td>
+                                    <td><span class="badge bg-success">${result.check_in_time}</span></td>
+                                </tr>`;
+                                scanResultsBody.innerHTML += row;
+                            });
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching scan results:', error);
+                    });
+            }
+
+            // Event listener saat jadwal dipilih
+            jadwalSelect.addEventListener('change', function() {
+                const timetableId = this.value;
+                if (!timetableId) return;
+
+                // Hentikan interval sebelumnya jika ada
+                if (scanInterval) {
+                    clearInterval(scanInterval);
+                }
+                
+                // Reset tampilan
+                qrCard.style.display = 'block';
+                scanResultsCard.style.display = 'block';
+                stopSessionBtn.style.display = 'block';
+                qrcodeContainer.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Membuat QR...';
+                scanResultsBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Memuat data...</td></tr>';
+
+                // 1. Buat QR Code
+                fetch(`{{ route('guru.absensi.generate-qr') }}?timetable_id=${timetableId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        qrcodeContainer.innerHTML = '';
+                        new QRCode(qrcodeContainer, {
+                            text: JSON.stringify(data),
+                            width: 256,
+                            height: 256,
+                        });
+                        const selectedOptionText = jadwalSelect.options[jadwalSelect.selectedIndex].text;
+                        qrInfoText.innerText = `Sesi untuk: ${selectedOptionText}`;
                     });
 
-                    video.srcObject = stream;
-                    video.play();
-                    requestAnimationFrame(tick);
+                // 2. Mulai ambil hasil pindaian secara periodik
+                fetchScanResults(timetableId); // Panggil pertama kali
+                scanInterval = setInterval(() => fetchScanResults(timetableId), 5000); // Ulangi setiap 5 detik
+            });
 
-                    // Membalikkan video (flip horizontal)
-                    video.style.transform = 'scaleX(-1)';  // Membalikkan video
-
-                } catch (err) {
-                    console.error("ERROR saat mengakses kamera: ", err);
-                    resultContainer.textContent = "Gagal mengakses kamera. Pastikan Anda memberikan izin dan menggunakan koneksi HTTPS.";
-                    scanBtn.style.display = 'block';
+            // Event listener untuk tombol Hentikan Sesi
+            stopSessionBtn.addEventListener('click', function() {
+                 if (scanInterval) {
+                    clearInterval(scanInterval);
                 }
-
-                const now = new Date().getTime();
-                if (nisnToSubmit === lastScannedData && (now - lastScanTime) < 3000) {
-                    return; 
-                }
-                lastScannedData = nisnToSubmit;
-                lastScanTime = now;
-
-                const selectedTimetableId = timetableSelect.value;
-                if (!selectedTimetableId || selectedTimetableId === '') {
-                    timetableSelect.classList.add('is-invalid');
-                    alert('Silakan pilih jadwal mata pelajaran terlebih dahulu.');
-                    return;
-                }
-                timetableSelect.classList.remove('is-invalid');
-
-                fetch("{{ route('guru.absensi.process') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ nisn: nisnToSubmit, timetable_id: selectedTimetableId }) 
-                })
-                .then(response => response.json().then(data => ({ ok: response.ok, data })))
-                .then(({ ok, data }) => {
-                    if (!ok) { throw new Error(data.error || 'Terjadi kesalahan.'); }
-                    fetchScanResults(); 
-                })
-                .catch(error => {
-                    alert(error.message);
-                });
-            }
-            
-            timetableSelect.addEventListener('change', fetchScanResults);
-
-            const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
-            html5QrcodeScanner.render(onScanSuccessHandler);
+                this.style.display = 'none';
+                qrCard.style.display = 'none';
+                scanResultsCard.style.display = 'none';
+                jadwalSelect.selectedIndex = 0;
+                 alert('Sesi absensi telah dihentikan.');
+            });
         });
     </script>
 @endpush

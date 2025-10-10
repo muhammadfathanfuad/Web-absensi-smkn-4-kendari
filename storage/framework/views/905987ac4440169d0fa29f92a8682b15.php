@@ -11,7 +11,7 @@
 
     <div class="app-wrapper">
 
-        <?php echo $__env->make('layouts.partials/sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        <?php echo $__env->make('layouts.partials/sidebar-admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
         <?php echo $__env->make('layouts.partials/topbar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
@@ -33,4 +33,4 @@
 
 </body>
 
-</html><?php /**PATH C:\Users\fatha\Herd\Taplox-Laravel\resources\views/layouts/vertical.blade.php ENDPATH**/ ?>
+</html><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/layouts/vertical-admin.blade.php ENDPATH**/ ?>
