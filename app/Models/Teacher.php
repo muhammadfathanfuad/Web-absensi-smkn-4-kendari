@@ -13,7 +13,7 @@ class Teacher extends Model
     public $incrementing = false; // Non-incrementing karena foreign key
     protected $keyType = 'int'; // Gunakan tipe int untuk user_id
 
-    protected $fillable = ['user_id', 'nip', 'department', 'title'];
+    protected $fillable = ['user_id', 'nip', 'department', 'kode_guru'];
 
     // Relasi ke user
     public function user()

@@ -9,6 +9,8 @@ class Classroom extends Model
 {
     use HasFactory;
 
+    protected $fillable = ['name', 'grade', 'homeroom_teacher_id', 'room_id'];
+
     // Menentukan kolom room_id menggunakan unsignedBigInteger
     protected $casts = [
         'room_id' => 'integer',  // Pastikan room_id bertipe integer atau unsignedBigInteger

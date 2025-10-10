@@ -38,7 +38,7 @@
                                     <p class="text-muted mb-0">
                                         Data Semua Warga Sekolah
                                     </p>
-                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                    <button type="button" class="btn btn-primary" id="addUserBtn" data-bs-toggle="modal"
                                         data-bs-target="#addUserModal">
                                         Tambah User
                                     </button>
@@ -56,10 +56,12 @@
                                     <p class="text-muted mb-0">
                                         Data Semua Guru Sekolah
                                     </p>
-                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                        data-bs-target="#addGuruModal">
-                                        Tambah Guru
-                                    </button>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#addGuruModal">
+                                            Tambah Guru
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -91,6 +93,278 @@
         </div>
     </div>
 
+    <!-- Modal Tambah Guru -->
+    <div class="modal fade" id="addGuruModal" tabindex="-1" aria-labelledby="addGuruModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addGuruModalLabel">Tambah Guru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addGuruForm" action="<?php echo e(route('guru.store')); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <div class="mb-3">
+                            <label for="addGuruEmail" class="form-label">Email User</label>
+                            <input type="email" class="form-control" id="addGuruEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addGuruNip" class="form-label">NIP</label>
+                            <input type="text" class="form-control" id="addGuruNip" name="nip" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addGuruKode" class="form-label">Kode Guru</label>
+                            <input type="text" class="form-control" id="addGuruKode" name="kode_guru" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addGuruDepartment" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="addGuruDepartment" name="department" required>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadGuruModal">Upload Data</button>
+                            <button type="submit" class="btn btn-primary">Tambah Guru</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Upload Guru -->
+    <div class="modal fade" id="uploadGuruModal" tabindex="-1" aria-labelledby="uploadGuruModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadGuruModalLabel">Upload Data Guru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadGuruForm" action="<?php echo e(route('guru.import')); ?>" method="POST" enctype="multipart/form-data">
+                        <?php echo csrf_field(); ?>
+                        <div class="mb-3">
+                            <label for="uploadGuruFile" class="form-label">Pilih File Excel atau CSV</label>
+                            <input type="file" class="form-control" id="uploadGuruFile" name="file" accept=".xlsx,.xls,.csv" required>
+                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: nama_guru, email, kode_guru, nip, no_hp, department.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Murid -->
+    <div class="modal fade" id="addMuridModal" tabindex="-1" aria-labelledby="addMuridModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMuridModalLabel">Tambah Murid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMuridForm" action="<?php echo e(route('murid.store')); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <div class="mb-3">
+                            <label for="addMuridEmail" class="form-label">Email User</label>
+                            <input type="email" class="form-control" id="addMuridEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addMuridNis" class="form-label">NIS</label>
+                            <input type="text" class="form-control" id="addMuridNis" name="nis" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addMuridTingkatan" class="form-label">Tingkatan</label>
+                            <select class="form-select" id="addMuridTingkatan" name="tingkatan" required>
+                                <?php $__currentLoopData = \App\Models\Classroom::distinct('grade')->pluck('grade'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $grade): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($grade); ?>"><?php echo e($grade); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addMuridClass" class="form-label">Kelas</label>
+                            <select class="form-select" id="addMuridClass" name="class_id" required>
+                                <?php $__currentLoopData = \App\Models\Classroom::all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($class->id); ?>" data-grade="<?php echo e($class->grade); ?>"><?php echo e($class->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addMuridGuardianName" class="form-label">Nama Wali</label>
+                            <input type="text" class="form-control" id="addMuridGuardianName" name="guardian_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addMuridGuardianPhone" class="form-label">Nomor HP Wali</label>
+                            <input type="text" class="form-control" id="addMuridGuardianPhone" name="guardian_phone" required>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadMuridModal">Upload File</button>
+                            <button type="submit" class="btn btn-primary">Tambah Murid</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Upload Murid -->
+    <div class="modal fade" id="uploadMuridModal" tabindex="-1" aria-labelledby="uploadMuridModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadMuridModalLabel">Upload Data Murid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadMuridForm" action="<?php echo e(route('murid.import')); ?>" method="POST" enctype="multipart/form-data">
+                        <?php echo csrf_field(); ?>
+                        <div class="mb-3">
+                            <label for="uploadMuridFile" class="form-label">Pilih File Excel atau CSV</label>
+                            <input type="file" class="form-control" id="uploadMuridFile" name="file" accept=".xlsx,.xls,.csv" required>
+                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: nama_murid, email, phone, nis, kelas, grade, nama_wali, nomor_hp_wali.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Guru -->
+    <div class="modal fade" id="editGuruModal" tabindex="-1" aria-labelledby="editGuruModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editGuruModalLabel">Edit Guru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editGuruForm" data-action="/admin/guru" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PUT'); ?>
+                        <input type="hidden" id="editGuruId" name="id">
+                        <div class="mb-3">
+                            <label for="editGuruName" class="form-label">Nama</label>
+                            <input type="text" class="form-control" id="editGuruName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGuruEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editGuruEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGuruNip" class="form-label">NIP</label>
+                            <input type="text" class="form-control" id="editGuruNip" name="nip" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGuruKode" class="form-label">Kode Guru</label>
+                            <input type="text" class="form-control" id="editGuruKode" name="kode_guru" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGuruDepartment" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="editGuruDepartment" name="department" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Murid -->
+    <div class="modal fade" id="editMuridModal" tabindex="-1" aria-labelledby="editMuridModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMuridModalLabel">Edit Murid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editMuridForm" data-action="/admin/murid" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PUT'); ?>
+                        <input type="hidden" id="editMuridId" name="id">
+                        <div class="mb-3">
+                            <label for="editMuridName" class="form-label">Nama</label>
+                            <input type="text" class="form-control" id="editMuridName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMuridEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editMuridEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMuridNis" class="form-label">NIS</label>
+                            <input type="text" class="form-control" id="editMuridNis" name="nis" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMuridTingkatan" class="form-label">Tingkatan</label>
+                            <select class="form-select" id="editMuridTingkatan" name="tingkatan" required>
+                                <?php $__currentLoopData = \App\Models\Classroom::distinct('grade')->pluck('grade'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $grade): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($grade); ?>"><?php echo e($grade); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMuridClass" class="form-label">Kelas</label>
+                            <select class="form-select" id="editMuridClass" name="class_id" required>
+                                <?php $__currentLoopData = \App\Models\Classroom::all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($class->id); ?>" data-grade="<?php echo e($class->grade); ?>"><?php echo e($class->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMuridGuardianName" class="form-label">Nama Wali</label>
+                            <input type="text" class="form-control" id="editMuridGuardianName" name="guardian_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMuridGuardianPhone" class="form-label">Nomor HP Wali</label>
+                            <input type="text" class="form-control" id="editMuridGuardianPhone" name="guardian_phone" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Guru -->
+    <div class="modal fade" id="deleteGuruModal" tabindex="-1" aria-labelledby="deleteGuruModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteGuruModalLabel">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus guru ini?</p>
+                    <input type="hidden" id="deleteGuruId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteGuruButton">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Murid -->
+    <div class="modal fade" id="deleteMuridModal" tabindex="-1" aria-labelledby="deleteMuridModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteMuridModalLabel">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus murid ini?</p>
+                    <input type="hidden" id="deleteMuridId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteMuridButton">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Tambah User -->
     <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -112,15 +386,15 @@
                         </div>
                         <div class="mb-3">
                             <label for="addUserPhone" class="form-label">Nomor Hp</label>
-                            <input type="text" class="form-control" id="addUserPhone" name="phone" required>
+                            <input type="text" class="form-control" id="addUserPhone" name="phone">
                         </div>
                         <div class="mb-3">
                             <label for="addUserUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="addUserUsername" name="username" required>
+                            <input type="text" class="form-control" id="addUserUsername" name="username">
                         </div>
                         <div class="mb-3">
                             <label for="addUserPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="addUserPassword" name="password" required>
+                            <input type="password" class="form-control" id="addUserPassword" name="password">
                         </div>
                         <button type="submit" class="btn btn-primary">Tambah User</button>
                     </form>
@@ -152,11 +426,11 @@
                         </div>
                         <div class="mb-3">
                             <label for="editUserPhone" class="form-label">Nomor Hp</label>
-                            <input type="text" class="form-control" id="editUserPhone" name="phone" required>
+                            <input type="text" class="form-control" id="editUserPhone" name="phone">
                         </div>
                         <div class="mb-3">
                             <label for="editUserUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="editUserUsername" name="username" required>
+                            <input type="text" class="form-control" id="editUserUsername" name="username">
                         </div>
                         <div class="mb-3">
                             <label for="editUserPassword" class="form-label">Password (Opsional)</label>
@@ -213,198 +487,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal Tambah Guru -->
-    <div class="modal fade" id="addGuruModal" tabindex="-1" aria-labelledby="addGuruModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addGuruModalLabel">Tambah Guru</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addGuruForm" action="<?php echo e(route('guru.store')); ?>" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <div class="mb-3">
-                            <label for="addGuruUser" class="form-label">Username Guru</label>
-                            <input type="text" class="form-control" id="addGuruUser" name="user_username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="addGuruNip" class="form-label">NIP</label>
-                            <input type="text" class="form-control" id="addGuruNip" name="nip">
-                        </div>
-                        <div class="mb-3">
-                            <label for="addGuruDepartment" class="form-label">Department</label>
-                            <input type="text" class="form-control" id="addGuruDepartment" name="department">
-                        </div>
-                        <div class="mb-3">
-                            <label for="addGuruTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="addGuruTitle" name="title">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Tambah Guru</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Tambah Murid -->
-    <div class="modal fade" id="addMuridModal" tabindex="-1" aria-labelledby="addMuridModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addMuridModalLabel">Tambah Murid</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addMuridForm" action="<?php echo e(route('murid.store')); ?>" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <div class="mb-3">
-                            <label for="addMuridUser" class="form-label">Username Murid</label>
-                            <input type="text" class="form-control" id="addMuridUser" name="user_username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="addMuridNis" class="form-label">NIS</label>
-                            <input type="text" class="form-control" id="addMuridNis" name="nis" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="addMuridClass" class="form-label">Kelas</label>
-                            <select class="form-select" id="addMuridClass" name="class_id" required>
-                                <option value="">Pilih Kelas</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="addMuridGuardianName" class="form-label">Nama Wali</label>
-                            <input type="text" class="form-control" id="addMuridGuardianName" name="guardian_name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="addMuridGuardianPhone" class="form-label">Telepon Wali</label>
-                            <input type="text" class="form-control" id="addMuridGuardianPhone" name="guardian_phone">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Tambah Murid</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Edit Guru -->
-    <div class="modal fade" id="editGuruModal" tabindex="-1" aria-labelledby="editGuruModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editGuruModalLabel">Edit Guru</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editGuruForm" data-action="/admin/guru" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('PUT'); ?>
-                        <input type="hidden" id="editGuruId" name="id">
-                        <div class="mb-3">
-                            <label for="editGuruUserName" class="form-label">Nama Guru</label>
-                            <input type="text" class="form-control" id="editGuruUserName" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGuruNip" class="form-label">NIP</label>
-                            <input type="text" class="form-control" id="editGuruNip" name="nip">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGuruDepartment" class="form-label">Department</label>
-                            <input type="text" class="form-control" id="editGuruDepartment" name="department">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGuruTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="editGuruTitle" name="title">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Edit Murid -->
-    <div class="modal fade" id="editMuridModal" tabindex="-1" aria-labelledby="editMuridModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editMuridModalLabel">Edit Murid</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editMuridForm" data-action="/admin/murid" method="POST">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('PUT'); ?>
-                        <input type="hidden" id="editMuridId" name="id">
-                        <div class="mb-3">
-                            <label for="editMuridUserName" class="form-label">Nama Murid</label>
-                            <input type="text" class="form-control" id="editMuridUserName" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editMuridNis" class="form-label">NIS</label>
-                            <input type="text" class="form-control" id="editMuridNis" name="nis" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editMuridClass" class="form-label">Kelas</label>
-                            <select class="form-select" id="editMuridClass" name="class_id" required>
-                                <option value="">Pilih Kelas</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editMuridGuardianName" class="form-label">Nama Wali</label>
-                            <input type="text" class="form-control" id="editMuridGuardianName" name="guardian_name">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editMuridGuardianPhone" class="form-label">Telepon Wali</label>
-                            <input type="text" class="form-control" id="editMuridGuardianPhone" name="guardian_phone">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Hapus Guru -->
-    <div class="modal fade" id="deleteGuruModal" tabindex="-1" aria-labelledby="deleteGuruModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteGuruModalLabel">Konfirmasi Hapus</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Apakah Anda yakin ingin menghapus guru ini?</p>
-                    <input type="hidden" id="deleteGuruId">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteGuruButton">Ya, Hapus</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Hapus Murid -->
-    <div class="modal fade" id="deleteMuridModal" tabindex="-1" aria-labelledby="deleteMuridModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteMuridModalLabel">Konfirmasi Hapus</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Apakah Anda yakin ingin menghapus murid ini?</p>
-                    <input type="hidden" id="deleteMuridId">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteMuridButton">Ya, Hapus</button>
-                </div>
-            </div>
-        </div>
-    </div>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
@@ -412,6 +494,42 @@
     <?php echo app('Illuminate\Foundation\Vite')(['node_modules/select2/dist/js/select2.min.js']); ?>
 
     <script>
+        // Functions to show edit modals
+        function showEditUserModal(id, name, email, phone, username, status) {
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editUserName').value = name;
+            document.getElementById('editUserEmail').value = email;
+            document.getElementById('editUserPhone').value = phone;
+            document.getElementById('editUserUsername').value = username;
+            document.getElementById('editUserStatus').value = status;
+            const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            modal.show();
+        }
+
+        function showEditGuruModal(id, name, email, nip, department, kode_guru) {
+            document.getElementById('editGuruId').value = id;
+            document.getElementById('editGuruName').value = name;
+            document.getElementById('editGuruEmail').value = email;
+            document.getElementById('editGuruNip').value = nip;
+            document.getElementById('editGuruDepartment').value = department;
+            document.getElementById('editGuruKode').value = kode_guru;
+            const modal = new bootstrap.Modal(document.getElementById('editGuruModal'));
+            modal.show();
+        }
+
+        function showEditMuridModal(id, name, email, nis, class_id, guardian_name, guardian_phone, grade) {
+            document.getElementById('editMuridId').value = id;
+            document.getElementById('editMuridName').value = name;
+            document.getElementById('editMuridEmail').value = email;
+            document.getElementById('editMuridNis').value = nis;
+            document.getElementById('editMuridTingkatan').value = grade;
+            document.getElementById('editMuridClass').value = class_id;
+            document.getElementById('editMuridGuardianName').value = guardian_name;
+            document.getElementById('editMuridGuardianPhone').value = guardian_phone;
+            const modal = new bootstrap.Modal(document.getElementById('editMuridModal'));
+            modal.show();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
 
@@ -435,21 +553,176 @@
                 }
             }
 
+            // const addUserFormHTML = `
+            //     <form id="addUserForm" action="<?php echo e(route('users.store')); ?>" method="POST">
+            //         <?php echo csrf_field(); ?>
+            //         <div class="mb-3">
+            //             <label for="addUserName" class="form-label">Nama</label>
+            //             <input type="text" class="form-control" id="addUserName" name="name" required>
+            //         </div>
+            //         <div class="mb-3">
+            //             <label for="addUserEmail" class="form-label">Email</label>
+            //             <input type="email" class="form-control" id="addUserEmail" name="email" required>
+            //         </div>
+            //         <div class="mb-3">
+            //             <label for="addUserPhone" class="form-label">Nomor Hp</label>
+            //             <input type="text" class="form-control" id="addUserPhone" name="phone">
+            //         </div>
+            //             <div class="mb-3">
+            //                 <label for="addUserUsername" class="form-label">Username</label>
+            //                 <input type="text" class="form-control" id="addUserUsername" name="username">
+            //             </div>
+            //         <div class="mb-3">
+            //             <label for="addUserPassword" class="form-label">Password</label>
+            //             <input type="password" class="form-control" id="addUserPassword" name="password">
+            //         </div>
+            //         <button type="submit" class="btn btn-primary">Tambah User</button>
+            //     </form>
+            // `;
 
+            function setAddUserModal() {
+                document.getElementById('addUserModalLabel').innerText = 'Tambah User';
+                document.querySelector('#addUserModal .modal-body').innerHTML = addUserFormHTML;
+                // Add submit handler
+                document.getElementById('addUserForm').addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    const formData = new FormData(this);
+                    try {
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                Accept: "application/json"
+                            },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (data.errors) {
+                            data.message = 'Validasi gagal: ' + Object.values(data.errors).flat().join(', ');
+                            data.success = false;
+                        } else if (!response.ok) {
+                            showNotification(data.message || 'Terjadi kesalahan server', false);
+                            return;
+                        }
+                        bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                        showNotification(data.message, data.success);
+                        if (data.success) {
+                            refreshTable();
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showNotification('Gagal menambahkan user. Periksa data atau koneksi.', false);
+                    }
+                });
+            }
+
+            document.getElementById('addUserBtn').addEventListener('click', setAddUserModal);
+
+            // Upload Guru form submission
+            document.getElementById('uploadGuruForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.disabled = true;
+                submitButton.textContent = 'Mengupload...';
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('uploadGuruModal')).hide();
+                        this.reset();
+                        // Refresh table
+                        if (window.gridInstance) window.gridInstance.forceRender();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Gagal mengupload data.', false);
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                });
+            });
+
+            // Filter class based on tingkatan for add murid
+            document.getElementById('addMuridTingkatan').addEventListener('change', function() {
+                const selectedGrade = this.value;
+                const classSelect = document.getElementById('addMuridClass');
+                const options = classSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    if (option.value === '') return;
+                    if (option.getAttribute('data-grade') === selectedGrade) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                classSelect.value = '';
+            });
+
+            // Add Murid form submission
+            document.getElementById('addMuridForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('addMuridModal')).hide();
+                        this.reset();
+                        // Refresh table
+                        if (window.gridInstance) window.gridInstance.forceRender();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Gagal menambah murid.', false);
+                });
+            });
+
+            // Upload Murid form submission
+            document.getElementById('uploadMuridForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.disabled = true;
+                submitButton.textContent = 'Mengupload...';
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('uploadMuridModal')).hide();
+                        this.reset();
+                        // Refresh table
+                        if (window.gridInstance) window.gridInstance.forceRender();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Gagal mengupload data.', false);
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                });
+            });
 
             // LOGIKA EDIT USER
-            const editUserModal = document.getElementById('editUserModal');
             const editUserForm = document.getElementById('editUserForm');
-
-            editUserModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const user = JSON.parse(button.getAttribute('data-user'));
-                document.getElementById('editUserId').value = user.id;
-                document.getElementById('editUserName').value = user.name;
-                document.getElementById('editUserEmail').value = user.email;
-                document.getElementById('editUserPhone').value = user.phone;
-                document.getElementById('editUserUsername').value = user.username;
-            });
 
             editUserForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
@@ -466,7 +739,7 @@
                         body: formData
                     });
                     const data = await response.json();
-                    bootstrap.Modal.getInstance(editUserModal).hide();
+                    bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
                     showNotification(data.message, data.success);
                     if (data.success) {
                         refreshTable();
@@ -476,60 +749,49 @@
                 }
             });
 
-
-
-            // Menambahkan kelas melalui dropdown
-            fetch('/admin/classes') // Assuming there's a route for classes
-                .then(response => response.json())
-                .then(data => {
-                    const addClassSelect = document.getElementById('addMuridClass');
-                    const editClassSelect = document.getElementById('editMuridClass');
-                    data.forEach(cls => {
-                        const optionAdd = document.createElement('option');
-                        optionAdd.value = cls.id;
-                        optionAdd.textContent = cls.name;
-                        addClassSelect.appendChild(optionAdd);
-
-                        const optionEdit = document.createElement('option');
-                        optionEdit.value = cls.id;
-                        optionEdit.textContent = cls.name;
-                        editClassSelect.appendChild(optionEdit);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-
-            // LOGIKA EDIT GURU
-            const editGuruModal = document.getElementById('editGuruModal');
-            const editGuruForm = document.getElementById('editGuruForm');
-
-            editGuruModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const guru = JSON.parse(button.getAttribute('data-guru'));
-                document.getElementById('editGuruId').value = guru.id;
-                document.getElementById('editGuruUserName').value = guru.user_name || '';
-                document.getElementById('editGuruNip').value = guru.nip || '';
-                document.getElementById('editGuruDepartment').value = guru.department || '';
-                document.getElementById('editGuruTitle').value = guru.title || '';
+            // Filter class based on tingkatan for edit murid
+            document.getElementById('editMuridTingkatan').addEventListener('change', function() {
+                const selectedGrade = this.value;
+                const classSelect = document.getElementById('editMuridClass');
+                const options = classSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    if (option.value === '') return;
+                    if (option.getAttribute('data-grade') === selectedGrade) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                classSelect.value = '';
             });
 
             // LOGIKA EDIT MURID
-            const editMuridModal = document.getElementById('editMuridModal');
             const editMuridForm = document.getElementById('editMuridForm');
 
-            editMuridModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const murid = JSON.parse(button.getAttribute('data-murid'));
-                document.getElementById('editMuridId').value = murid.id;
-                document.getElementById('editMuridUserName').value = murid.user_name || '';
-                document.getElementById('editMuridNis').value = murid.nis || '';
-                document.getElementById('editMuridClass').value = murid.class_id || '';
-                document.getElementById('editMuridGuardianName').value = murid.guardian_name || '';
-                document.getElementById('editMuridGuardianPhone').value = murid.guardian_phone || '';
+            editMuridForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const muridId = document.getElementById('editMuridId').value;
+                const formData = new FormData(editMuridForm);
+                formData.append('_method', 'PUT'); // Method spoofing
+
+                try {
+                    const response = await fetch(`/admin/murid/${muridId}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+                        },
+                        body: formData
+                    });
+                    const data = await response.json();
+                    bootstrap.Modal.getInstance(document.getElementById('editMuridModal')).hide();
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        refreshTable();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
             });
-
-
-
-
 
         });
     </script>

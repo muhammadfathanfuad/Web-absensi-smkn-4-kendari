@@ -45,7 +45,7 @@ class GridDatatable {
                 "Name",
                 "NIP",
                 "Department",
-                "Title",
+                "Kode Guru",
                 {
                     name: "Data",
                     hidden: true,
@@ -57,14 +57,11 @@ class GridDatatable {
 
                         return gridjs.html(`
                             <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editGuruModal"
-                                    data-guru='${JSON.stringify(guru)}'>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEditGuruModal('${guru.user_id}', '${guru.user.full_name || ''}', '${guru.user.email || ''}', '${guru.nip || ''}', '${guru.department || ''}', '${guru.kode_guru || ''}')">
                                     Edit
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger delete-guru-btn" data-id="${
-                                    guru.id
+                                    guru.user_id
                                 }">
                                     Hapus
                                 </button>
@@ -73,11 +70,11 @@ class GridDatatable {
                     },
                 },
             ],
-            pagination: { limit: 5 },
+            pagination: { limit: 10 },
             search: true,
             server: {
                 url: "/admin/guru",
-                then: (data) => data,
+                then: (data) => data.map(teacher => [teacher.user?.full_name ?? '-', teacher.nip ?? '-', teacher.department ?? '-', teacher.kode_guru ?? '-', teacher]),
             },
             language: { search: { placeholder: " Ketik untuk mencari…" } },
         }).render(mount);
@@ -93,6 +90,7 @@ class GridDatatable {
                 "Name",
                 "NIS",
                 "Kelas",
+                "Tingkatan",
                 "Nama Wali",
                 "Telepon Wali",
                 {
@@ -102,18 +100,15 @@ class GridDatatable {
                 {
                     name: "Aksi",
                     formatter: (cell, row) => {
-                        const murid = row.cells[5].data;
+                        const murid = row.cells[6].data;
 
                         return gridjs.html(`
                             <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editMuridModal"
-                                    data-murid='${JSON.stringify(murid)}'>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEditMuridModal('${murid.user_id}', '${murid.user.full_name || ''}', '${murid.user.email || ''}', '${murid.nis || ''}', '${murid.class_id || ''}', '${murid.guardian_name || ''}', '${murid.guardian_phone || ''}', '${murid.classroom?.grade ?? ''}')">
                                     Edit
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger delete-murid-btn" data-id="${
-                                    murid.id
+                                    murid.user_id
                                 }">
                                     Hapus
                                 </button>
@@ -122,11 +117,11 @@ class GridDatatable {
                     },
                 },
             ],
-            pagination: { limit: 5 },
+            pagination: { limit: 10 },
             search: true,
             server: {
                 url: "/admin/murid",
-                then: (data) => data,
+                then: (data) => data.map(student => [student.user?.full_name ?? '-', student.nis ?? '-', student.classroom?.name ?? '-', student.classroom?.grade ?? '-', student.guardian_name ?? '-', student.guardian_phone ?? '-', student]),
             },
             language: { search: { placeholder: " Ketik untuk mencari…" } },
         }).render(mount);
@@ -139,6 +134,13 @@ class GridDatatable {
 
         this.gridInstanceUser = new gridjs.Grid({
             columns: [
+                {
+                    name: gridjs.html('<input type="checkbox" id="select-all-checkbox">'),
+                    formatter: (cell, row) => {
+                        const userId = row.cells[6].data;
+                        return gridjs.html(`<input type="checkbox" class="row-checkbox" data-id="${userId}">`);
+                    }
+                },
                 "Name",
                 "Email",
                 "Nomor Hp",
@@ -167,19 +169,16 @@ class GridDatatable {
                     name: "Aksi",
                     formatter: (cell, row) => {
                         const user = {
-                            id: row.cells[5].data,
-                            name: row.cells[0].data,
-                            email: row.cells[1].data,
-                            phone: row.cells[2].data,
-                            username: row.cells[3].data,
-                            status: row.cells[4].data,
+                            id: row.cells[6].data,
+                            name: row.cells[1].data,
+                            email: row.cells[2].data,
+                            phone: row.cells[3].data,
+                            username: row.cells[4].data,
+                            status: row.cells[5].data,
                         };
                         return gridjs.html(`
                             <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editUserModal"
-                                    data-user='${JSON.stringify(user)}'>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEditUserModal('${user.id}', '${user.name.replace(/"/g, '\\"')}', '${user.email.replace(/"/g, '\\"')}', '${user.phone.replace(/"/g, '\\"')}', '${user.username.replace(/"/g, '\\"')}', '${user.status}')">
                                     Edit
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger delete-user-btn" data-id="${
@@ -192,18 +191,20 @@ class GridDatatable {
                     },
                 },
             ],
-            pagination: { limit: 5 },
+            pagination: { limit: 10 },
             search: true,
             server: {
                 url: "/admin/users/table",
                 then: (data) =>
                     data.map((u) => [
+                        `<input type="checkbox" class="row-checkbox" data-id="${u.id}">`,
                         u.full_name ?? "-",
                         u.email ?? "-",
                         u.phone ?? "-",
                         u.username ?? "-",
                         u.status ?? "-",
                         u.id,
+                        u.role ?? "-",
                     ]),
             },
             language: { search: { placeholder: " Ketik untuk mencari…" } },
@@ -238,6 +239,14 @@ class GridDatatable {
             () => this.gridInstanceUser.forceRender(),
             "PUT"
         );
+
+        // Select all checkbox functionality
+        document.addEventListener('change', (event) => {
+            if (event.target.id === 'select-all-checkbox') {
+                const isChecked = event.target.checked;
+                document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = isChecked);
+            }
+        });
 
         document.body.addEventListener("click", (event) => {
             if (event.target.classList.contains("delete-guru-btn")) {
