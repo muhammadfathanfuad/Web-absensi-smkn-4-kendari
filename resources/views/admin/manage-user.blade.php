@@ -40,10 +40,20 @@
                                     <p class="text-muted mb-0">
                                         Data Semua Warga Sekolah
                                     </p>
-                                    <button type="button" class="btn btn-primary" id="addUserBtn" data-bs-toggle="modal"
-                                        data-bs-target="#addUserModal">
-                                        Tambah User
-                                    </button>
+                                    <div id="single-actions">
+                                        <button type="button" class="btn btn-primary" id="addUserBtn" data-bs-toggle="modal"
+                                            data-bs-target="#addUserModal">
+                                            Tambah User
+                                        </button>
+                                    </div>
+                                    <div id="bulk-actions" style="display: none;">
+                                        <button type="button" class="btn btn-warning me-2" id="bulkEditBtn">
+                                            Edit
+                                        </button>
+                                        <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                            Hapus
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -58,10 +68,15 @@
                                     <p class="text-muted mb-0">
                                         Data Semua Guru Sekolah
                                     </p>
-                                    <div class="d-flex gap-2">
+                                    <div id="single-actions-guru">
                                         <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                             data-bs-target="#addGuruModal">
                                             Tambah Guru
+                                        </button>
+                                    </div>
+                                    <div id="bulk-actions-guru" style="display: none;">
+                                        <button type="button" class="btn btn-danger" id="bulkDeleteGuruBtn">
+                                            Hapus
                                         </button>
                                     </div>
                                 </div>
@@ -463,6 +478,7 @@
                 <div class="modal-body">
                     <p>Apakah Anda yakin ingin menghapus user ini?</p>
                     <input type="hidden" id="deleteUserId">
+                    <input type="hidden" id="deleteRoute" value="/admin/user">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -471,6 +487,31 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Bulk Edit Status -->
+    <div class="modal fade" id="bulkEditStatusModal" tabindex="-1" aria-labelledby="bulkEditStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkEditStatusModalLabel">Edit Status User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Pilih status baru untuk user yang dipilih:</p>
+                    <select class="form-select" id="bulkStatusSelect">
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="confirmBulkEditStatus">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     <div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel"
         aria-hidden="true">
@@ -638,7 +679,7 @@
                         bootstrap.Modal.getInstance(document.getElementById('uploadGuruModal')).hide();
                         this.reset();
                         // Refresh table
-                        if (window.gridInstance) window.gridInstance.forceRender();
+                        if (window.gridInstanceGuru) window.gridInstanceGuru.forceRender();
                     }
                 })
                 .catch(error => {
