@@ -4,25 +4,23 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\Timetable;
 use App\Models\Student;
-use App\Models\Classroom;
 use App\Models\ClassSession;
 use App\Models\Attendance;
 use App\Models\Subject;
-use Illuminate\Support\Facades\Auth;
 
 class AbsensiController extends Controller
 {
+    // Menampilkan halaman scanner/QR generator
     public function showScanner()
     {
-        $teacherId = Auth::user()->id;
-        $today = Carbon::now();
-        $dayOfWeek = $today->dayOfWeekIso;
+        $teacherId = Auth::id();
+        $dayOfWeek = today()->dayOfWeekIso;
 
-        // 1. Mengambil jadwal hari ini untuk ditampilkan di dropdown
-        $jadwalHariIni = Timetable::with(['classroom', 'subject'])
+        $jadwalHariIni = Timetable::with(['subject', 'classroom'])
             ->where('teacher_id', $teacherId)
             ->where('day_of_week', $dayOfWeek)
             ->orderBy('start_time', 'asc')
@@ -31,112 +29,94 @@ class AbsensiController extends Controller
         return view('guru.scan-qr', compact('jadwalHariIni'));
     }
 
-        public function generateQrCode(Request $request)
+    // Menghasilkan payload QR (JSON) dan memastikan ClassSession ada
+    public function generateQrCode(Request $request)
     {
-        // Validasi input timetable_id
         $request->validate([
             'timetable_id' => 'required|exists:timetables,id',
         ]);
 
-        $timetable = Timetable::with('subject')->find($request->timetable_id);
-        $user = Auth::user()->load('teacher'); // Memuat data guru dari relasi
+        $timetable = Timetable::with('subject')->findOrFail($request->timetable_id);
+        $user = Auth::user()->load('teacher');
 
         if (!$user->teacher) {
             return response()->json(['error' => 'Data guru (NIP) tidak ditemukan.'], 404);
         }
 
-        // 2. Data yang akan dimasukkan ke dalam QR Code
+        // Pastikan ada ClassSession untuk hari ini
+        $classSession = ClassSession::firstOrCreate(
+            ['timetable_id' => $timetable->id, 'date' => today()->toDateString()],
+            ['status' => 'ongoing', 'opened_by' => $user->id]
+        );
+
         $qrData = [
             'teacher_user_id' => $user->id,
             'teacher_name' => $user->name,
-            'teacher_nip' => $user->teacher->nip,
-            'subject_id' => $timetable->subject->id,
-            'subject_name' => $timetable->subject->name,
+            'teacher_nip' => optional($user->teacher)->nip,
+            'subject_id' => optional($timetable->subject)->id,
+            'subject_name' => optional($timetable->subject)->name,
             'timetable_id' => $timetable->id,
-            'class_id' => $timetable->class_id
+            'class_id' => $timetable->class_id,
+            'class_session_id' => $classSession->id,
         ];
 
         return response()->json($qrData);
     }
 
-    public function getScanResults($timetable_id)
-    {
-        $classSession = ClassSession::where('timetable_id', $timetable_id)
-                                      ->where('date', today()->toDateString())
-                                      ->first();
-
-        if (!$classSession) {
-            return response()->json([]);
-        }
-
-        // Relasi student() di model Attendance akan mengambil data siswa
-        $attendances = Attendance::with(['student.user'])
-            ->where('class_session_id', $classSession->id)
-            ->get();
-
-        return response()->json($attendances);
-    }
-
+    // Memproses scan (dipanggil oleh teacher JS saat menerima scan dari siswa)
     public function processScan(Request $request)
     {
-        // Validasi 'nisn' sesuai dengan data yang dikirim dari QR (JavaScript)
         $request->validate([
             'nisn' => 'required|string',
-            'timetable_id' => 'required|integer|exists:timetables,id',
+            'timetable_id' => 'required|exists:timetables,id',
         ]);
-        
 
-        // Mencari siswa berdasarkan kolom 'nis' menggunakan data dari 'nisn'
         $student = Student::where('nis', $request->nisn)->with('user')->first();
         if (!$student) {
             return response()->json(['error' => 'Siswa dengan NIS ' . $request->nisn . ' tidak ditemukan.'], 404);
         }
 
-        $timetable = Timetable::find($request->timetable_id);
+        $timetable = Timetable::findOrFail($request->timetable_id);
+
         $classSession = ClassSession::firstOrCreate(
-            ['timetable_id' => $request->timetable_id, 'date' => today()->toDateString()],
-            ['status' => 'ongoing', 'opened_by' => 2] // Ganti dengan auth()->id()
+            ['timetable_id' => $timetable->id, 'date' => today()->toDateString()],
+            ['status' => 'ongoing', 'opened_by' => Auth::id()]
         );
-        
-        // --- PERBAIKAN KUNCI #1 ---
-        // Mencari absensi menggunakan PRIMARY KEY yang benar yaitu 'user_id'
+
+        // Cari attendance berdasarkan class_session dan student.user_id
         $attendance = Attendance::where('class_session_id', $classSession->id)
-                                ->where('student_id', $student->user_id) // DIUBAH DARI $student->id
+                                ->where('student_id', $student->user_id)
                                 ->first();
 
         $action = '';
-        $note = null;
 
         if ($attendance) {
-            // Logika untuk scan keluar (check-out)
+            // Check-out
             if ($attendance->check_out_time !== null) {
-                return response()->json(['error' => $student->user->full_name . ' sudah melakukan scan masuk dan keluar.'], 409);
+                return response()->json(['error' => optional($student->user)->full_name . ' sudah melakukan scan masuk dan keluar.'], 409);
             }
             $attendance->check_out_time = now()->format('H:i:s');
             $attendance->save();
             $action = 'scan_out';
         } else {
-            // Logika untuk scan masuk (check-in)
-            $timezone = 'Asia/Makassar'; 
+            // Check-in
+            $timezone = 'Asia/Makassar';
             $jamMasukJadwal = Carbon::parse($timetable->start_time, $timezone);
             $jamScan = Carbon::now($timezone);
-            
-            $selisihMenit = abs($jamScan->diffInMinutes($jamMasukJadwal));
+
+            $selisihMenit = $jamScan->diffInMinutes($jamMasukJadwal);
             $isAfter = $jamScan->isAfter($jamMasukJadwal);
 
             $status = 'H';
             $note = null;
-
             if ($isAfter && $selisihMenit > 15) {
-                $note = 'Terlambat';
                 $status = 'T';
+                $note = 'Terlambat';
             }
 
-            // --- PERBAIKAN KUNCI #2 ---
-            // Membuat absensi dengan PRIMARY KEY siswa yang benar yaitu 'user_id'
             $attendance = Attendance::create([
                 'class_session_id' => $classSession->id,
-                'student_id' => $student->user_id, // DIUBAH DARI $student->id
+                'student_id' => $student->user_id,
                 'status' => $status,
                 'check_in_time' => $jamScan->format('H:i:s'),
                 'notes' => $note,
@@ -144,7 +124,7 @@ class AbsensiController extends Controller
             $action = 'scan_in';
         }
 
-        $dataUntukTabel = [
+        $response = [
             'action' => $action,
             'nisn' => $student->nis,
             'nama' => optional($student->user)->full_name ?? 'Siswa Tidak Ditemukan',
@@ -154,9 +134,41 @@ class AbsensiController extends Controller
             'status' => $attendance->status,
         ];
 
-        return response()->json($dataUntukTabel);
+        return response()->json($response);
     }
 
+    // Mengembalikan hasil pindaian untuk ditampilkan guru (format yang mudah dirender)
+    public function getScanResults($timetable_id)
+    {
+        $classSession = ClassSession::where('timetable_id', $timetable_id)
+                                    ->where('date', today()->toDateString())
+                                    ->first();
+
+        if (!$classSession) {
+            return response()->json([]);
+        }
+
+        $attendances = Attendance::with(['student.user'])
+                        ->where('class_session_id', $classSession->id)
+                        ->orderBy('id')
+                        ->get();
+
+        $rows = $attendances->map(function ($a, $i) {
+            return [
+                'no' => $i + 1,
+                'student_name' => optional($a->student->user)->full_name ?? '-',
+                'student_nisn' => optional($a->student)->nis ?? '-',
+                'check_in_time' => $a->check_in_time,
+                'check_out_time' => $a->check_out_time,
+                'note' => $a->notes,
+                'status' => $a->status,
+            ];
+        })->values();
+
+        return response()->json($rows);
+    }
+
+    // Menampilkan halaman status absensi (existing)
     public function showStatus(Request $request)
     {
         $subjects = Subject::orderBy('name')->get();
@@ -173,7 +185,7 @@ class AbsensiController extends Controller
                 $q->where('subject_id', $selectedSubjectId);
             });
         }
-        
+
         $attendances = $query->latest('id')->get();
 
         return view('guru.status-absensi', compact('subjects', 'attendances', 'selectedSubjectId', 'selectedDate'));

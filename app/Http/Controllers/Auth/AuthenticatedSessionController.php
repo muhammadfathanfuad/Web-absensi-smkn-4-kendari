@@ -46,7 +46,7 @@ class AuthenticatedSessionController extends Controller
         } elseif ($user->roles()->where('name', 'teacher')->exists()) {
             return redirect()->route('guru.dashboard');
         } elseif ($user->roles()->where('name', 'student')->exists()) {
-            return redirect()->route('student.dashboard');
+            return redirect()->route('murid.dashboard');
         }
 
         // Default redirect if no role found

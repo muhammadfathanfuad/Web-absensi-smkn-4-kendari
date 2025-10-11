@@ -74,4 +74,12 @@ class DashboardMuridController extends Controller
         return view('murid.pengumuman-murid');
     }
 
+    /**
+     * Menampilkan halaman scanner QR untuk murid.
+     */
+    public function qr()
+    {
+        return view('murid.qr-absensi');
+    }
+
 }
