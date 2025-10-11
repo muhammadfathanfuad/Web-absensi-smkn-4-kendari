@@ -1,7 +1,5 @@
-@extends('layouts.vertical-murid', ['subtitle' => 'Scan QR Absensi'])
-
-@section('content')
-    @include('layouts.partials.page-title', ['title' => 'Scan QR Absensi', 'subtitle' => 'Murid'])
+<?php $__env->startSection('content'); ?>
+    <?php echo $__env->make('layouts.partials.page-title', ['title' => 'Scan QR Absensi', 'subtitle' => 'Murid'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -18,10 +16,10 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
-    <script src="{{ asset('vendor/html5-qrcode.min.js') }}"></script>
+<?php $__env->startPush('scripts'); ?>
+    <script src="<?php echo e(asset('vendor/html5-qrcode.min.js')); ?>"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const scanStatus = document.getElementById('scanStatus');
@@ -42,9 +40,9 @@
 
                     scanStatus.innerText = 'Mengirim data absensi...';
 
-                    fetch("{{ route('murid.qr.submit') }}", {
+                    fetch("<?php echo e(route('murid.qr.submit')); ?>", {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' },
                         body: JSON.stringify({ timetable_id: timetableId })
                     })
                     .then(r => r.json().then(data => ({ ok: r.ok, data })))
@@ -86,7 +84,7 @@
                 try {
                     if (typeof Html5Qrcode === 'undefined') {
                         scanStatus.innerText = 'Memuat library pemindai...';
-                        await loadScriptOnce('{{ asset('vendor/html5-qrcode.min.js') }}');
+                        await loadScriptOnce('<?php echo e(asset('vendor/html5-qrcode.min.js')); ?>');
                     }
 
                     if (typeof Html5Qrcode === 'undefined') {
@@ -141,4 +139,5 @@
             initCameras();
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.vertical-murid', ['subtitle' => 'Scan QR Absensi'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/murid/qr-absensi.blade.php ENDPATH**/ ?>

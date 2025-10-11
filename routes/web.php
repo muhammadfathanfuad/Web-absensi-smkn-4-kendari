@@ -3,6 +3,7 @@
 use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\Murid\DashboardMuridController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\UserController;
@@ -17,14 +18,14 @@ require __DIR__ . '/auth.php';
 
 // Root route
 Route::get('/', function () {
-    if (Auth::check()) {
+        if (Auth::check()) {
         $user = Auth::user();
         if ($user->roles()->where('name', 'admin')->exists()) {
             return redirect()->route('admin.dashboard');
         } elseif ($user->roles()->where('name', 'teacher')->exists()) {
             return redirect()->route('guru.dashboard');
         } elseif ($user->roles()->where('name', 'student')->exists()) {
-            return redirect()->route('student.dashboard');
+            return redirect()->route('murid.dashboard');
         }
     }
     return view('auth.signin');
@@ -32,14 +33,14 @@ Route::get('/', function () {
 
 // Public routes
 Route::get('/auth/signin', function () {
-    if (Auth::check()) {
+        if (Auth::check()) {
         $user = Auth::user();
         if ($user->roles()->where('name', 'admin')->exists()) {
             return redirect()->route('admin.dashboard');
         } elseif ($user->roles()->where('name', 'teacher')->exists()) {
             return redirect()->route('guru.dashboard');
         } elseif ($user->roles()->where('name', 'student')->exists()) {
-            return redirect()->route('student.dashboard');
+            return redirect()->route('murid.dashboard');
         }
     }
     return redirect('/login');
@@ -104,10 +105,14 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
 });
 
 // Student routes
-Route::middleware(['auth', 'role:student'])->group(function () {
-    Route::get('/student/dashboard', function () {
-        return view('student.dashboard');
-    })->name('student.dashboard');
+Route::middleware(['auth', 'role:student'])->prefix('murid')->name('murid.')->group(function () {
+    Route::get('/dashboard', [DashboardMuridController::class, 'index'])->name('dashboard');
+    Route::get('/jadwal', [DashboardMuridController::class, 'jadwal'])->name('jadwal');
+    Route::get('/absensi', [DashboardMuridController::class, 'absensi'])->name('absensi');
+    Route::get('/pengumuman', [DashboardMuridController::class, 'pengumuman'])->name('pengumuman');
+    // QR / Scan untuk murid
+    Route::get('/qr', [DashboardMuridController::class, 'qr'])->name('qr');
+    Route::post('/qr/submit', [\App\Http\Controllers\Murid\ScanController::class, 'submit'])->name('qr.submit');
 });
 
 // Catch-all routes
