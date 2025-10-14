@@ -47,10 +47,7 @@ class DashboardController extends Controller
             ['nama' => 'Siti Aminah (Contoh)', 'kelas' => 'XI TKJ 2', 'keterangan' => 'Sakit'],
         ];
 
-        $statistikKehadiranData = [
-            'series' => [150, 2, 1, 0],
-            'labels' => ['Hadir', 'Sakit', 'Izin', 'Alpha']
-        ];
+        // statistikKehadiranData removed — not needed on dashboard per request
 
         // --- PERUBAHAN DI BAGIAN INI ---
 
@@ -88,47 +85,7 @@ class DashboardController extends Controller
 
         // --- AKHIR PERUBAHAN ---
 
-        $startOfMonth = $today->copy()->startOfMonth();
-        $endOfMonth = $today->copy()->endOfMonth();
-        $schedules = Timetable::where('teacher_id', $teacherId)->get();
-        $weeklyHours = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
-
-        for ($date = $startOfMonth; $date->lte($endOfMonth); $date->addDay()) {
-            $currentDayOfWeek = $date->dayOfWeekIso;
-            $weekOfMonth = $date->weekOfMonth;
-
-            foreach ($schedules as $schedule) {
-                if ($schedule->day_of_week == $currentDayOfWeek) {
-                    $duration = Carbon::parse($schedule->start_time)->diffInMinutes(Carbon::parse($schedule->end_time));
-                    if (isset($weeklyHours[$weekOfMonth])) {
-                        // Simpan dalam menit agar lebih akurat
-                        $weeklyHours[$weekOfMonth] += $duration;
-                    }
-                }
-            }
-        }
-        
-        $riwayatMengajarData = [
-            'categories' => [],
-            'series' => [['name' => 'Total Jam Mengajar', 'data' => []]]
-        ];
-        
-        foreach($weeklyHours as $weekNum => $totalMinutesInWeek) {
-            if ($totalMinutesInWeek > 0) {
-                $riwayatMengajarData['categories'][] = "Minggu $weekNum";
-                // Ubah kembali ke jam untuk ditampilkan di chart
-                $riwayatMengajarData['series'][0]['data'][] = round($totalMinutesInWeek / 60, 1);
-            }
-        }
-        
-        $pengumuman = [
-            ['judul' => 'Rapat Dewan Guru', 'tanggal' => '10 Oktober 2025 - 08:00', 'icon' => 'solar:megaphone-bold'],
-            ['judul' => 'Kegiatan Class Meeting', 'tanggal' => '15 Desember 2025', 'icon' => 'solar:calendar-bold'],
-        ];
-
-        return view('guru.dashboard', compact(
-            'jadwalMengajar', 'siswaIzin', 'jamMengajarData', 
-            'riwayatMengajarData', 'statistikKehadiranData', 'pengumuman'
-        ));
+        // Removed Riwayat Mengajar, Statistik Kehadiran, and Pengumuman data per request
+        return view('guru.dashboard', compact('jadwalMengajar', 'siswaIzin', 'jamMengajarData'));
     }
 }

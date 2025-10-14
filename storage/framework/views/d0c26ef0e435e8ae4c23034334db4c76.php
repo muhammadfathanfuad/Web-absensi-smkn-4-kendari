@@ -1,14 +1,14 @@
-    @extends('layouts.vertical-murid')
+    
 
-    @section('title', 'Jadwal Pelajaran')
+    <?php $__env->startSection('title', 'Jadwal Pelajaran'); ?>
 
-    {{-- 1. Mengirim CSS Flatpickr dari CDN --}}
-    @section('css')
+    
+    <?php $__env->startSection('css'); ?>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    @endsection
+    <?php $__env->stopSection(); ?>
 
-    @section('content')
-        {{-- Page Title --}}
+    <?php $__env->startSection('content'); ?>
+        
         <div class="row calendar-adjust">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -23,9 +23,9 @@
         </div>
 
         <div class="row">
-            {{-- Kolom Kiri: Jadwal --}}
+            
             <div class="col-lg-8">
-                {{-- Jadwal Pembelajaran --}}
+                
                 <div class="card">
                     <div class="card-body">
                         <h4 class="card-title mb-4">Jadwal Pelajaran Hari Ini</h4>
@@ -41,40 +41,40 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse ($timetables ?? collect() as $i => $tt)
+                                    <?php $__empty_1 = true; $__currentLoopData = $timetables ?? collect(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $tt): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                         <tr>
-                                            <th scope="row">{{ $i + 1 }}</th>
-                                            <td>{{ optional($tt->subject)->name ?? '—' }}</td>
-                                            <td>{{ optional($tt->classroom)->name ?? optional($tt->classroom)->class_code ?? '—' }}</td>
-                                            <td>{{ optional(optional($tt->teacher)->user)->name ?? '—' }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($tt->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($tt->end_time)->format('H:i') }}</td>
+                                            <th scope="row"><?php echo e($i + 1); ?></th>
+                                            <td><?php echo e(optional($tt->subject)->name ?? '—'); ?></td>
+                                            <td><?php echo e(optional($tt->classroom)->name ?? optional($tt->classroom)->class_code ?? '—'); ?></td>
+                                            <td><?php echo e(optional(optional($tt->teacher)->user)->name ?? '—'); ?></td>
+                                            <td><?php echo e(\Carbon\Carbon::parse($tt->start_time)->format('H:i')); ?> - <?php echo e(\Carbon\Carbon::parse($tt->end_time)->format('H:i')); ?></td>
                                         </tr>
-                                    @empty
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                         <tr>
                                             <td colspan="5" class="text-center">Tidak ada jadwal untuk hari ini.</td>
                                         </tr>
-                                    @endforelse
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            {{-- Kolom Kanan: Kalender --}}
+            
             <div class="col-lg-4">
                 <div class="card calender-card">
                     <div class="card-body">
                         <h4 class="card-title mb-4">Kalender</h4>
-                        {{-- Elemen HTML untuk kalender --}}
+                        
                         <div class="flatpickr-calendar-inline"></div>
                     </div>
                 </div>
             </div>
         </div>
-    @endsection
+    <?php $__env->stopSection(); ?>
 
-    {{-- 2. Mengirim JS Flatpickr dari CDN dan skrip inisialisasi --}}
-    @section('scripts')
+    
+    <?php $__env->startSection('scripts'); ?>
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <script>
             // Inisialisasi Flatpickr
@@ -82,4 +82,5 @@
                 inline: true,
             });
         </script>
-    @endsection
+    <?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.vertical-murid', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\PresenZ\Web-absensi-smkn-4-kendari\resources\views/murid/jadwal-pelajaran.blade.php ENDPATH**/ ?>

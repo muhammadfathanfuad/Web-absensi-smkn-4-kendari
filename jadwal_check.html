@@ -1,0 +1,190 @@
+
+<div class="account-pages py-5">
+    <div class="container">
+        <div class="row ">
+            <div class="col-md-6 col-lg-5">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <div class="text-center">
+                            <div class="mx-auto mb-4 text-center auth-logo">
+                                <a href="http://127.0.0.1:8000/index" class="logo-dark">
+                                    <img src="/images/logo-dark.png" height="32" alt="logo dark">
+                                </a>
+
+                                <a href="http://127.0.0.1:8000/index" class="logo-light">
+                                    <img src="/images/logo-light.png" height="28" alt="logo light">
+                                </a>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-2">Selamat Datang Kembali !</h3>
+                                <p class="text-muted">Masuk ke akun anda</p>
+                        </div>
+                        <form method="POST" action="http://127.0.0.1:8000/login" class="mt-4">
+
+                            <input type="hidden" name="_token" value="VAhWyCndHXq6Sp84ifFAidSs1KE7wf2LhWPvxCNO" autocomplete="off">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Terdaftar</label>
+                                <input type="email" class="form-control " id="email" name="email" value=""
+                                    placeholder="Masukkan Email Anda">
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label for="password" class="form-label">Password</label>
+                                </div>
+                                <div class="position-relative">
+                                    <input type="password" class="form-control pe-5" id="password" name="password"
+                                        placeholder="Masukkan Password anda">
+                                    <button type="button" class="btn position-absolute end-0 top-50 translate-middle-y me-2" id="toggle-password">
+                                        <i class="bx bx-show"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="remember-me" name="remember">
+                                <label class="form-check-label" for="remember-me">Ingat saya</label>
+                            </div>
+                            <div class="d-grid">
+                                <button class="btn btn-dark btn-lg fw-medium" type="submit">Masuk</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Notifikasi -->
+<div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notifikasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="notificationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!DOCTYPE html>
+<html >
+
+<head>
+    <meta charset="utf-8" />
+<title>Web absensi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Web absensi: A modern web application for attendance management." />
+<meta name="author" content="Tim Web KKN" />
+<meta name="keywords" content="Web absensi, attendance management, modern UI" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#ffffff">
+<meta name="csrf-token" content="VAhWyCndHXq6Sp84ifFAidSs1KE7wf2LhWPvxCNO">
+
+
+<!-- App favicon -->
+<link rel="shortcut icon" href="/images/favicon.png">    <meta name="csrf-token" content="VAhWyCndHXq6Sp84ifFAidSs1KE7wf2LhWPvxCNO">
+
+    
+    <!-- Google Font Family link -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+
+
+<script type="module" src="https://Web-absensi-smkn-4-kendari.test:5173/@vite/client"></script><link rel="stylesheet" href="https://Web-absensi-smkn-4-kendari.test:5173/resources/scss/icons.scss" /><link rel="stylesheet" href="https://Web-absensi-smkn-4-kendari.test:5173/resources/scss/style.scss" />
+<script type="module" src="https://Web-absensi-smkn-4-kendari.test:5173/@vite/client"></script><script type="module" src="https://Web-absensi-smkn-4-kendari.test:5173/resources/js/config.js"></script>    
+    
+    </head>
+
+<body class="authentication-bg" style="background-image: url('/images/bg-signin.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+>
+
+    
+    <script type="module" src="https://Web-absensi-smkn-4-kendari.test:5173/@vite/client"></script><script type="module" src="https://Web-absensi-smkn-4-kendari.test:5173/resources/js/app.js"></script>
+
+<script>
+
+document.getElementById('toggle-password').addEventListener('click', function() {
+
+    const passwordInput = document.getElementById('password');
+
+    const icon = this.querySelector('i');
+
+    if (passwordInput.type === 'password') {
+
+        passwordInput.type = 'text';
+
+        icon.className = 'bx bx-hide';
+
+    } else {
+
+        passwordInput.type = 'password';
+
+        icon.className = 'bx bx-show';
+
+    }
+
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+
+    function showNotification(message, isSuccess = true) {
+        document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
+        document.getElementById('notificationMessage').innerText = message;
+        notificationModal.show();
+    }
+
+    });
+
+</script>
+
+
+    
+<script>
+
+document.getElementById('toggle-password').addEventListener('click', function() {
+
+    const passwordInput = document.getElementById('password');
+
+    const icon = this.querySelector('i');
+
+    if (passwordInput.type === 'password') {
+
+        passwordInput.type = 'text';
+
+        icon.className = 'bx bx-hide';
+
+    } else {
+
+        passwordInput.type = 'password';
+
+        icon.className = 'bx bx-show';
+
+    }
+
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+
+    function showNotification(message, isSuccess = true) {
+        document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
+        document.getElementById('notificationMessage').innerText = message;
+        notificationModal.show();
+    }
+
+    });
+
+</script>
+
+
+</body>
+</html>

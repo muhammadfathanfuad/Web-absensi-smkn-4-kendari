@@ -88,8 +88,8 @@
                                 const row = `<tr>
                                     <td>${r.no}</td>
                                     <td>${r.student_name}</td>
-                                    <td>${r.student_nisn}</td>
                                     <td>${r.check_in_time}</td>
+                                    <td>${r.check_out_time}</td>
                                     <td>${r.status === 'T' ? '<span class="badge bg-warning">Terlambat</span>' : '<span class="badge bg-success">Hadir</span>'}</td>
                                 </tr>`;
                                 scanResultsBody.innerHTML += row;
