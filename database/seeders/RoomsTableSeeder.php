@@ -10,34 +10,24 @@ class RoomsTableSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = Carbon::now();
+        $rooms = [
+            'Ruang 101',
+            'Ruang 102',
+            'Ruang 103',
+            'Ruang 104',
+            'Ruang 105',
+            'Ruang 106',
+            'Ruang 107',
+        ];
 
-        DB::table('rooms')->insert([
-            [
-                'name' => 'Ruang 101',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'name' => 'Ruang 102',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'name' => 'Ruang 103',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'name' => 'Ruang 104',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'name' => 'Ruang 105',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-        ]);
+        foreach ($rooms as $room) {
+            DB::table('rooms')->updateOrInsert(
+                ['name' => $room],
+                [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }

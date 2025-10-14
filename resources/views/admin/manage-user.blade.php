@@ -93,10 +93,17 @@
                                     <p class="text-muted mb-0">
                                         Data Semua Murid Sekolah
                                     </p>
-                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                        data-bs-target="#addMuridModal">
-                                        Tambah Murid
-                                    </button>
+                                    <div id="single-actions-murid">
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#addMuridModal">
+                                            Tambah Murid
+                                        </button>
+                                    </div>
+                                    <div id="bulk-actions-murid" style="display: none;">
+                                        <button type="button" class="btn btn-danger" id="bulkDeleteMuridBtn">
+                                            Hapus
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -161,7 +168,7 @@
                         <div class="mb-3">
                             <label for="uploadGuruFile" class="form-label">Pilih File Excel atau CSV</label>
                             <input type="file" class="form-control" id="uploadGuruFile" name="file" accept=".xlsx,.xls,.csv" required>
-                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: nama_guru, email, kode_guru, nip, no_hp, department.</small>
+                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: Kode Guru, Nama Guru, NIP, Email, No Hp, Department.</small>
                         </div>
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
@@ -405,10 +412,7 @@
                             <label for="addUserPhone" class="form-label">Nomor Hp</label>
                             <input type="text" class="form-control" id="addUserPhone" name="phone">
                         </div>
-                        <div class="mb-3">
-                            <label for="addUserUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="addUserUsername" name="username">
-                        </div>
+
                         <div class="mb-3">
                             <label for="addUserPassword" class="form-label">Password</label>
                             <input type="password" class="form-control" id="addUserPassword" name="password">
@@ -445,10 +449,7 @@
                             <label for="editUserPhone" class="form-label">Nomor Hp</label>
                             <input type="text" class="form-control" id="editUserPhone" name="phone">
                         </div>
-                        <div class="mb-3">
-                            <label for="editUserUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="editUserUsername" name="username">
-                        </div>
+
                         <div class="mb-3">
                             <label for="editUserPassword" class="form-label">Password (Opsional)</label>
                             <input type="password" class="form-control" id="editUserPassword" name="password">
@@ -533,17 +534,19 @@
 @endsection
 
 @section('scripts')
+    <script>
+        window.baseUrl = "{{ request()->getSchemeAndHttpHost() . request()->getBasePath() }}";
+    </script>
     @vite(['resources/js/admin/tabel.js'])
     @vite(['node_modules/select2/dist/js/select2.min.js'])
 
     <script>
         // Functions to show edit modals
-        function showEditUserModal(id, name, email, phone, username, status) {
+        function showEditUserModal(id, name, email, phone, status) {
             document.getElementById('editUserId').value = id;
             document.getElementById('editUserName').value = name;
             document.getElementById('editUserEmail').value = email;
             document.getElementById('editUserPhone').value = phone;
-            document.getElementById('editUserUsername').value = username;
             document.getElementById('editUserStatus').value = status;
             const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
             modal.show();

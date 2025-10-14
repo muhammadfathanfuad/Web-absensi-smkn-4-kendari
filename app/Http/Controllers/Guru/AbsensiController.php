@@ -11,27 +11,31 @@ use App\Models\Classroom;
 use App\Models\ClassSession;
 use App\Models\Attendance;
 use App\Models\Subject;
+use Illuminate\Support\Facades\Auth;
+use App\Services\TimeOverrideService;
 
 class AbsensiController extends Controller
 {
     public function showScanner()
     {
-        $teacherId = 2; // Ganti dengan auth()->user()->id;
-        $dayOfWeek = today()->dayOfWeekIso;
+        $teacherId = Auth::user()->teacher->user_id;
+        $dayOfWeek = TimeOverrideService::dayOfWeek();
 
-        $jadwalHariIni = Timetable::with(['subject', 'classroom'])
-            ->where('teacher_id', $teacherId)
+        $jadwalHariIni = Timetable::with(['classSubject.subject', 'classSubject.class'])
+            ->whereHas('classSubject', function($query) use ($teacherId) {
+                $query->where('teacher_id', $teacherId);
+            })
             ->where('day_of_week', $dayOfWeek)
             ->orderBy('start_time', 'asc')
             ->get();
-        
+
         return view('guru.scan-qr', compact('jadwalHariIni'));
     }
 
     public function getScanResults($timetable_id)
     {
         $classSession = ClassSession::where('timetable_id', $timetable_id)
-                                      ->where('date', today()->toDateString())
+                                      ->where('date', TimeOverrideService::today())
                                       ->first();
 
         if (!$classSession) {
@@ -132,13 +136,13 @@ class AbsensiController extends Controller
         $selectedSubjectId = $request->input('subject_id');
         $selectedDate = $request->input('date', today()->toDateString());
 
-        $query = Attendance::with(['student.user', 'classSession.timetable.subject'])
+        $query = Attendance::with(['student.user', 'classSession.timetable.classSubject.subject'])
             ->whereHas('classSession', function ($q) use ($selectedDate) {
                 $q->where('date', $selectedDate);
             });
 
         if ($selectedSubjectId) {
-            $query->whereHas('classSession.timetable', function ($q) use ($selectedSubjectId) {
+            $query->whereHas('classSession.timetable.classSubject', function ($q) use ($selectedSubjectId) {
                 $q->where('subject_id', $selectedSubjectId);
             });
         }

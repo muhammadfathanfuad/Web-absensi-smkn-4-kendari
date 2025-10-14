@@ -1,33 +1,22 @@
-# TODO List for Adding Checkbox Column and Bulk Actions to Manage User Tables
+# Plan to Handle Duplicate Data in Schedule Table
 
-## 1. Fix kode_guru in TeacherController and View
-- [ ] Change name="title" to name="kode_guru" in edit guru modal in manage-user.blade.php
+## Information Gathered
+- JadwalController.php index method fetches timetables and maps to JSON array for display.
+- Each timetable entry is shown as a separate row in the table.
+- Duplicates occur when multiple consecutive time slots for the same subject, class, teacher, day, and type.
+- Need to merge consecutive times into a single range (e.g., 08:00-08:40, 08:40-09:20, 09:20-10:00 -> 08:00-10:00).
 
-## 2. Add Bulk Methods to Controllers
-- [x] Add bulkDelete, bulkStatusActive, bulkStatusSuspended to TeacherController
-- [x] Add bulkDelete, bulkStatusActive, bulkStatusSuspended to StudentController
-- [x] Add bulkDelete, bulkStatusActive, bulkStatusSuspended to UserController
+## Plan
+- Modify JadwalController.php index method to group timetables by day_of_week, class_subject_id, type.
+- For each group, collect and sort time slots by start_time.
+- Merge consecutive time slots where end_time of one equals start_time of next.
+- Create a single entry with combined time range for each merged group.
+- Ensure the output JSON structure remains compatible with the frontend Grid.js table.
 
-## 3. Add Routes for Bulk Actions
-- [x] Add bulk routes for guru, murid, user in routes/web.php
+## Dependent Files to Edit
+- app/Http/Controllers/JadwalController.php
 
-## 4. Update View to Add Bulk Buttons
-- [ ] Add bulk buttons in guru tab card-header
-- [ ] Add bulk buttons in murid tab card-header
-- [ ] Add bulk buttons in user tab card-header
-
-## 5. Update tabel.js to Add Checkbox Column and Bulk Logic
-- [ ] Add checkbox column to guru table
-- [ ] Add checkbox column to murid table
-- [ ] Add checkbox column to user table
-- [ ] Add event listeners for bulk buttons
-- [ ] Add updateBulkButtons method
-- [ ] Add change event listener for checkboxes
-
-## 6. Test the Implementation
-- [ ] Test bulk delete for guru
-- [ ] Test bulk status change for guru
-- [ ] Test bulk delete for murid
-- [ ] Test bulk status change for murid
-- [ ] Test bulk delete for user
-- [ ] Test bulk status change for user
+## Followup Steps
+- [x] Test the modified index method to ensure correct merging.
+- [x] Verify the table displays merged entries correctly.
+- [x] Check for any edge cases (non-consecutive times, different types, etc.).

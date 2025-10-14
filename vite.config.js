@@ -31,6 +31,7 @@ export default defineConfig({
                 "resources/js/pages/maps-iraq.js",
                 "resources/js/pages/maps-canada.js",
                 "resources/js/pages/chart.js",
+                "resources/js/admin/tabel-jadwal-xi.js",
             ],
             refresh: true,
         }),

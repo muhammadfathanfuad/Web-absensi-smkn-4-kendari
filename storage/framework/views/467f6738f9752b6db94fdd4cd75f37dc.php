@@ -12,7 +12,7 @@
                         <select class="form-select" id="timetable_id" name="timetable_id">
                             <option value="" selected disabled>-- Pilih Mapel --</option>
                             <?php $__empty_1 = true; $__currentLoopData = $jadwalHariIni; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                <option value="<?php echo e($jadwal->id); ?>"><?php echo e($jadwal->subject->name); ?> - <?php echo e($jadwal->classroom->name); ?> (<?php echo e(\Carbon\Carbon::parse($jadwal->start_time)->format('H:i')); ?>)</option>
+                                <option value="<?php echo e($jadwal->id); ?>"><?php echo e($jadwal->classSubject->subject->name); ?> - <?php echo e($jadwal->classSubject->class->name); ?> (<?php echo e(\Carbon\Carbon::parse($jadwal->start_time)->format('H:i')); ?>)</option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <option disabled>Tidak ada jadwal mengajar hari ini.</option>
                             <?php endif; ?>

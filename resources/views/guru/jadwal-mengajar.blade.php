@@ -23,10 +23,9 @@
                         @forelse ($jadwalHariIni as $jadwal)
                             <tr>
                                 <td>{{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->end_time)->format('H:i') }}</td>
-                                <td>{{ $jadwal->subject->name ?? 'N/A' }}</td>
-                                <td>{{ $jadwal->classroom->name ?? 'N/A' }}</td>
-                                {{-- PERUBAHAN DI SINI: panggil room melalui classroom --}}
-                                <td>{{ $jadwal->classroom->room->name ?? '-' }}</td>
+                                <td>{{ $jadwal->classSubject->subject->name ?? 'N/A' }}</td>
+                                <td>{{ $jadwal->classSubject->class->name ?? 'N/A' }}</td>
+                                <td>{{ $jadwal->classSubject->class->room->name ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -63,10 +62,9 @@
                                     @foreach ($semuaJadwal[$dayNumber] as $jadwal)
                                         <tr>
                                             <td>{{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->end_time)->format('H:i') }}</td>
-                                            <td>{{ $jadwal->subject->name ?? 'N/A' }}</td>
-                                            <td>{{ $jadwal->classroom->name ?? 'N/A' }}</td>
-                                            {{-- PERUBAHAN DI SINI JUGA --}}
-                                            <td>{{ $jadwal->classroom->room->name ?? '-' }}</td>
+                                            <td>{{ $jadwal->classSubject->subject->name ?? 'N/A' }}</td>
+                                            <td>{{ $jadwal->classSubject->class->name ?? 'N/A' }}</td>
+                                            <td>{{ $jadwal->classSubject->class->room->name ?? '-' }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

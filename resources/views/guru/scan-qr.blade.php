@@ -14,7 +14,7 @@
                         <select class="form-select" id="timetable_id" name="timetable_id">
                             <option value="" selected disabled>-- Pilih Mapel --</option>
                             @forelse ($jadwalHariIni as $jadwal)
-                                <option value="{{ $jadwal->id }}">{{ $jadwal->subject->name }} - {{ $jadwal->classroom->name }} ({{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }})</option>
+                                <option value="{{ $jadwal->id }}">{{ $jadwal->classSubject->subject->name }} - {{ $jadwal->classSubject->class->name }} ({{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }})</option>
                             @empty
                                 <option disabled>Tidak ada jadwal mengajar hari ini.</option>
                             @endforelse

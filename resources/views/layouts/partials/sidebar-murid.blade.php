@@ -19,31 +19,31 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('dashboard-murid') }}">
+                    <a class="nav-link" href="{{ route('admin.dashboard') }}">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>
                          <span class="nav-text"> Dashboard </span>
                     </a>
-                    <a class="nav-link" href="{{ route('tampilan-qr') }}">
+                    <a class="nav-link" href="">
                          <span class="nav-icon">
                               <i class='bx  bx-qr-scan'  ></i> 
                          </span>
                          <span class="nav-text"> QR Code </span>
                     </a>
-                    <a class="nav-link" href="{{ route('jadwal-pelajaran') }}">
+                    <a class="nav-link" href="">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>
                          <span class="nav-text"> Jadwal Pelajaran </span>
                     </a>
-                    <a class="nav-link" href="{{ route('riwayat-absensi') }}">
+                    <a class="nav-link" href="">
                          <span class="nav-icon">
                               <i class='bx  bx-history'  ></i>    
                          </span>
                          <span class="nav-text"> Riwayat Absensi </span>
                     </a>
-                    <a class="nav-link" href="{{ route('pengumuman-murid') }}">
+                    <a class="nav-link" href="">
                          <span class="nav-icon">
                               <i class='bx  bx-bell'  ></i>       
                          </span>

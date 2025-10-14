@@ -9,7 +9,7 @@ use App\Imports\StudentsImport;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $students = Student::with('user', 'classroom')->get();
         return response()->json($students);
@@ -122,43 +122,5 @@ class StudentController extends Controller
         }
     }
 
-    // Bulk activate students
-    public function bulkStatusActive(Request $request)
-    {
-        try {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'integer|exists:students,user_id',
-            ]);
 
-            $students = Student::whereIn('user_id', $request->ids)->with('user')->get();
-            foreach ($students as $student) {
-                $student->user->update(['status' => 'active']);
-            }
-
-            return response()->json(['success' => true, 'message' => 'Status murid berhasil diubah ke aktif!']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
-        }
-    }
-
-    // Bulk suspend students
-    public function bulkStatusSuspended(Request $request)
-    {
-        try {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'integer|exists:students,user_id',
-            ]);
-
-            $students = Student::whereIn('user_id', $request->ids)->with('user')->get();
-            foreach ($students as $student) {
-                $student->user->update(['status' => 'suspended']);
-            }
-
-            return response()->json(['success' => true, 'message' => 'Status murid berhasil diubah ke suspended!']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
-        }
-    }
 }

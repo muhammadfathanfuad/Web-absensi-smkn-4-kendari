@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             StudentsTableSeeder::class,
 
             // 6. Data relasi jadwal
+            WeeksTableSeeder::class,
             ClassSubjectsTableSeeder::class,
             TimetablesTableSeeder::class,
             ClassSessionsTableSeeder::class,

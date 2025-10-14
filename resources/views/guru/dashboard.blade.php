@@ -4,6 +4,43 @@
 
     {{-- Mengubah judul halaman --}}
     @include('layouts.partials.page-title', ['title' => 'Dashboard', 'subtitle' => 'Guru'])
+    
+    {{-- Time Override Indicator --}}
+    @if(session('time_override_active'))
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bx bx-time me-2"></i>
+                    <strong>Time Override Active:</strong> 
+                    Waktu saat ini: {{ session('time_override_datetime') }} | 
+                    Waktu real: {{ now()->toDateTimeString() }}
+                </div>
+                <div>
+                    <a href="{{ route('time-override.index') }}" class="btn btn-warning btn-sm me-2">
+                        <i class="bx bx-cog me-1"></i> Time Override
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bx bx-info-circle me-2"></i>
+                    <strong>Real Time Mode:</strong> Ingin test dengan waktu yang berbeda?
+                </div>
+                <div>
+                    <a href="{{ route('time-override.index') }}" class="btn btn-warning btn-sm">
+                        <i class="bx bx-time me-1"></i> Time Override
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <div class="row">
         {{-- Jadwal Mengajar Hari Ini --}}

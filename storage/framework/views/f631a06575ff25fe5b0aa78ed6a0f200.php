@@ -2,6 +2,44 @@
 
     
     <?php echo $__env->make('layouts.partials.page-title', ['title' => 'Dashboard', 'subtitle' => 'Guru'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    
+    
+    <?php if(session('time_override_active')): ?>
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bx bx-time me-2"></i>
+                    <strong>Time Override Active:</strong> 
+                    Waktu saat ini: <?php echo e(session('time_override_datetime')); ?> | 
+                    Waktu real: <?php echo e(now()->toDateTimeString()); ?>
+
+                </div>
+                <div>
+                    <a href="<?php echo e(route('time-override.index')); ?>" class="btn btn-warning btn-sm me-2">
+                        <i class="bx bx-cog me-1"></i> Time Override
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bx bx-info-circle me-2"></i>
+                    <strong>Real Time Mode:</strong> Ingin test dengan waktu yang berbeda?
+                </div>
+                <div>
+                    <a href="<?php echo e(route('time-override.index')); ?>" class="btn btn-warning btn-sm">
+                        <i class="bx bx-time me-1"></i> Time Override
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="row">
         

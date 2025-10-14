@@ -21,10 +21,9 @@
                         <?php $__empty_1 = true; $__currentLoopData = $jadwalHariIni; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td><?php echo e(\Carbon\Carbon::parse($jadwal->start_time)->format('H:i')); ?> - <?php echo e(\Carbon\Carbon::parse($jadwal->end_time)->format('H:i')); ?></td>
-                                <td><?php echo e($jadwal->subject->name ?? 'N/A'); ?></td>
-                                <td><?php echo e($jadwal->classroom->name ?? 'N/A'); ?></td>
-                                
-                                <td><?php echo e($jadwal->classroom->room->name ?? '-'); ?></td>
+                                <td><?php echo e($jadwal->classSubject->subject->name ?? 'N/A'); ?></td>
+                                <td><?php echo e($jadwal->classSubject->class->name ?? 'N/A'); ?></td>
+                                <td><?php echo e($jadwal->classSubject->class->room->name ?? '-'); ?></td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
@@ -61,10 +60,9 @@
                                     <?php $__currentLoopData = $semuaJadwal[$dayNumber]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
                                             <td><?php echo e(\Carbon\Carbon::parse($jadwal->start_time)->format('H:i')); ?> - <?php echo e(\Carbon\Carbon::parse($jadwal->end_time)->format('H:i')); ?></td>
-                                            <td><?php echo e($jadwal->subject->name ?? 'N/A'); ?></td>
-                                            <td><?php echo e($jadwal->classroom->name ?? 'N/A'); ?></td>
-                                            
-                                            <td><?php echo e($jadwal->classroom->room->name ?? '-'); ?></td>
+                                            <td><?php echo e($jadwal->classSubject->subject->name ?? 'N/A'); ?></td>
+                                            <td><?php echo e($jadwal->classSubject->class->name ?? 'N/A'); ?></td>
+                                            <td><?php echo e($jadwal->classSubject->class->room->name ?? '-'); ?></td>
                                         </tr>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>

@@ -8,17 +8,20 @@ use Carbon\Carbon;
 use App\Models\Timetable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Services\TimeOverrideService;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $teacherId = Auth::user()->id;
-        $today = Carbon::now();
+        $teacherId = Auth::user()->teacher->user_id;
+        $today = TimeOverrideService::now();
         $dayOfWeek = $today->dayOfWeekIso;
 
-        $jadwalQuery = Timetable::with(['classroom', 'subject'])
-            ->where('teacher_id', $teacherId)
+        $jadwalQuery = Timetable::with(['classSubject.class', 'classSubject.subject'])
+            ->whereHas('classSubject', function($query) use ($teacherId) {
+                $query->where('teacher_id', $teacherId);
+            })
             ->where('day_of_week', $dayOfWeek)
             ->orderBy('start_time', 'asc')
             ->get();
@@ -36,8 +39,8 @@ class DashboardController extends Controller
 
             return [
                 'jam' => $startTime->format('H:i') . ' - ' . $endTime->format('H:i'),
-                'mapel' => $item->subject->name ?? 'N/A',
-                'kelas' => $item->classroom->name ?? 'N/A',
+                'mapel' => $item->classSubject->subject->name ?? 'N/A',
+                'kelas' => $item->classSubject->class->name ?? 'N/A',
                 'status' => $status
             ];
         });
@@ -90,7 +93,9 @@ class DashboardController extends Controller
 
         $startOfMonth = $today->copy()->startOfMonth();
         $endOfMonth = $today->copy()->endOfMonth();
-        $schedules = Timetable::where('teacher_id', $teacherId)->get();
+        $schedules = Timetable::whereHas('classSubject', function($query) use ($teacherId) {
+            $query->where('teacher_id', $teacherId);
+        })->get();
         $weeklyHours = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
 
         for ($date = $startOfMonth; $date->lte($endOfMonth); $date->addDay()) {

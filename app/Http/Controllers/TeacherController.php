@@ -9,7 +9,7 @@ use App\Imports\TeachersImport;
 
 class TeacherController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $teachers = Teacher::with('user')->get();
         return response()->json($teachers);
@@ -113,43 +113,5 @@ class TeacherController extends Controller
         }
     }
 
-    // Bulk activate teachers
-    public function bulkStatusActive(Request $request)
-    {
-        try {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'integer|exists:teachers,user_id',
-            ]);
 
-            $teachers = Teacher::whereIn('user_id', $request->ids)->with('user')->get();
-            foreach ($teachers as $teacher) {
-                $teacher->user->update(['status' => 'active']);
-            }
-
-            return response()->json(['success' => true, 'message' => 'Status guru berhasil diubah ke aktif!']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
-        }
-    }
-
-    // Bulk suspend teachers
-    public function bulkStatusSuspended(Request $request)
-    {
-        try {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'integer|exists:teachers,user_id',
-            ]);
-
-            $teachers = Teacher::whereIn('user_id', $request->ids)->with('user')->get();
-            foreach ($teachers as $teacher) {
-                $teacher->user->update(['status' => 'suspended']);
-            }
-
-            return response()->json(['success' => true, 'message' => 'Status guru berhasil diubah ke suspended!']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
-        }
-    }
 }

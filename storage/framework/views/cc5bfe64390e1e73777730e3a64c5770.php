@@ -1,2 +1,0 @@
-
-<?php echo $__env->make('layouts.vertical', ['subtitle' => 'scan-qr'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\Taplox-Laravel\resources\views/jadwal-mengajar.blade.php ENDPATH**/ ?>

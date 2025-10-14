@@ -15,14 +15,16 @@ class UserController extends Controller
         return view('admin.manage-user', compact('users'));
     }
 
-    public function table()
+    public function table(Request $request)
     {
-        $users = User::with('roles')->get()->map(function ($user) {
+        $users = User::with('roles', 'teacher', 'student')->get()->map(function ($user) {
             $user->role = $user->roles->first()?->name ?? null;
             return $user;
         });
+
         return response()->json($users);
     }
+
 
     public function store(Request $request)
     {
@@ -30,7 +32,6 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'nullable|string|max:255|unique:users',
-            'username' => 'nullable|string|max:255|unique:users',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -38,7 +39,6 @@ class UserController extends Controller
             'full_name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
-            'username' => $request->username,
             'password_hash' => $request->password ? bcrypt($request->password) : bcrypt('password'),
             'status' => 'suspended',
         ]);
@@ -56,17 +56,22 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'phone' => 'nullable|string|max:255|unique:users,phone,' . $id,
-            'username' => 'nullable|string|max:255|unique:users,username,' . $id,
+            'password' => 'nullable|string|min:8',
             'status' => 'required|in:active,suspended',
         ]);
 
-        $user->update([
+        $updateData = [
             'full_name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
-            'username' => $request->username,
             'status' => $request->status,
-        ]);
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password_hash'] = bcrypt($request->password);
+        }
+
+        $user->update($updateData);
 
         return response()->json(['success' => true, 'message' => 'User berhasil diupdate!']);
     }
