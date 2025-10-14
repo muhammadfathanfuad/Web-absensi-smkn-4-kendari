@@ -1,74 +1,144 @@
-@extends('layouts.vertical-murid')
-
-@section('title', 'QR Code Absensi')
+@extends('layouts.vertical-murid', ['subtitle' => 'Scan QR Absensi'])
 
 @section('content')
-    {{-- Page Title --}}
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">QR Code Absensi</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard-murid') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">QR Code</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('layouts.partials.page-title', ['title' => 'Scan QR Absensi', 'subtitle' => 'Murid'])
 
-    {{-- QR Code Card --}}
-     <div class="row justify-content-center">
-        <div class="col-lg-6 col-md-8">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-body text-center">
-                    {{-- Menampilkan data murid secara dinamis --}}
-                    <div class="mb-4">
-                        <img src="{{ asset($murid->foto) }}" alt="Foto Murid" class="rounded-circle avatar-lg">
+                    <h5 class="card-title">Arahkan kamera ke QR Code guru</h5>
+                    <div class="mb-2">
+                        <label for="cameraSelect" class="form-label">Pilih Kamera</label>
+                        <select id="cameraSelect" class="form-select"></select>
                     </div>
-                    <h5 class="font-size-16 mb-1">{{ $murid->nama }}</h5>
-                    <p class="text-muted mb-2">NISN: {{ $murid->nisn }}</p>
-                    <p class="text-muted mb-4">Kelas: {{ $murid->kelas }}</p>
-
-                    {{-- 1. Siapkan wadah kosong untuk QR Code --}}
-                    <div id="qrcode-container" class="mb-4 d-flex justify-content-center"></div>
-
-                    <div class="alert alert-info" role="alert">
-                        <i class="mdi mdi-information-outline me-2"></i>
-                        Tunjukkan kode ini kepada guru untuk melakukan absensi.
-                    </div>
-
-                    <a href="{{ route('dashboard-murid') }}" class="btn btn-light w-100">
-                        <i class="bx bx-arrow-back me-2"></i>Kembali ke Dashboard
-                    </a>
+                    <div id="reader" style="width:100%; min-height:300px;"></div>
+                    <div id="scanStatus" class="mt-2 text-muted">Menunggu pemindaian...</div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
-@section('scripts')
-    {{-- 2. Muat library qrcode.js dari CDN --}}
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
-    <script type="text/javascript">
-        // 3. Jalankan skrip untuk membuat QR Code
-        document.addEventListener("DOMContentLoaded", function() {
-            // Ambil wadah yang sudah kita siapkan
-            var qrcodeContainer = document.getElementById('qrcode-container');
-            
-            // Ambil data unik (NISN) dari PHP yang dikirim controller
-            var dataToEncode = "{{ $muridJson }}";
+@push('scripts')
+    <script src="{{ asset('vendor/html5-qrcode.min.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const scanStatus = document.getElementById('scanStatus');
+            let last = { value: null, time: 0 };
 
-            // Buat QR Code baru
-            new QRCode(qrcodeContainer, {
-                text: dataToEncode,
-                width: 250,
-                height: 250,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            function onScanSuccess(decodedText, decodedResult) {
+                try {
+                    const payload = JSON.parse(decodedText);
+                    const timetableId = payload.timetable_id || payload.timetableId || payload.timetable;
+                    if (!timetableId) {
+                        scanStatus.innerText = 'QR tidak berisi timetable_id.';
+                        return;
+                    }
+
+                    const now = Date.now();
+                    if (last.value === timetableId && (now - last.time) < 3000) return;
+                    last = { value: timetableId, time: now };
+
+                    scanStatus.innerText = 'Mengirim data absensi...';
+
+                    fetch("{{ route('murid.qr.submit') }}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ timetable_id: timetableId })
+                    })
+                    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                    .then(({ ok, data }) => {
+                        if (!ok) throw new Error(data.error || data.message || 'Gagal');
+                        scanStatus.innerText = data.message || 'Absensi berhasil: ' + (data.status || 'H');
+                    })
+                    .catch(err => {
+                        scanStatus.innerText = err.message || 'Gagal mengirim data.';
+                    });
+
+                } catch (e) {
+                    scanStatus.innerText = 'QR tidak valid.';
+                }
+            }
+
+            const cameraSelect = document.getElementById('cameraSelect');
+            let currentScanner = null;
+            let currentCameraId = null;
+
+            function loadScriptOnce(src) {
+                return new Promise((resolve, reject) => {
+                    if (window.Html5Qrcode) return resolve();
+                    const existing = document.querySelector(`script[src="${src}"]`);
+                    if (existing) {
+                        existing.addEventListener('load', () => resolve());
+                        existing.addEventListener('error', () => reject(new Error('Failed to load ' + src)));
+                        return;
+                    }
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = () => resolve();
+                    s.onerror = () => reject(new Error('Failed to load ' + src));
+                    document.head.appendChild(s);
+                });
+            }
+
+            async function initCameras() {
+                try {
+                    if (typeof Html5Qrcode === 'undefined') {
+                        scanStatus.innerText = 'Memuat library pemindai...';
+                        await loadScriptOnce('{{ asset('vendor/html5-qrcode.min.js') }}');
+                    }
+
+                    if (typeof Html5Qrcode === 'undefined') {
+                        throw new Error('Html5Qrcode tidak terdefinisi');
+                    }
+
+                    const cameras = await Html5Qrcode.getCameras();
+                    if (!cameras || cameras.length === 0) {
+                        scanStatus.innerText = 'Tidak menemukan kamera.';
+                        return;
+                    }
+
+                    // populate select
+                    cameraSelect.innerHTML = '';
+                    cameras.forEach(cam => {
+                        const opt = document.createElement('option');
+                        opt.value = cam.id;
+                        opt.text = cam.label || cam.id;
+                        cameraSelect.appendChild(opt);
+                    });
+
+                    function startCamera(cameraId) {
+                        if (currentScanner) {
+                            currentScanner.stop().catch(()=>{}).finally(() => {
+                                currentScanner.clear();
+                                currentScanner = new Html5Qrcode('reader');
+                                currentScanner.start(cameraId, { fps: 10, qrbox: 250 }, onScanSuccess)
+                                    .catch(err => { scanStatus.innerText = 'Gagal mengakses kamera: ' + (err.message || err); console.error(err); });
+                            });
+                        } else {
+                            currentScanner = new Html5Qrcode('reader');
+                            currentScanner.start(cameraId, { fps: 10, qrbox: 250 }, onScanSuccess)
+                                .catch(err => { scanStatus.innerText = 'Gagal mengakses kamera: ' + (err.message || err); console.error(err); });
+                        }
+                        currentCameraId = cameraId;
+                    }
+
+                    // start with first
+                    startCamera(cameras[0].id);
+
+                    cameraSelect.addEventListener('change', function () {
+                        const newId = this.value;
+                        if (newId && newId !== currentCameraId) startCamera(newId);
+                    });
+
+                } catch (err) {
+                    scanStatus.innerText = 'Gagal menginisialisasi kamera: ' + (err.message || err);
+                    console.error(err);
+                }
+            }
+
+            initCameras();
         });
     </script>
-@endsection
+@endpush

@@ -4,43 +4,6 @@
 
     {{-- Mengubah judul halaman --}}
     @include('layouts.partials.page-title', ['title' => 'Dashboard', 'subtitle' => 'Guru'])
-    
-    {{-- Time Override Indicator --}}
-    @if(session('time_override_active'))
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="alert alert-warning d-flex justify-content-between align-items-center">
-                <div>
-                    <i class="bx bx-time me-2"></i>
-                    <strong>Time Override Active:</strong> 
-                    Waktu saat ini: {{ session('time_override_datetime') }} | 
-                    Waktu real: {{ now()->toDateTimeString() }}
-                </div>
-                <div>
-                    <a href="{{ route('time-override.index') }}" class="btn btn-warning btn-sm me-2">
-                        <i class="bx bx-cog me-1"></i> Time Override
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    @else
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="alert alert-info d-flex justify-content-between align-items-center">
-                <div>
-                    <i class="bx bx-info-circle me-2"></i>
-                    <strong>Real Time Mode:</strong> Ingin test dengan waktu yang berbeda?
-                </div>
-                <div>
-                    <a href="{{ route('time-override.index') }}" class="btn btn-warning btn-sm">
-                        <i class="bx bx-time me-1"></i> Time Override
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
 
     <div class="row">
         {{-- Jadwal Mengajar Hari Ini --}}
@@ -110,21 +73,6 @@
     </div>
 
     <div class="row">
-        {{-- Riwayat Mengajar Bulan Ini --}}
-        <div class="col-xl-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Riwayat Mengajar Bulan Ini</h4>
-                </div>
-                <div class="card-body">
-                    {{-- ID ini untuk inisialisasi chart dari JS --}}
-                    <div id="riwayatMengajarChart" class="apex-charts" dir="ltr" style="height: 300px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
         {{-- List Siswa Izin Hari Ini --}}
         <div class="col-lg-6">
             <div class="card card-height-100">
@@ -167,42 +115,9 @@
             </div>
         </div>
 
-        {{-- Statistik Kehadiran & Pengumuman --}}
+        {{-- Right column intentionally left empty (removed Statistik & Pengumuman) --}}
         <div class="col-lg-6">
-            {{-- Statistik Kehadiran Siswa --}}
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Statistik Kehadiran Siswa</h4>
-                </div>
-                <div class="card-body">
-                    {{-- ID ini untuk inisialisasi chart dari JS --}}
-                    <div id="statistikKehadiranChart" class="apex-charts" dir="ltr" style="height: 250px;"></div>
-                </div>
-            </div>
-            {{-- Pengumuman --}}
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Pengumuman</h4>
-                </div>
-                <div class="card-body" style="max-height: 220px; overflow-y: auto;">
-                    {{-- Pengumuman Dinamis --}}
-                    @forelse ($pengumuman as $item)
-                        <div class="d-flex mb-3">
-                            <div class="flex-shrink-0">
-                                 <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle text-center">
-                                    <iconify-icon icon="{{ $item['icon'] }}" class="fs-24 text-primary avatar-title"></iconify-icon>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">{{ $item['judul'] }}</h6>
-                                <small class="text-muted">{{ $item['tanggal'] }}</small>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-center">Tidak ada pengumuman.</p>
-                    @endforelse
-                </div>
-            </div>
+            <!-- Intentionally left blank after removing Statistik Kehadiran and Pengumuman -->
         </div>
     </div>
 @endsection
@@ -212,8 +127,6 @@
     <script>
         // Data dari controller yang akan digunakan oleh JavaScript
         var jamMengajarData = @json($jamMengajarData);
-        var riwayatMengajarData = @json($riwayatMengajarData);
-        var statistikKehadiranData = @json($statistikKehadiranData);
     </script>
     @vite(['resources/js/pages/dashboard.js'])
 @endsection

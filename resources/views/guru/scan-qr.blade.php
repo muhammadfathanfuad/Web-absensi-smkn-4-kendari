@@ -14,14 +14,17 @@
                         <select class="form-select" id="timetable_id" name="timetable_id">
                             <option value="" selected disabled>-- Pilih Mapel --</option>
                             @forelse ($jadwalHariIni as $jadwal)
-                                <option value="{{ $jadwal->id }}">{{ $jadwal->classSubject->subject->name }} - {{ $jadwal->classSubject->class->name }} ({{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }})</option>
+                                <option value="{{ $jadwal->id }}">{{ $jadwal->subject->name }} - {{ $jadwal->classroom->name }} ({{ \Carbon\Carbon::parse($jadwal->start_time)->format('H:i') }})</option>
                             @empty
                                 <option disabled>Tidak ada jadwal mengajar hari ini.</option>
                             @endforelse
                         </select>
                         <div class="invalid-feedback">Silakan pilih jadwal terlebih dahulu.</div>
                     </div>
-                    <div id="reader" width="100%"></div>
+
+                    <div id="qrcode" class="d-flex justify-content-center" style="display:none; width:180px; height:180px; margin:0 auto;"></div>
+                    <p class="mt-2 text-muted" id="qrInfoText" style="font-size:0.85rem; margin-top:6px;"></p>
+                    <button id="stopSession" class="btn btn-danger mt-2" style="display: none;">Hentikan Sesi Absensi</button>
                 </div>
             </div>
         </div>
@@ -54,141 +57,111 @@
     </div>
 @endsection
 @push('scripts')
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Use kjua for cleaner SVG QR (fallback to qrcodejs if needed) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/kjua/0.1.1/kjua.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const resultTableBody = document.querySelector("#scan-results-table tbody");
             const timetableSelect = document.getElementById('timetable_id');
-            let rowCounter = 1;
-            let lastScannedData = null;
-            let lastScanTime = null;
+            const qrcodeContainer = document.getElementById('qrcode');
+            const qrInfoText = document.getElementById('qrInfoText');
+            const scanResultsCard = document.getElementById('scan-results-table');
+            const scanCountEl = document.getElementById('scanCount');
+            const scanResultsBody = document.getElementById('scan-results-table') ? document.querySelector('#scan-results-table tbody') : null;
+            const stopSessionBtn = document.getElementById('stopSession');
 
-            // ... (fungsi populateTable dan fetchScanResults tetap sama) ...
-            function populateTable(attendances) {
-                resultTableBody.innerHTML = '';
-                rowCounter = 1;
-                if (attendances.length === 0) {
-                    resultTableBody.innerHTML = `<tr id="initial-message-row"><td colspan="5" class="text-center">Belum ada pindaian untuk mapel ini.</td></tr>`;
-                    return;
-                }
-                attendances.forEach(absen => {
-                    const student = absen.student;
-                    const user = student ? student.user : null;
-                    if(!user) return;
-                    let statusBadge = '';
-                    if (absen.check_out_time) {
-                        statusBadge = `<span class="badge bg-soft-success text-success">Selesai</span>`;
-                    } else if (absen.status === 'T' || absen.notes === 'Terlambat') {
-                        statusBadge = `<span class="badge bg-soft-warning text-warning">Terlambat</span>`;
-                    } else {
-                        statusBadge = `<span class="badge bg-soft-info text-info">Sudah Masuk</span>`;
-                    }
-                    const newRow = `
-                        <tr id="nisn-${student.nis}">
-                            <td>${rowCounter++}</td>
-                            <td>${user.full_name}</td>
-                            <td class="jam-masuk">${absen.check_in_time}</td>
-                            <td class="jam-keluar">${absen.check_out_time ?? '-'}</td>
-                            <td class="status">${statusBadge}</td>
-                        </tr>
-                    `;
-                    resultTableBody.insertAdjacentHTML('beforeend', newRow);
-                });
-            }
-            function fetchScanResults() {
-                const timetableId = timetableSelect.value;
-                if (!timetableId) return;
-                let url = `{{ route('guru.absensi.results', ['timetable_id' => ':id']) }}`.replace(':id', timetableId);
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => populateTable(data))
-                    .catch(error => console.error('Error fetching scan results:', error));
-            }
+            let qrcode = null;
+            let scanInterval = null;
 
-            // --- FUNGSI BARU UNTUK MEMBERSIHKAN TEKS DARI KODE HTML ---
-            function decodeHtmlEntities(text) {
-                const textarea = document.createElement('textarea');
-                textarea.innerHTML = text;
-                return textarea.value;
-            }
-
-            // --- FUNGSI onScanSuccessHandler YANG SUDAH DIPERBARUI ---
-            function onScanSuccessHandler(decodedText, decodedResult) {
-                let nisnToSubmit;
-
-                try {
-                    // 1. Bersihkan teks dari &quot; menjadi "
-                    const cleanText = decodeHtmlEntities(decodedText);
-                    
-                    // 2. Parse teks yang sudah bersih sebagai JSON
-                    const qrData = JSON.parse(cleanText);
-                    
-                    nisnToSubmit = qrData.nisn;
-                    
-                    if (!nisnToSubmit) {
-                        alert('Format QR Code tidak valid: Properti "nisn" tidak ditemukan.');
-                        return;
-                    }
-                } catch (e) {
-                    nisnToSubmit = decodedText;
-                    scanBtn.style.display = 'none';
-                    video.hidden = false;
-                    resultContainer.textContent = "Arahkan kamera ke kode QR...";
-
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: 'environment'
+            function fetchScanResults(timetableId) {
+                fetch(`/scan-qr/results/${timetableId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!scanResultsBody) return;
+                        scanResultsBody.innerHTML = '';
+                        scanCountEl && (scanCountEl.innerText = data.length);
+                        if (data.length === 0) {
+                            scanResultsBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada siswa yang melakukan absensi.</td></tr>';
+                        } else {
+                            data.forEach(r => {
+                                const row = `<tr>
+                                    <td>${r.no}</td>
+                                    <td>${r.student_name}</td>
+                                    <td>${r.check_in_time}</td>
+                                    <td>${r.check_out_time}</td>
+                                    <td>${r.status === 'T' ? '<span class="badge bg-warning">Terlambat</span>' : '<span class="badge bg-success">Hadir</span>'}</td>
+                                </tr>`;
+                                scanResultsBody.innerHTML += row;
+                            });
                         }
+                    }).catch(err => console.error(err));
+            }
+
+            timetableSelect.addEventListener('change', function () {
+                const timetableId = this.value;
+                if (!timetableId) return;
+
+                if (scanInterval) clearInterval(scanInterval);
+
+                qrcodeContainer.style.display = 'block';
+                stopSessionBtn.style.display = 'inline-block';
+                qrcodeContainer.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Membuat QR...';
+
+                fetch(`{{ route('guru.absensi.generate-qr') }}?timetable_id=${timetableId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        // clear previous
+                        qrcodeContainer.innerHTML = '';
+                        try {
+                            // prefer kjua (SVG) for cleaner output
+                            if (typeof kjua !== 'undefined') {
+                                const svg = kjua({
+                                    render: 'svg',
+                                    crisp: true,
+                                    size: 180,
+                                    text: JSON.stringify(data),
+                                    fill: '#000000',
+                                    back: '#ffffff',
+                                    rounded: 0
+                                });
+                                qrcodeContainer.appendChild(svg);
+                            } else if (typeof QRCode !== 'undefined') {
+                                // fallback to QRCode.js
+                                new QRCode(qrcodeContainer, {
+                                    text: JSON.stringify(data),
+                                    width: 180,
+                                    height: 180,
+                                    colorDark: '#000000',
+                                    colorLight: '#ffffff',
+                                    correctLevel: QRCode.CorrectLevel.H
+                                });
+                            } else {
+                                throw new Error('No QR generator available');
+                            }
+                            const selectedOptionText = timetableSelect.options[timetableSelect.selectedIndex].text;
+                            qrInfoText.innerText = `Sesi untuk: ${selectedOptionText}`;
+                        } catch (err) {
+                            console.error('QR generation error:', err);
+                            qrcodeContainer.innerHTML = '<div class="text-danger">Gagal membuat QR Code.</div>';
+                            qrInfoText.innerText = '';
+                        }
+                    }).catch(err => {
+                        console.error('Fetch QR data error:', err);
+                        qrcodeContainer.innerHTML = '<div class="text-danger">Gagal mengambil data QR.</div>';
                     });
 
-                    video.srcObject = stream;
-                    video.play();
-                    requestAnimationFrame(tick);
+                fetchScanResults(timetableId);
+                scanInterval = setInterval(() => fetchScanResults(timetableId), 5000);
+            });
 
-                    // Membalikkan video (flip horizontal)
-                    video.style.transform = 'scaleX(-1)';  // Membalikkan video
-
-                } catch (err) {
-                    console.error("ERROR saat mengakses kamera: ", err);
-                    resultContainer.textContent = "Gagal mengakses kamera. Pastikan Anda memberikan izin dan menggunakan koneksi HTTPS.";
-                    scanBtn.style.display = 'block';
-                }
-
-                const now = new Date().getTime();
-                if (nisnToSubmit === lastScannedData && (now - lastScanTime) < 3000) {
-                    return; 
-                }
-                lastScannedData = nisnToSubmit;
-                lastScanTime = now;
-
-                const selectedTimetableId = timetableSelect.value;
-                if (!selectedTimetableId || selectedTimetableId === '') {
-                    timetableSelect.classList.add('is-invalid');
-                    alert('Silakan pilih jadwal mata pelajaran terlebih dahulu.');
-                    return;
-                }
-                timetableSelect.classList.remove('is-invalid');
-
-                fetch("{{ route('guru.absensi.process') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ nisn: nisnToSubmit, timetable_id: selectedTimetableId }) 
-                })
-                .then(response => response.json().then(data => ({ ok: response.ok, data })))
-                .then(({ ok, data }) => {
-                    if (!ok) { throw new Error(data.error || 'Terjadi kesalahan.'); }
-                    fetchScanResults(); 
-                })
-                .catch(error => {
-                    alert(error.message);
-                });
-            }
-            
-            timetableSelect.addEventListener('change', fetchScanResults);
-
-            const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
-            html5QrcodeScanner.render(onScanSuccessHandler);
+            stopSessionBtn && stopSessionBtn.addEventListener('click', function () {
+                if (scanInterval) clearInterval(scanInterval);
+                this.style.display = 'none';
+                qrcodeContainer.style.display = 'none';
+                qrInfoText.innerText = '';
+                timetableSelect.selectedIndex = 0;
+            });
         });
     </script>
 @endpush

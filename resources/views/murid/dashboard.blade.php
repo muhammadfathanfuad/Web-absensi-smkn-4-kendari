@@ -24,12 +24,12 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <img src="{{ asset('images/users/avatar-1.jpg') }}" alt=""
+                            <img src="{{ asset(optional($student->user ?? null)->profile_photo ?? 'images/users/avatar-1.jpg') }}" alt=""
                                 class="avatar-sm rounded-circle">
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <h5 class="font-size-16 mb-1">Selamat Datang, Fathan!</h5>
-                            <p class="text-muted mb-0">Kelas: XI RPL</p>
+                            <h5 class="font-size-16 mb-1">Selamat Datang, {{ optional(optional($student)->user)->name ?? 'Siswa' }}!</h5>
+                            <p class="text-muted mb-0">Kelas: {{ optional($student)->classroom->name ?? '—' }}</p>
                         </div>
                     </div>
                 </div>
@@ -50,7 +50,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-muted mb-1">Hadir</p>
-                            <h4 class="mb-0">12</h4>
+                            <h4 class="mb-0">{{ $hadirCount ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -67,7 +67,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-muted mb-1">Izin</p>
-                            <h4 class="mb-0">2</h4>
+                            <h4 class="mb-0">{{ $izinCount ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -84,7 +84,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-muted mb-1">Sakit</p>
-                            <h4 class="mb-0">1</h4>
+                            <h4 class="mb-0">{{ $sakitCount ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -101,7 +101,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-muted mb-1">Alpa</p>
-                            <h4 class="mb-0">0</h4>
+                            <h4 class="mb-0">{{ $alpaCount ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -109,7 +109,7 @@
         </div>
     </div>
 
-    {{-- Main Content: Schedule and Announcements --}}
+    {{-- Main Content: Schedule --}}
     <div class="row">
         <div class="col-lg-8">
             <div class="card">
@@ -119,45 +119,29 @@
                         <table class="table table-nowrap table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th scope="col">#</th>
+                                    <th scope="col">No</th>
                                     <th scope="col">Mata Pelajaran</th>
                                     <th scope="col">Guru</th>
                                     <th scope="col">Jam</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <th scope="row">1</th>
-                                    <td>Matematika</td>
-                                    <td>Drs. Budi Santoso</td>
-                                    <td>07:00 - 08:30</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">2</th>
-                                    <td>Bahasa Indonesia</td>
-                                    <td>Siti Aminah, S.Pd.</td>
-                                    <td>08:30 - 10:00</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">3</th>
-                                    <td>Produktif RPL</td>
-                                    <td>Andi Wijaya, M.Kom.</td>
-                                    <td>10:30 - 12:00</td>
-                                </tr>
-                                </tbody>
+                                @forelse ($timetables ?? collect() as $i => $tt)
+                                    <tr>
+                                        <th scope="row">{{ $i + 1 }}</th>
+                                        <td>{{ optional($tt->subject)->name ?? '\u2014' }}</td>
+                                        <td>{{ optional(optional($tt->teacher)->user)->name ?? '—' }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($tt->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($tt->end_time)->format('H:i') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">Tidak ada jadwal untuk hari ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-4">Pengumuman</h4>
-                    <div class="alert alert-info">
-                        Tidak ada pengumuman baru untuk saat ini.
-                    </div>
-                    </div>
             </div>
         </div>
     </div>
