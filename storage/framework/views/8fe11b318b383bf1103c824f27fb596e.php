@@ -72,21 +72,6 @@
 
     <div class="row">
         
-        <div class="col-xl-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Riwayat Mengajar Bulan Ini</h4>
-                </div>
-                <div class="card-body">
-                    
-                    <div id="riwayatMengajarChart" class="apex-charts" dir="ltr" style="height: 300px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        
         <div class="col-lg-6">
             <div class="card card-height-100">
                 <div class="card-header">
@@ -130,40 +115,7 @@
 
         
         <div class="col-lg-6">
-            
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Statistik Kehadiran Siswa</h4>
-                </div>
-                <div class="card-body">
-                    
-                    <div id="statistikKehadiranChart" class="apex-charts" dir="ltr" style="height: 250px;"></div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Pengumuman</h4>
-                </div>
-                <div class="card-body" style="max-height: 220px; overflow-y: auto;">
-                    
-                    <?php $__empty_1 = true; $__currentLoopData = $pengumuman; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <div class="d-flex mb-3">
-                            <div class="flex-shrink-0">
-                                 <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle text-center">
-                                    <iconify-icon icon="<?php echo e($item['icon']); ?>" class="fs-24 text-primary avatar-title"></iconify-icon>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0"><?php echo e($item['judul']); ?></h6>
-                                <small class="text-muted"><?php echo e($item['tanggal']); ?></small>
-                            </div>
-                        </div>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <p class="text-center">Tidak ada pengumuman.</p>
-                    <?php endif; ?>
-                </div>
-            </div>
+            <!-- Intentionally left blank after removing Statistik Kehadiran and Pengumuman -->
         </div>
     </div>
 <?php $__env->stopSection(); ?>
@@ -173,8 +125,6 @@
     <script>
         // Data dari controller yang akan digunakan oleh JavaScript
         var jamMengajarData = <?php echo json_encode($jamMengajarData, 15, 512) ?>;
-        var riwayatMengajarData = <?php echo json_encode($riwayatMengajarData, 15, 512) ?>;
-        var statistikKehadiranData = <?php echo json_encode($statistikKehadiranData, 15, 512) ?>;
     </script>
     <?php echo app('Illuminate\Foundation\Vite')(['resources/js/pages/dashboard.js']); ?>
 <?php $__env->stopSection(); ?>

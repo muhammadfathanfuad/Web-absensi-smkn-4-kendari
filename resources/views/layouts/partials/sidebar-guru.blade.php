@@ -43,12 +43,7 @@
                          </span>
                          <span class="nav-text"> Status Absensi </span>
                     </a>
-                    <a class="nav-link" href="{{ route('any', 'pengumuman') }}">
-                         <span class="nav-icon">
-                              <i class='bx  bx-bell'  ></i>       
-                         </span>
-                         <span class="nav-text"> Pengumuman </span>
-                    </a>
+                    <!-- Pengumuman removed -->
                </li>
 
           </ul>

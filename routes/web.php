@@ -4,6 +4,7 @@ use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\Murid\DashboardMuridController;
+use App\Http\Controllers\Murid\JadwalPelajaranController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\UserController;
@@ -11,7 +12,6 @@ use App\Http\Controllers\UserController;
 // Import controller yang baru kita buat
 use App\Http\Controllers\Guru\DashboardController;
 use App\Http\Controllers\Guru\AbsensiController;
-use App\Http\Controllers\Guru\PengumumanController;
 use App\Http\Controllers\Guru\JadwalController;
 
 require __DIR__ . '/auth.php';
@@ -101,15 +101,14 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');
     Route::get('/status-absensi', [AbsensiController::class, 'showStatus'])->name('guru.status-absensi');
     Route::get('/jadwal-mengajar', [JadwalController::class, 'index'])->name('guru.jadwal-mengajar');
-    Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('guru.pengumuman');
 });
 
 // Student routes
 Route::middleware(['auth', 'role:student'])->prefix('murid')->name('murid.')->group(function () {
     Route::get('/dashboard', [DashboardMuridController::class, 'index'])->name('dashboard');
-    Route::get('/jadwal', [DashboardMuridController::class, 'jadwal'])->name('jadwal');
+    Route::get('/jadwal', [JadwalPelajaranController::class, 'jadwal'])->name('jadwal');
     Route::get('/absensi', [DashboardMuridController::class, 'absensi'])->name('absensi');
-    Route::get('/pengumuman', [DashboardMuridController::class, 'pengumuman'])->name('pengumuman');
+    // Pengumuman page removed per request
     // QR / Scan untuk murid
     Route::get('/qr', [DashboardMuridController::class, 'qr'])->name('qr');
     Route::post('/qr/submit', [\App\Http\Controllers\Murid\ScanController::class, 'submit'])->name('qr.submit');

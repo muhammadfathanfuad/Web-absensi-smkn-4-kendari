@@ -43,12 +43,7 @@
                     </span>
                     <span class="nav-text"> Riwayat Absensi </span>
                 </a>
-                <a class="nav-link" href="<?php echo e(route('murid.pengumuman')); ?>">
-                    <span class="nav-icon">
-                        <i class='bx bx-bell'></i>
-                    </span>
-                    <span class="nav-text"> Pengumuman </span>
-                </a>
+                <!-- Pengumuman menu removed -->
             </li>
 
         </ul>
