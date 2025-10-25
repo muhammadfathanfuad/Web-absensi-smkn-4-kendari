@@ -26,5 +26,11 @@ class Teacher extends Model
     {
         return $this->hasMany(Classroom::class, 'homeroom_teacher_id');
     }
+
+    // Relasi ke class subjects
+    public function classSubjects()
+    {
+        return $this->hasMany(ClassSubject::class, 'teacher_id', 'user_id');
+    }
 }
 

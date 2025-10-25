@@ -112,6 +112,22 @@
                                 <i class="bx bx-check me-1"></i> Set Custom Time
                             </button>
                         </form>
+                        
+                        <!-- Quick Set Buttons -->
+                        <div class="mt-3">
+                            <h6 class="text-muted">Quick Set:</h6>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickTime('07:30')">
+                                    <i class="bx bx-sun me-1"></i> Jam 07:30 (Pagi)
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="setQuickTime('10:00')">
+                                    <i class="bx bx-coffee me-1"></i> Jam 10:00 (Istirahat)
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setQuickTime('13:00')">
+                                    <i class="bx bx-sun me-1"></i> Jam 13:00 (Siang)
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -212,6 +228,38 @@
                 });
         }
 
+        // Set default values for custom time form
+        function setDefaultValues() {
+            const today = new Date();
+            const dateInput = document.getElementById('customDate');
+            const timeInput = document.getElementById('customTime');
+            
+            // Set default date to today
+            dateInput.value = today.toISOString().split('T')[0];
+            
+            // Set default time to current time
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            timeInput.value = timeString;
+        }
+
+        // Quick set time function
+        function setQuickTime(time) {
+            const dateInput = document.getElementById('customDate');
+            const timeInput = document.getElementById('customTime');
+            
+            // Set to today's date
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+            
+            // Set the specified time
+            timeInput.value = time;
+            
+            // Auto submit the form
+            applyScenario(dateInput.value, timeInput.value);
+        }
+
         // Update status display
         function updateStatusDisplay(data) {
             const statusCard = document.getElementById('statusCard');
@@ -297,14 +345,23 @@
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     loadStatus();
                     showAlert('Time override berhasil diset!', 'success');
                 } else {
-                    showAlert('Gagal set time override!', 'danger');
+                    showAlert('Gagal set time override: ' + (data.message || 'Unknown error'), 'danger');
                 }
+            })
+            .catch(error => {
+                console.error('Error setting time override:', error);
+                showAlert('Gagal set time override: ' + error.message, 'danger');
             });
         }
 
@@ -333,7 +390,17 @@
         document.getElementById('customTimeForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            applyScenario(formData.get('date'), formData.get('time'));
+            const date = formData.get('date');
+            const time = formData.get('time');
+            
+            // Validate inputs
+            if (!date || !time) {
+                showAlert('Silakan isi tanggal dan waktu!', 'warning');
+                return;
+            }
+            
+            console.log('Setting custom time:', { date, time });
+            applyScenario(date, time);
         });
 
         // Show alert
@@ -358,6 +425,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadStatus();
             loadScenarios();
+            setDefaultValues();
             
             // Auto refresh status every 30 seconds
             setInterval(loadStatus, 30000);

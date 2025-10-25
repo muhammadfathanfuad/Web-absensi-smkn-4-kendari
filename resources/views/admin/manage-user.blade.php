@@ -69,9 +69,12 @@
                                         Data Semua Guru Sekolah
                                     </p>
                                     <div id="single-actions-guru">
-                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                        <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal"
                                             data-bs-target="#addGuruModal">
                                             Tambah Guru
+                                        </button>
+                                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadGuruModal">
+                                            Upload Data
                                         </button>
                                     </div>
                                     <div id="bulk-actions-guru" style="display: none;">
@@ -94,9 +97,12 @@
                                         Data Semua Murid Sekolah
                                     </p>
                                     <div id="single-actions-murid">
-                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                        <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal"
                                             data-bs-target="#addMuridModal">
                                             Tambah Murid
+                                        </button>
+                                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadMuridModal">
+                                            Upload Data
                                         </button>
                                     </div>
                                     <div id="bulk-actions-murid" style="display: none;">
@@ -141,11 +147,15 @@
                             <input type="text" class="form-control" id="addGuruKode" name="kode_guru" required>
                         </div>
                         <div class="mb-3">
-                            <label for="addGuruDepartment" class="form-label">Department</label>
-                            <input type="text" class="form-control" id="addGuruDepartment" name="department" required>
+                            <label for="addGuruDepartment" class="form-label">Mata Pelajaran yang Diajarkan</label>
+                            <select class="form-select" id="addGuruDepartment" name="department" required>
+                                <option value="">Pilih Mata Pelajaran</option>
+                                @foreach(\App\Models\Subject::orderBy('name')->get() as $subject)
+                                    <option value="{{ $subject->name }}">{{ $subject->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadGuruModal">Upload Data</button>
+                        <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary">Tambah Guru</button>
                         </div>
                     </form>
@@ -169,6 +179,29 @@
                             <label for="uploadGuruFile" class="form-label">Pilih File Excel atau CSV</label>
                             <input type="file" class="form-control" id="uploadGuruFile" name="file" accept=".xlsx,.xls,.csv" required>
                             <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: Kode Guru, Nama Guru, NIP, Email, No Hp, Department.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Upload Murid -->
+    <div class="modal fade" id="uploadMuridModal" tabindex="-1" aria-labelledby="uploadMuridModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadMuridModalLabel">Upload Data Murid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadMuridForm" action="{{ route('murid.import') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="uploadMuridFile" class="form-label">Pilih File Excel atau CSV</label>
+                            <input type="file" class="form-control" id="uploadMuridFile" name="file" accept=".xlsx,.xls,.csv" required>
+                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: Nama, NIS, Kelas, Nama Wali, Telepon Wali. Format Kelas: "10 TKJA" (10=tingkatan, TKJA=nama kelas).</small>
                         </div>
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
@@ -695,6 +728,38 @@
                 });
             });
 
+            // Upload Murid form submission
+            document.getElementById('uploadMuridForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.disabled = true;
+                submitButton.textContent = 'Mengupload...';
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.success);
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('uploadMuridModal')).hide();
+                        this.reset();
+                        // Refresh table
+                        if (window.gridInstanceMurid) window.gridInstanceMurid.forceRender();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Gagal mengupload data.', false);
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                });
+            });
+
             // Filter class based on tingkatan for add murid
             document.getElementById('addMuridTingkatan').addEventListener('change', function() {
                 const selectedGrade = this.value;
@@ -789,6 +854,12 @@
                     showNotification(data.message, data.success);
                     if (data.success) {
                         refreshTable();
+                        // Auto-reorder table after status change
+                        setTimeout(() => {
+                            if (window.gridInstance && window.gridInstance.reorderTableByStatus) {
+                                window.gridInstance.reorderTableByStatus();
+                            }
+                        }, 500);
                     }
                 } catch (error) {
                     console.error('Error:', error);

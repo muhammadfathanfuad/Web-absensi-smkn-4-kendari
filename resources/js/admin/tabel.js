@@ -95,28 +95,38 @@ class GridDatatable {
             },
             server: {
                 url: "/admin/guru",
-                then: (data) => data.map((teacher) => [
-                    null, // checkbox (formatter)
-                    teacher.user?.full_name ?? "-",
-                    teacher.nip ?? "-",
-                    teacher.department ?? "-",
-                    teacher.kode_guru ?? "-",
-                    teacher, // Data (hidden) → dipakai formatter
-                    null, // Aksi (formatter)
-                ]),
+                then: (data) =>
+                    data.map((teacher) => [
+                        null, // checkbox (formatter)
+                        teacher.user?.full_name ?? "-",
+                        teacher.nip ?? "-",
+                        teacher.department ?? "-",
+                        teacher.kode_guru ?? "-",
+                        teacher, // Data (hidden) → dipakai formatter
+                        null, // Aksi (formatter)
+                    ]),
             },
         }).render(mount);
 
         // Select all guru
-        const selectAllGuru = document.getElementById("select-all-guru-checkbox");
+        const selectAllGuru = document.getElementById(
+            "select-all-guru-checkbox"
+        );
         if (selectAllGuru) {
             selectAllGuru.addEventListener("change", () => {
                 const isChecked = selectAllGuru.checked;
-                document.querySelectorAll(".row-checkbox-guru").forEach(cb => cb.checked = isChecked);
+                document
+                    .querySelectorAll(".row-checkbox-guru")
+                    .forEach((cb) => (cb.checked = isChecked));
                 // Update bulk actions
-                const checkedBoxes = document.querySelectorAll(".row-checkbox-guru:checked");
-                const singleActions = document.getElementById("single-actions-guru");
-                const bulkActions = document.getElementById("bulk-actions-guru");
+                const checkedBoxes = document.querySelectorAll(
+                    ".row-checkbox-guru:checked"
+                );
+                const singleActions = document.getElementById(
+                    "single-actions-guru"
+                );
+                const bulkActions =
+                    document.getElementById("bulk-actions-guru");
                 if (checkedBoxes.length > 0) {
                     if (singleActions) singleActions.style.display = "none";
                     if (bulkActions) bulkActions.style.display = "block";
@@ -193,30 +203,40 @@ class GridDatatable {
             },
             server: {
                 url: "/admin/murid",
-                then: (data) => data.map((student) => [
-                    null, // checkbox
-                    student.user?.full_name ?? "-",
-                    student.nis ?? "-",
-                    student.classroom?.name ?? "-",
-                    student.classroom?.grade ?? "-",
-                    student.guardian_name ?? "-",
-                    student.guardian_phone ?? "-",
-                    student, // Data (hidden)
-                    null, // Aksi
-                ]),
+                then: (data) =>
+                    data.map((student) => [
+                        null, // checkbox
+                        student.user?.full_name ?? "-",
+                        student.nis ?? "-",
+                        student.classroom?.name ?? "-",
+                        student.classroom?.grade ?? "-",
+                        student.guardian_name ?? "-",
+                        student.guardian_phone ?? "-",
+                        student, // Data (hidden)
+                        null, // Aksi
+                    ]),
             },
         }).render(mount);
 
         // Select all murid
-        const selectAllMurid = document.getElementById("select-all-murid-checkbox");
+        const selectAllMurid = document.getElementById(
+            "select-all-murid-checkbox"
+        );
         if (selectAllMurid) {
             selectAllMurid.addEventListener("change", () => {
                 const isChecked = selectAllMurid.checked;
-                document.querySelectorAll(".row-checkbox-murid").forEach(cb => cb.checked = isChecked);
+                document
+                    .querySelectorAll(".row-checkbox-murid")
+                    .forEach((cb) => (cb.checked = isChecked));
                 // Update bulk actions
-                const checkedBoxes = document.querySelectorAll(".row-checkbox-murid:checked");
-                const singleActions = document.getElementById("single-actions-murid");
-                const bulkActions = document.getElementById("bulk-actions-murid");
+                const checkedBoxes = document.querySelectorAll(
+                    ".row-checkbox-murid:checked"
+                );
+                const singleActions = document.getElementById(
+                    "single-actions-murid"
+                );
+                const bulkActions =
+                    document.getElementById("bulk-actions-murid");
                 if (checkedBoxes.length > 0) {
                     if (singleActions) singleActions.style.display = "none";
                     if (bulkActions) bulkActions.style.display = "block";
@@ -250,7 +270,9 @@ class GridDatatable {
                 "Email",
                 "Nomor Hp",
                 {
-                    name: "Status",
+                    name: gridjs.html(
+                        '<span>Status <i class="bx bx-sort-up text-primary" title="Diurutkan: Aktif di atas"></i></span>'
+                    ),
                     formatter: (cell) => {
                         const statusClass =
                             cell === "active"
@@ -302,15 +324,16 @@ class GridDatatable {
             search: true,
             server: {
                 url: "/admin/users/table",
-                then: (data) => data.map((u) => [
-                    null, // checkbox
-                    u.full_name ?? "-",
-                    u.email ?? "-",
-                    u.phone ?? "-",
-                    u.status ?? "-",
-                    u.id, // hidden ID
-                    null, // Aksi
-                ]),
+                then: (data) =>
+                    data.map((u) => [
+                        null, // checkbox
+                        u.full_name ?? "-",
+                        u.email ?? "-",
+                        u.phone ?? "-",
+                        u.status ?? "-",
+                        u.id, // hidden ID
+                        null, // Aksi
+                    ]),
             },
             language: {
                 search: { placeholder: " Ketik untuk mencari…" },
@@ -325,9 +348,13 @@ class GridDatatable {
         if (selectAllUser) {
             selectAllUser.addEventListener("change", () => {
                 const isChecked = selectAllUser.checked;
-                document.querySelectorAll(".row-checkbox").forEach(cb => cb.checked = isChecked);
+                document
+                    .querySelectorAll(".row-checkbox")
+                    .forEach((cb) => (cb.checked = isChecked));
                 // Update bulk actions
-                const checkedBoxes = document.querySelectorAll(".row-checkbox:checked");
+                const checkedBoxes = document.querySelectorAll(
+                    ".row-checkbox:checked"
+                );
                 const singleActions = document.getElementById("single-actions");
                 const bulkActions = document.getElementById("bulk-actions");
                 if (checkedBoxes.length > 0) {
@@ -341,6 +368,9 @@ class GridDatatable {
         }
 
         window.gridInstance = this.gridInstanceUser;
+        // Make reorderTableByStatus method accessible globally
+        window.gridInstance.reorderTableByStatus = () =>
+            this.reorderTableByStatus();
     }
 
     // ---------- EVENT LISTENERS ----------
@@ -366,7 +396,13 @@ class GridDatatable {
         );
         this.handleFormSubmit(
             "editUserForm",
-            () => this.gridInstanceUser?.forceRender(),
+            () => {
+                this.gridInstanceUser?.forceRender();
+                // Auto-reorder table after status change
+                setTimeout(() => {
+                    this.reorderTableByStatus();
+                }, 500);
+            },
             "PUT"
         );
 
@@ -481,6 +517,10 @@ class GridDatatable {
                                 document.getElementById("deleteRoute")?.value;
                             if (route === "/admin/user") {
                                 this.gridInstanceUser?.forceRender();
+                                // Auto-reorder table after bulk status change
+                                setTimeout(() => {
+                                    this.reorderTableByStatus();
+                                }, 500);
                                 document.getElementById(
                                     "single-actions"
                                 ).style.display = "block";
@@ -578,8 +618,6 @@ class GridDatatable {
             });
         }
 
-
-
         // ----- Murid bulk -----
         document.addEventListener("change", (event) => {
             if (
@@ -642,8 +680,6 @@ class GridDatatable {
                 deleteModal.show();
             });
         }
-
-
 
         // ----- Single delete buttons (User/Guru/Murid) -----
         document.body.addEventListener("click", (event) => {
@@ -762,6 +798,10 @@ class GridDatatable {
                             document.getElementById("deleteRoute").value;
                         if (route === "/admin/user") {
                             this.gridInstanceUser?.forceRender();
+                            // Auto-reorder table after bulk delete
+                            setTimeout(() => {
+                                this.reorderTableByStatus();
+                            }, 500);
                             document.getElementById(
                                 "single-actions"
                             ).style.display = "block";
@@ -901,6 +941,49 @@ class GridDatatable {
                     showNotification("Gagal menghapus data", false);
                 });
         });
+    }
+
+    // Method to reorder table by status (active users first)
+    reorderTableByStatus() {
+        if (!this.gridInstanceUser) return;
+
+        // Add a subtle animation to indicate reordering
+        const tableContainer = document.querySelector(
+            "#table-search .gridjs-wrapper"
+        );
+        if (tableContainer) {
+            tableContainer.style.transition = "opacity 0.3s ease";
+            tableContainer.style.opacity = "0.7";
+        }
+
+        // Show a brief notification that table is being reordered
+        const notification = document.createElement("div");
+        notification.className =
+            "alert alert-info alert-dismissible fade show position-fixed";
+        notification.style.cssText =
+            "top: 20px; right: 20px; z-index: 9999; min-width: 300px;";
+        notification.innerHTML = `
+            <i class="bx bx-sort-up me-2"></i>
+            Mengurutkan tabel: User aktif di atas
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(notification);
+
+        // Force re-render to get fresh data from server (which is already sorted)
+        this.gridInstanceUser.forceRender();
+
+        // Restore opacity and remove notification after a short delay
+        setTimeout(() => {
+            if (tableContainer) {
+                tableContainer.style.opacity = "1";
+            }
+            // Auto-remove notification after 2 seconds
+            setTimeout(() => {
+                if (notification && notification.parentNode) {
+                    notification.remove();
+                }
+            }, 2000);
+        }, 300);
     }
 }
 

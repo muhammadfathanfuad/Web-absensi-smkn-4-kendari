@@ -21,7 +21,7 @@ class TeacherController extends Controller
             'email' => 'required|string|email|max:255|exists:users,email',
             'nip' => 'required|string|max:255',
             'kode_guru' => 'required|string|max:255',
-            'department' => 'required|string|max:255',
+            'department' => 'required|string|max:255|exists:subjects,name',
         ]);
 
         $user = \App\Models\User::where('email', $request->email)->first();
@@ -44,7 +44,29 @@ class TeacherController extends Controller
             'department' => $request->department,
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Guru berhasil ditambahkan!']);
+        // Otomatis hubungkan guru dengan mata pelajaran yang dipilih
+        $this->connectTeacherToSelectedSubject($teacher, $request->department);
+
+        return response()->json(['success' => true, 'message' => 'Guru berhasil ditambahkan dan terhubung dengan mata pelajaran!']);
+    }
+
+    /**
+     * Menghubungkan guru dengan mata pelajaran yang dipilih
+     * ClassSubject akan dibuat tanpa class_id (akan diisi nanti saat mata pelajaran ditambahkan ke kelas)
+     */
+    private function connectTeacherToSelectedSubject($teacher, $subjectName)
+    {
+        // Cari mata pelajaran berdasarkan nama yang dipilih
+        $subject = \App\Models\Subject::where('name', $subjectName)->first();
+        
+        if ($subject) {
+            // Buat ClassSubject tanpa class_id (akan diisi nanti)
+            \App\Models\ClassSubject::create([
+                'teacher_id' => $teacher->user_id,
+                'subject_id' => $subject->id,
+                'class_id' => null, // Akan diisi nanti saat mata pelajaran ditambahkan ke kelas
+            ]);
+        }
     }
 
     public function update(Request $request, $id)

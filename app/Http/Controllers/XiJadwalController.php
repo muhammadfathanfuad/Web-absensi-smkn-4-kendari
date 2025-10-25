@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\XiTimetable;
+use App\Models\Timetable;
 use App\Models\XiClass;
 use App\Models\Term;
 use App\Imports\XiTimetableImport;
@@ -24,8 +24,10 @@ class XiJadwalController extends Controller
             7 => 'Minggu'
         ];
 
-        $query = XiTimetable::with(['classSubject.class', 'classSubject.subject', 'classSubject.teacher.user'])
-            ->xiClasses();
+        $query = Timetable::with(['classSubject.class', 'classSubject.subject', 'classSubject.teacher.user', 'term'])
+            ->whereHas('classSubject.class', function($q) {
+                $q->where('grade', '11');
+            });
 
         // Apply filters
         if ($request->group_type && $request->group_type !== 'all' && $request->group_type !== '') {
@@ -53,9 +55,19 @@ class XiJadwalController extends Controller
             }
         }
 
+        // Filter by term_id if provided
+        if ($request->has('term_id') && $request->term_id) {
+            \Log::info('Filtering Kelas XI by term_id: ' . $request->term_id);
+            $query->where('term_id', $request->term_id);
+        } else {
+            \Log::info('No term_id filter applied for Kelas XI');
+        }
+
         $timetables = $query->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
+
+        \Log::info('Found ' . $timetables->count() . ' Kelas XI timetables');
 
         // Check if we have any data
         if ($timetables->isEmpty()) {
@@ -252,19 +264,20 @@ class XiJadwalController extends Controller
             'file' => 'required|mimes:xlsx,csv|max:10240', // 10MB max
             'group_type' => 'required|in:A,B',
             'grade' => 'required|in:X,XI,XII',
+            'term_id' => 'required|exists:terms,id',
         ]);
 
         try {
-            // Check if there's an active term
-            $term = Term::where('is_active', true)->latest()->first();
+            // Get the selected term
+            $term = Term::find($request->term_id);
             if (!$term) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak ada term aktif. Silakan buat term aktif terlebih dahulu.'
+                    'message' => 'Semester yang dipilih tidak ditemukan.'
                 ], 400);
             }
 
-            $import = new XiTimetableImport($request->group_type, $request->grade);
+            $import = new XiTimetableImport($request->group_type, $request->grade, $term->id);
             Excel::import($import, $request->file('file'));
 
             // Get the processed count
@@ -341,11 +354,21 @@ class XiJadwalController extends Controller
 
     public function getStatistics()
     {
-        $totalTimetables = XiTimetable::xiClasses()->count();
-        $groupA = XiTimetable::xiClasses()->groupType('A')->count();
-        $groupB = XiTimetable::xiClasses()->groupType('B')->count();
-        $labSessions = XiTimetable::xiClasses()->locationType('lab')->count();
-        $theorySessions = XiTimetable::xiClasses()->locationType('theory')->count();
+        $totalTimetables = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->count();
+        $groupA = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->groupType('A')->count();
+        $groupB = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->groupType('B')->count();
+        $labSessions = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->locationType('lab')->count();
+        $theorySessions = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->locationType('theory')->count();
 
         return response()->json([
             'total' => $totalTimetables,
@@ -358,7 +381,9 @@ class XiJadwalController extends Controller
 
     public function destroy($id)
     {
-        $timetable = XiTimetable::find($id);
+        $timetable = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->find($id);
         if (!$timetable) {
             return response()->json(['success' => false, 'message' => 'Jadwal XI tidak ditemukan.'], 404);
         }
@@ -382,13 +407,17 @@ class XiJadwalController extends Controller
         }
 
         // Cek apakah data ada sebelum dihapus (dengan scope XI)
-        $existingCount = XiTimetable::xiClasses()->whereIn('id', $ids)->count();
+        $existingCount = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->whereIn('id', $ids)->count();
         
         if ($existingCount === 0) {
             return response()->json(['success' => false, 'message' => 'Jadwal XI tidak ditemukan.'], 404);
         }
 
-        $deletedCount = XiTimetable::xiClasses()->whereIn('id', $ids)->delete();
+        $deletedCount = Timetable::whereHas('classSubject.class', function($q) {
+            $q->where('grade', '11');
+        })->whereIn('id', $ids)->delete();
 
         return response()->json(['success' => true, 'message' => "Jadwal XI terpilih berhasil dihapus. ({$deletedCount} data dihapus)"]);
     }
@@ -396,8 +425,12 @@ class XiJadwalController extends Controller
     public function deleteAllJadwalXi()
     {
         try {
-            $deletedCount = XiTimetable::xiClasses()->count();
-            XiTimetable::xiClasses()->delete();
+            $deletedCount = Timetable::whereHas('classSubject.class', function($q) {
+                $q->where('grade', '11');
+            })->count();
+            Timetable::whereHas('classSubject.class', function($q) {
+                $q->where('grade', '11');
+            })->delete();
             
             return response()->json([
                 'success' => true,

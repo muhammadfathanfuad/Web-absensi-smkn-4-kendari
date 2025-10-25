@@ -31,4 +31,14 @@ class Classroom extends Model
     {
         return $this->belongsTo(Room::class, 'room_id');
     }
+
+    public function students()
+    {
+        return $this->hasMany(Student::class, 'class_id');
+    }
+
+    public function classSubjects()
+    {
+        return $this->hasMany(ClassSubject::class, 'class_id');
+    }
 }

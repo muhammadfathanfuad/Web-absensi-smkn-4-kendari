@@ -28,15 +28,33 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
+                    {{-- Info Statistik --}}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info d-flex align-items-center">
+                                <i class="bx bx-info-circle me-2"></i>
+                                <div>
+                                    <strong>Total Data:</strong> {{ $attendances->total() }} absensi
+                                    @if($from && $to)
+                                        <span class="ms-3"><strong>Filter:</strong> {{ \Carbon\Carbon::parse($from)->format('d M Y') }} - {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</span>
+                                    @else
+                                        <span class="ms-3"><strong>Menampilkan:</strong> Semua data absensi</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <form method="GET" class="row mb-3" id="filter-form">
                         <div class="col-md-4">
-                            <label for="date-range" class="form-label">Filter berdasarkan tanggal:</label>
+                            <label for="date-range" class="form-label">Filter berdasarkan tanggal (opsional):</label>
                             <input type="text" id="date-range" class="form-control" placeholder="Pilih rentang tanggal..." value="{{ ($from && $to) ? $from.' to '.$to : '' }}">
                             <input type="hidden" name="from" id="date-from" value="{{ $from ?? '' }}">
                             <input type="hidden" name="to" id="date-to" value="{{ $to ?? '' }}">
                         </div>
-                        <div class="col-md-2 align-self-end">
-                            <button type="submit" class="btn btn-primary">Filter</button>
+                        <div class="col-md-3 align-self-end">
+                            <button type="submit" class="btn btn-primary me-2">Filter</button>
+                            <a href="{{ route('murid.absensi') }}" class="btn btn-outline-secondary">Reset</a>
                         </div>
                     </form>
 
@@ -55,7 +73,7 @@
                                 @forelse($attendances ?? collect() as $att)
                                     <tr>
                                         <td>{{ optional($att->created_at)->format('d F Y') }}</td>
-                                        <td>{{ optional(optional($att->classSession)->timetable)->subject->name ?? '—' }}</td>
+                                        <td>{{ optional(optional(optional($att->classSession)->timetable)->classSubject)->subject->name ?? '—' }}</td>
                                         <td>
                                             @switch($att->status)
                                                 @case('H')
@@ -77,17 +95,96 @@
                                                     <span class="badge bg-secondary">{{ $att->status }}</span>
                                             @endswitch
                                         </td>
-                                        <td>{{ optional($att->check_in_time)->format('H:i') ?? '-' }}</td>
-                                        <td>{{ $att->notes ?? '-' }}</td>
+                                        <td>
+                                            @if($att->check_in_time)
+                                                {{ \Carbon\Carbon::parse($att->check_in_time)->format('H:i') }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @php
+                                                // Format keterangan berdasarkan status seperti di halaman jadwal pelajaran
+                                                $notes = '';
+                                                
+                                                if ($att->status === 'H') {
+                                                    // Hadir - show scan time
+                                                    if ($att->check_in_time) {
+                                                        $checkInTime = \Carbon\Carbon::parse($att->check_in_time)->format('H:i');
+                                                        $notes = "Hadir tepat waktu (Scan: {$checkInTime})";
+                                                    } else {
+                                                        $notes = 'Hadir tepat waktu';
+                                                    }
+                                                } elseif ($att->status === 'T') {
+                                                    // Terlambat - show late time and scan time
+                                                    $lateMinutes = abs(round($att->late_minutes ?? 0));
+                                                    
+                                                    // Format late time
+                                                    if ($lateMinutes === 0) {
+                                                        $timeFormat = '0 menit';
+                                                    } elseif ($lateMinutes < 60) {
+                                                        $timeFormat = "{$lateMinutes} menit";
+                                                    } else {
+                                                        $hours = floor($lateMinutes / 60);
+                                                        $remainingMinutes = $lateMinutes % 60;
+                                                        if ($remainingMinutes === 0) {
+                                                            $timeFormat = "{$hours} jam";
+                                                        } else {
+                                                            $timeFormat = "{$hours} jam {$remainingMinutes} menit";
+                                                        }
+                                                    }
+                                                    
+                                                    if ($att->check_in_time) {
+                                                        $checkInTime = \Carbon\Carbon::parse($att->check_in_time)->format('H:i');
+                                                        $notes = "Terlambat {$timeFormat} (Scan: {$checkInTime})";
+                                                    } else {
+                                                        $notes = "Terlambat {$timeFormat}";
+                                                    }
+                                                } elseif ($att->status === 'A') {
+                                                    $notes = 'Tidak hadir - tidak melakukan scan';
+                                                } elseif ($att->status === 'I') {
+                                                    $notes = 'Izin';
+                                                } elseif ($att->status === 'S') {
+                                                    $notes = 'Sakit';
+                                                } else {
+                                                    $notes = $att->notes ?? '-';
+                                                }
+                                                
+                                                // Add check-out time if available
+                                                if ($att->check_out_time) {
+                                                    $checkOutTime = \Carbon\Carbon::parse($att->check_out_time)->format('H:i');
+                                                    $notes .= " (Keluar: {$checkOutTime})";
+                                                }
+                                            @endphp
+                                            {{ $notes ?: '-' }}
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center">Tidak ada data absensi dalam rentang tanggal yang dipilih.</td>
+                                        <td colspan="5" class="text-center">
+                                            @if($from && $to)
+                                                Tidak ada data absensi dalam rentang tanggal yang dipilih.
+                                            @else
+                                                Belum ada data absensi.
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
+
+                    {{-- Pagination --}}
+                    @if($attendances->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $attendances->firstItem() }} sampai {{ $attendances->lastItem() }} dari {{ $attendances->total() }} data
+                            </div>
+                            <div>
+                                {{ $attendances->appends(request()->query())->links() }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

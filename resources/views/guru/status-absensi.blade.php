@@ -52,7 +52,7 @@
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $absen->student->nis ?? 'N/A' }}</td>
                                 <td>{{ $absen->student->user->full_name ?? 'N/A' }}</td>
-                                <td>{{ $absen->classSession->timetable->subject->name ?? 'N/A' }}</td>
+                                <td>{{ $absen->classSession->timetable->classSubject->subject->name ?? 'N/A' }}</td>
                                 <td>{{ $absen->check_in_time ?? '-' }}</td>
                                 <td>
                                     {{-- --- PERUBAHAN LOGIKA STATUS DI SINI --- --}}

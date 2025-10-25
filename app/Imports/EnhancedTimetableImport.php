@@ -18,21 +18,23 @@ class EnhancedTimetableImport implements ToCollection
     private $processedCount = 0;
     private $grade;
     private $weekType;
+    private $termId;
     private $currentHari;
     private $detectedFormat = null;
 
-    public function __construct($grade = null, $weekType = null)
+    public function __construct($grade = null, $weekType = null, $termId = null)
     {
         $this->grade = $grade;
         $this->weekType = $weekType;
+        $this->termId = $termId;
         $this->currentHari = null;
     }
 
     public function collection(Collection $rows)
     {
-        $term = Term::where('is_active', true)->latest()->first();
+        $term = $this->termId ? Term::find($this->termId) : Term::where('is_active', true)->latest()->first();
         if (!$term) {
-            throw new \Exception('Tidak ada term aktif. Silakan buat term aktif terlebih dahulu.');
+            throw new \Exception('Semester tidak ditemukan atau tidak ada term aktif.');
         }
 
         $daysMap = [

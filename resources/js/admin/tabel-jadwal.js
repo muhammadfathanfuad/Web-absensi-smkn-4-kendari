@@ -19,11 +19,7 @@ function showNotification(message, isSuccess = true) {
     notificationModal.show();
 }
 
-// Fungsi global untuk edit jadwal
-window.editJadwal = function (id) {
-    // Implementasi edit modal akan ditambahkan nanti
-    alert("Fitur edit jadwal akan segera hadir untuk ID: " + id);
-};
+// Fungsi global untuk edit jadwal - diimplementasikan di jadwal-pelajaran.blade.php
 
 // Fungsi global untuk delete jadwal
 window.deleteJadwal = function (id) {
@@ -277,6 +273,64 @@ window.deleteClass = function () {
         .catch((error) => {
             console.error("Error deleting class:", error);
             showNotification("Gagal menghapus kelas", false);
+        });
+};
+
+// Fungsi global untuk menangani form tambah kelas
+window.handleClassAdd = function (event) {
+    console.log("handleClassAdd called");
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+
+    console.log("Form data:", {
+        name: formData.get("name"),
+        grade: formData.get("grade"),
+    });
+
+    // Disable submit button and show loading
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Menambahkan...";
+
+    fetch("/admin/classes", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-CSRF-TOKEN": getCsrfToken(),
+        },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log("Add class response:", data);
+            if (data.success) {
+                showNotification(data.message, true);
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(
+                    document.getElementById("addClassModal")
+                );
+                if (modal) {
+                    modal.hide();
+                }
+                // Reset form
+                event.target.reset();
+                // Reload classes table
+                if (typeof window.reloadClassesTable === "function") {
+                    window.reloadClassesTable();
+                }
+            } else {
+                showNotification(data.message, false);
+            }
+        })
+        .catch((error) => {
+            console.error("Error adding class:", error);
+            showNotification("Gagal menambahkan kelas", false);
+        })
+        .finally(() => {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
         });
 };
 
@@ -739,10 +793,12 @@ class GridJadwalDatatable {
 
     // Fungsi untuk menginisialisasi semua tabel
     initTables() {
+        // Initialize JadwalTable with default (no filter) - will be filtered when semester is selected
         this.initJadwalTable();
         this.initJadwalXiTable();
         this.initSubjectsTable();
         this.initClassesTable();
+        // initTermsTable() - hanya dipanggil ketika tab semester dibuka
         this.initImportForm();
         this.initSubjectForm();
         this.initUploadSubjectForm();
@@ -763,8 +819,22 @@ class GridJadwalDatatable {
         this.renderClassesTable();
     }
 
+    // Fungsi untuk menginisialisasi tabel Semester dengan auto reload
+    initTermsTable() {
+        this.renderTermsTable();
+    }
+
     // Fungsi untuk menginisialisasi form kelas
     initClassForms() {
+        // Add class form
+        const addClassForm = document.getElementById("addClassForm");
+        if (addClassForm) {
+            console.log("Add class form found, adding event listener");
+            addClassForm.addEventListener("submit", window.handleClassAdd);
+        } else {
+            console.error("Add class form not found!");
+        }
+
         // Edit class form
         const editClassForm = document.getElementById("editClassForm");
         if (editClassForm) {
@@ -965,6 +1035,33 @@ class GridJadwalDatatable {
         });
     }
 
+    // Fungsi untuk attach event listener langsung ke checkbox setelah tabel di-render
+    attachTermsCheckboxEvents() {
+        const selectAllCheckbox = document.getElementById(
+            "select-all-terms-checkbox"
+        );
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener("change", () => {
+                const isChecked = selectAllCheckbox.checked;
+                const allCheckboxes = document.querySelectorAll(
+                    ".row-checkbox-terms"
+                );
+                allCheckboxes.forEach((cb) => (cb.checked = isChecked));
+                this.updateTermsBulkActions();
+            });
+        }
+
+        // Attach event listeners to individual checkboxes
+        const individualCheckboxes = document.querySelectorAll(
+            ".row-checkbox-terms"
+        );
+        individualCheckboxes.forEach((checkbox, index) => {
+            checkbox.addEventListener("change", () => {
+                this.updateTermsBulkActions();
+            });
+        });
+    }
+
     // Fungsi untuk update bulk actions mata pelajaran
     updateSubjectsBulkActions() {
         const allCheckboxes = document.querySelectorAll(
@@ -1031,6 +1128,31 @@ class GridJadwalDatatable {
         console.log(
             `Classes: ${checkedBoxes.length} of ${allCheckboxes.length} selected`
         );
+    }
+
+    // Fungsi untuk update bulk actions semester
+    updateTermsBulkActions() {
+        const allCheckboxes = document.querySelectorAll(".row-checkbox-terms");
+        const checkedBoxes = document.querySelectorAll(
+            ".row-checkbox-terms:checked"
+        );
+        const selectAll = document.getElementById("select-all-terms-checkbox");
+        const singleActions = document.getElementById("single-actions-terms");
+        const bulkActions = document.getElementById("bulk-actions-terms");
+
+        if (selectAll) {
+            selectAll.checked =
+                allCheckboxes.length > 0 &&
+                checkedBoxes.length === allCheckboxes.length;
+        }
+
+        if (checkedBoxes.length > 0) {
+            if (singleActions) singleActions.style.display = "none";
+            if (bulkActions) bulkActions.style.display = "block";
+        } else {
+            if (singleActions) singleActions.style.display = "block";
+            if (bulkActions) bulkActions.style.display = "none";
+        }
     }
 
     // Fungsi untuk menampilkan modal konfirmasi bulk delete
@@ -1514,10 +1636,134 @@ class GridJadwalDatatable {
         }, 100);
     }
 
+    // Render terms table with auto reload
+    renderTermsTable() {
+        const container = document.getElementById("terms-table");
+        if (!container) {
+            console.error("Container terms-table not found");
+            return;
+        }
+
+        // Clear container first
+        container.innerHTML = "";
+
+        // Destroy existing instance if it exists
+        if (this.gridInstanceTerms) {
+            try {
+                if (typeof this.gridInstanceTerms.destroy === "function") {
+                    this.gridInstanceTerms.destroy();
+                }
+            } catch (e) {
+                console.log("Error destroying GridJS instance:", e);
+            }
+        }
+
+        // Create new GridJS instance with auto reload
+        this.gridInstanceTerms = new gridjs.Grid({
+            columns: [
+                {
+                    id: "checkbox",
+                    name: gridjs.html(
+                        '<input type="checkbox" id="select-all-terms-checkbox">'
+                    ),
+                    width: "48px",
+                    sort: false,
+                    formatter: (cell, row) => {
+                        const termId = row.cells[5].data; // ID is in the sixth column (index 5)
+                        return gridjs.html(
+                            `<input type="checkbox" class="row-checkbox-terms" data-id="${termId}">`
+                        );
+                    },
+                },
+                { name: "Nama Semester" },
+                {
+                    name: "Tanggal Mulai",
+                    formatter: (cell) => {
+                        return new Date(cell).toLocaleDateString("id-ID");
+                    },
+                },
+                {
+                    name: "Tanggal Berakhir",
+                    formatter: (cell) => {
+                        return new Date(cell).toLocaleDateString("id-ID");
+                    },
+                },
+                {
+                    name: "Status",
+                    formatter: (cell) => {
+                        return cell
+                            ? gridjs.html(
+                                  '<span class="badge bg-success">Aktif</span>'
+                              )
+                            : gridjs.html(
+                                  '<span class="badge bg-secondary">Tidak Aktif</span>'
+                              );
+                    },
+                },
+                {
+                    name: "Aksi",
+                    width: "200px",
+                    sort: false,
+                    formatter: (cell, row) => {
+                        const termId = row.cells[5].data; // ID is in the sixth column (index 5)
+                        return gridjs.html(`
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editTerm(${termId})">
+                                    <i class="bx bx-edit me-1"></i>Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTerm(${termId})">
+                                    <i class="bx bx-trash me-1"></i>Hapus
+                                </button>
+                            </div>
+                        `);
+                    },
+                },
+            ],
+            pagination: { limit: 10 },
+            search: true,
+            sort: true,
+            server: {
+                url: "/admin/terms/data",
+                then: (data) => {
+                    if (!data || !Array.isArray(data)) {
+                        console.error("Invalid data received:", data);
+                        return [];
+                    }
+
+                    return data.map((term) => [
+                        "", // Checkbox column
+                        term.name,
+                        term.start_date,
+                        term.end_date,
+                        term.is_active,
+                        term.id, // Hidden ID column
+                    ]);
+                },
+                total: (data) => {
+                    return data.length;
+                },
+            },
+        }).render(container);
+
+        // Ekspor instance untuk auto reload
+        window.gridInstanceTerms = this.gridInstanceTerms;
+
+        // Re-initialize bulk actions after table is rendered
+        setTimeout(() => {
+            this.attachTermsCheckboxEvents();
+        }, 100);
+    }
+
     // Fungsi untuk menginisialisasi tabel Jadwal
-    initJadwalTable() {
+    initJadwalTable(termId = null) {
         const mount = document.getElementById("table-search");
         if (!mount) return;
+
+        // Build URL with optional term_id parameter
+        let serverUrl = "/admin/jadwal";
+        if (termId) {
+            serverUrl += `?term_id=${termId}`;
+        }
 
         this.gridInstanceJadwal = new gridjs.Grid({
             columns: [
@@ -1548,9 +1794,6 @@ class GridJadwalDatatable {
 
                         return gridjs.html(`
                             <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary" onclick="editJadwal('${jadwalId}')">
-                                    Edit
-                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteJadwal('${jadwalId}')">
                                     Hapus
                                 </button>
@@ -1562,7 +1805,7 @@ class GridJadwalDatatable {
             pagination: { limit: 10 },
             search: true,
             server: {
-                url: "/admin/jadwal",
+                url: serverUrl,
                 then: (data) =>
                     data.map((jadwal) => [
                         null, // checkbox
@@ -1668,10 +1911,12 @@ class GridJadwalDatatable {
     }
 
     // Fungsi untuk menginisialisasi tabel Jadwal XI (mengikuti style tabel utama)
-    initJadwalXiTable() {
+    initJadwalXiTable(termId = null) {
         const mount = document.getElementById("table-search-xi");
         if (!mount) {
-            console.error("Table mount element not found");
+            console.warn(
+                "Table mount element not found, skipping XI table initialization"
+            );
             return;
         }
 
@@ -1684,6 +1929,11 @@ class GridJadwalDatatable {
             location_type: urlParams.get("location_type") || "",
             day: urlParams.get("day") || "",
         };
+
+        // Add term_id parameter if provided
+        if (termId) {
+            filterParams.term_id = termId;
+        }
 
         // Build query string for server request
         const queryString = new URLSearchParams(filterParams).toString();
@@ -1726,9 +1976,6 @@ class GridJadwalDatatable {
 
                         return gridjs.html(`
                             <div class="d-flex gap-2 justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary" onclick="editJadwal('${jadwalId}')">
-                                    Edit
-                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="openDeleteJadwalXiModal('${jadwalId}')">
                                     Hapus
                                 </button>
@@ -1791,6 +2038,9 @@ class GridJadwalDatatable {
             },
             language: { search: { placeholder: "Ketik untuk mencari…" } },
         }).render(mount);
+
+        // Make gridInstanceJadwalXI global for refresh functionality
+        window.gridInstanceJadwalXI = this.gridInstanceJadwalXI;
 
         // expose reload helper for XI table
         window.gridXiReload = () => {
@@ -2362,6 +2612,16 @@ class GridJadwalDatatable {
                 this.updateLocationBasedOnWeek(e.target.value, locationSelect);
             });
         }
+
+        // Group to Location mapping (when group changes, update location if week is selected)
+        if (groupSelect) {
+            groupSelect.addEventListener("change", (e) => {
+                const currentWeek = weekSelect ? weekSelect.value : "";
+                if (currentWeek) {
+                    this.updateLocationBasedOnWeek(currentWeek, locationSelect);
+                }
+            });
+        }
     }
 
     // Update group based on selected class
@@ -2400,18 +2660,42 @@ class GridJadwalDatatable {
         }
     }
 
-    // Update location based on selected week
+    // Update location based on selected week and group
     updateLocationBasedOnWeek(selectedWeek, locationSelect) {
         if (!locationSelect) return;
 
+        // Get current group selection
+        const groupSelect = document.getElementById("filterGroupType");
+        const selectedGroup = groupSelect ? groupSelect.value : "";
+
         if (selectedWeek === "ganjil") {
-            // Ganjil = Lab
-            locationSelect.value = "lab";
-            this.highlightField(locationSelect, "auto-set");
+            if (selectedGroup === "A") {
+                // Kelompok A: Ganjil = Lab
+                locationSelect.value = "lab";
+                this.highlightField(locationSelect, "auto-set (Kelompok A)");
+            } else if (selectedGroup === "B") {
+                // Kelompok B: Ganjil = Teori
+                locationSelect.value = "theory";
+                this.highlightField(locationSelect, "auto-set (Kelompok B)");
+            } else {
+                // Default behavior if no group selected
+                locationSelect.value = "lab";
+                this.highlightField(locationSelect, "auto-set");
+            }
         } else if (selectedWeek === "genap") {
-            // Genap = Teori
-            locationSelect.value = "theory";
-            this.highlightField(locationSelect, "auto-set");
+            if (selectedGroup === "A") {
+                // Kelompok A: Genap = Teori
+                locationSelect.value = "theory";
+                this.highlightField(locationSelect, "auto-set (Kelompok A)");
+            } else if (selectedGroup === "B") {
+                // Kelompok B: Genap = Lab
+                locationSelect.value = "lab";
+                this.highlightField(locationSelect, "auto-set (Kelompok B)");
+            } else {
+                // Default behavior if no group selected
+                locationSelect.value = "theory";
+                this.highlightField(locationSelect, "auto-set");
+            }
         } else if (!selectedWeek) {
             // Reset location if no week selected
             locationSelect.value = "";

@@ -17,6 +17,7 @@ class XiTimetableImport implements ToCollection
     private $headers = [];
     private $processedCount = 0;
     private $groupType;
+    private $termId;
     private $currentHari;
     private $detectedFormat = null;
     private $errors = [];
@@ -24,18 +25,19 @@ class XiTimetableImport implements ToCollection
     private $classHeaderRow = [];
     private $grade;
 
-    public function __construct($groupType = null, $grade = null)
+    public function __construct($groupType = null, $grade = null, $termId = null)
     {
         $this->groupType = $groupType;
         $this->grade = $grade;
+        $this->termId = $termId;
         $this->currentHari = null;
     }
 
     public function collection(Collection $rows)
     {
-        $term = Term::where('is_active', true)->latest()->first();
+        $term = $this->termId ? Term::find($this->termId) : Term::where('is_active', true)->latest()->first();
         if (!$term) {
-            throw new \Exception('Tidak ada term aktif. Silakan buat term aktif terlebih dahulu.');
+            throw new \Exception('Semester tidak ditemukan atau tidak ada term aktif.');
         }
 
         $daysMap = [

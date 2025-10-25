@@ -19,10 +19,13 @@ class TimeOverrideController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'time' => 'required|date_format:H:i:s'
+            'time' => 'required|date_format:H:i'
         ]);
 
-        TimeOverrideService::setOverride($request->date, $request->time);
+        // Convert HH:MM to HH:MM:SS format
+        $time = $request->time . ':00';
+
+        TimeOverrideService::setOverride($request->date, $time);
 
         return response()->json([
             'success' => true,

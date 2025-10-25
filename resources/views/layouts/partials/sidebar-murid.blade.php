@@ -43,7 +43,30 @@
                     </span>
                     <span class="nav-text"> Riwayat Absensi </span>
                 </a>
-                <!-- Pengumuman menu removed -->
+                <a class="nav-link" href="{{ route('murid.pengumuman') }}">
+                    <span class="nav-icon">
+                        <i class='bx bx-news'></i>
+                    </span>
+                    <span class="nav-text"> Pengumuman </span>
+                </a>
+                <a class="nav-link" href="{{ route('murid.permohonan-izin') }}">
+                    <span class="nav-icon">
+                        <i class='bx bx-file'></i>
+                    </span>
+                    <span class="nav-text"> Permohonan Izin </span>
+                </a>
+                <a class="nav-link" href="{{ route('murid.pengaturan') }}">
+                    <span class="nav-icon">
+                        <i class='bx bx-cog'></i>
+                    </span>
+                    <span class="nav-text"> Pengaturan </span>
+                </a>
+                <a class="nav-link" href="{{ route('murid.bantuan') }}">
+                    <span class="nav-icon">
+                        <i class='bx bx-help-circle'></i>
+                    </span>
+                    <span class="nav-text"> Bantuan </span>
+                </a>
             </li>
 
         </ul>

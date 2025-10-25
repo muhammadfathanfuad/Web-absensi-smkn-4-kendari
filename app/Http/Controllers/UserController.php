@@ -17,10 +17,14 @@ class UserController extends Controller
 
     public function table(Request $request)
     {
-        $users = User::with('roles', 'teacher', 'student')->get()->map(function ($user) {
-            $user->role = $user->roles->first()?->name ?? null;
-            return $user;
-        });
+        $users = User::with('roles', 'teacher', 'student')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+            ->orderBy('full_name', 'asc')
+            ->get()
+            ->map(function ($user) {
+                $user->role = $user->roles->first()?->name ?? null;
+                return $user;
+            });
 
         return response()->json($users);
     }

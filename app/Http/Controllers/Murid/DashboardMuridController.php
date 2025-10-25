@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Models\Timetable;
 use App\Models\Student;
 use App\Models\Attendance;
+use App\Services\TimeOverrideService;
 // Jika nanti Anda memerlukan model, tambahkan di sini. Contoh:
 // use App\Models\Jadwal;
 // use App\Models\Pengumuman;
@@ -26,12 +27,17 @@ class DashboardMuridController extends Controller
         $student = Student::where('user_id', $user->id)->first();
         $classId = $student ? $student->class_id : null;
 
-        $day = Carbon::now()->isoWeekday();
+        // Data siswa untuk welcome message
+        $namaSiswa = $user->full_name ?? 'Siswa';
+
+        $day = TimeOverrideService::dayOfWeek();
 
         $timetables = collect();
         if ($classId) {
-            $timetables = Timetable::with(['subject', 'teacher.user'])
-                ->where('class_id', $classId)
+            $timetables = Timetable::with(['classSubject.subject', 'classSubject.teacher.user', 'classSubject.class'])
+                ->whereHas('classSubject', function($query) use ($classId) {
+                    $query->where('class_id', $classId);
+                })
                 ->where('day_of_week', $day)
                 ->where('is_active', true)
                 ->orderBy('start_time')
@@ -44,7 +50,7 @@ class DashboardMuridController extends Controller
         $sakitCount = Attendance::where('student_id', $user->id)->where('status', 'S')->count();
         $alpaCount = Attendance::where('student_id', $user->id)->where('status', 'A')->count();
 
-        return view('murid.dashboard', compact('timetables', 'student', 'hadirCount', 'izinCount', 'sakitCount', 'alpaCount'));
+        return view('murid.dashboard', compact('timetables', 'student', 'hadirCount', 'izinCount', 'sakitCount', 'alpaCount', 'namaSiswa'));
     }
 
     /**
@@ -76,19 +82,19 @@ class DashboardMuridController extends Controller
         $from = request()->query('from');
         $to = request()->query('to');
 
-        // Default: 30 hari terakhir
-        if (! $from || ! $to) {
-            $to = Carbon::now()->endOfDay()->toDateString();
-            $from = Carbon::now()->subDays(30)->startOfDay()->toDateString();
-        }
-
         $user = Auth::user();
 
-        $attendances = Attendance::with(['classSession.timetable.subject'])
-            ->where('student_id', $user->id)
-            ->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()])
-            ->orderByDesc('created_at')
-            ->get();
+        // Query dasar untuk semua absensi siswa
+        $query = Attendance::with(['classSession.timetable.classSubject.subject'])
+            ->where('student_id', $user->id);
+
+        // Jika ada filter tanggal, tambahkan kondisi whereBetween
+        if ($from && $to) {
+            $query->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
+        }
+
+        // Pagination dengan limit 15 per halaman
+        $attendances = $query->orderByDesc('created_at')->paginate(15);
 
         return view('murid.riwayat-absensi', compact('attendances', 'from', 'to'));
     }
