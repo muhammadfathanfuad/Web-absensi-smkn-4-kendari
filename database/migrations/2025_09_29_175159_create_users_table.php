@@ -13,7 +13,7 @@ class CreateUsersTable extends Migration
             $table->string('full_name');
             $table->string('email')->unique()->nullable();
             $table->string('phone')->unique()->nullable();
-            $table->string('username')->unique();
+            $table->string('username')->unique()->nullable();
             $table->string('password_hash');
             $table->enum('status', ['active', 'suspended'])->default('active');
             $table->timestamps();

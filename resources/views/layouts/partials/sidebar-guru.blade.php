@@ -43,7 +43,24 @@
                          </span>
                          <span class="nav-text"> Status Absensi </span>
                     </a>
-                    <!-- Pengumuman removed -->
+                    <a class="nav-link" href="{{ route('any', 'pengumuman-guru') }}">
+                         <span class="nav-icon">
+                              <i class='bx bx-news'></i>
+                         </span>
+                         <span class="nav-text"> Pengumuman </span>
+                    </a>
+                    <a class="nav-link" href="{{ route('any', 'pengaturan-guru') }}">
+                         <span class="nav-icon">
+                              <i class='bx bx-cog'></i>
+                         </span>
+                         <span class="nav-text"> Pengaturan </span>
+                    </a>
+                    <a class="nav-link" href="{{ route('any', 'bantuan-guru') }}">
+                         <span class="nav-icon">
+                              <i class='bx bx-help-circle'></i>
+                         </span>
+                         <span class="nav-text"> Bantuan </span>
+                    </a>
                </li>
 
           </ul>

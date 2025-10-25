@@ -1,0 +1,130 @@
+/* Admin Dashboard Styles */
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 20px;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 8px;
+    width: 2px;
+    height: calc(100% + 10px);
+    background: #e9ecef;
+}
+
+.timeline-item:last-child:before {
+    display: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #5156be;
+}
+
+/* Custom styling for pie chart legend */
+.apexcharts-legend {
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+
+.apexcharts-legend-series {
+    display: inline-block !important;
+    margin-right: 15px !important;
+    margin-bottom: 8px !important;
+}
+
+.apexcharts-legend-text {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+/* Responsive legend for smaller screens */
+@media (max-width: 768px) {
+    .apexcharts-legend-series {
+        margin-right: 10px !important;
+        margin-bottom: 5px !important;
+    }
+}
+
+/* Timeline Scroll Styles */
+.timeline-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 #f8f9fa;
+}
+
+.timeline-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.timeline-scroll::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+/* Equal Height Cards */
+.equal-height-cards {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.equal-height-cards .card {
+    display: flex;
+    flex-direction: column;
+}
+
+.equal-height-cards .card-body {
+    flex: 1;
+}
+
+/* Pagination Active State Styles */
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+}
+
+.pagination .page-item.active {
+    background-color: #0d6efd !important;
+}
+
+.pagination .page-item.active .page-link:hover {
+    background-color: #0b5ed7 !important;
+    border-color: #0a58ca !important;
+}

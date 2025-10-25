@@ -2,140 +2,173 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\Teacher;
-use App\Models\Student;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\UsersImport;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::select('id', 'full_name')->get();
-        return response()->json($users);
+        $users = User::all();
+        return view('admin.manage-user', compact('users'));
     }
 
-    public function table()
+    public function table(Request $request)
     {
-        // Ambil kolom yang dibutuhkan saja
-        $users = User::select('id', 'full_name', 'email', 'phone', 'username', 'status')->get();
-
-        // Kembalikan JSON (array of objects)
-        return response()->json($users);
-    }
-
-    public function search(Request $request)
-    {
-        $query = $request->get('q');
-        $users = User::where('full_name', 'like', '%' . $query . '%')
-            ->orWhere('email', 'like', '%' . $query . '%')
-            ->orWhere('username', 'like', '%' . $query . '%')
-            ->select('id', 'full_name', 'email', 'username')
-            ->limit(10)
-            ->get();
+        $users = User::with('roles', 'teacher', 'student')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+            ->orderBy('full_name', 'asc')
+            ->get()
+            ->map(function ($user) {
+                $user->role = $user->roles->first()?->name ?? null;
+                return $user;
+            });
 
         return response()->json($users);
     }
+
 
     public function store(Request $request)
     {
-        try {
-            // Validasi input
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email',
-                'phone' => 'required|string|max:15|unique:users,phone',
-                'username' => 'required|string|max:255|unique:users,username',
-                'password' => 'required|string|min:8', // password minimal 8 karakter
-            ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'nullable|string|max:255|unique:users',
+            'password' => 'nullable|string|min:8',
+        ]);
 
-            // Membuat user baru
-            $user = User::create([
-                'full_name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'username' => $validated['username'],
-                'password_hash' => Hash::make($validated['password']),
-                'status' => 'active', // default status bisa diubah sesuai kebutuhan
-            ]);
+        $user = User::create([
+            'full_name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password_hash' => $request->password ? bcrypt($request->password) : bcrypt('password'),
+            'status' => 'suspended',
+        ]);
 
-            // Mengembalikan response sukses
-            return response()->json(['success' => true, 'message' => 'User berhasil ditambahkan!']);
-        } catch (ValidationException $e) {
-            // Mengembalikan response gagal validasi
-            return response()->json(['success' => false, 'message' => 'Validasi gagal', 'errors' => $e->errors()], 422);
-        } catch (\Exception $e) {
-            // Mengembalikan response gagal karena error lain
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
-        }
+        // No role attached
+
+        return response()->json(['success' => true, 'message' => 'User berhasil ditambahkan!']);
     }
 
     public function update(Request $request, $id)
     {
-        try {
-            // Cari user berdasarkan ID sebelum validasi
-            $user = User::findOrFail($id);
+        $user = User::findOrFail($id);
 
-            // Validasi input dengan pengecualian pada user yang sedang diupdate
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email,' . $user->id, // Pengecualian untuk email yang sedang diupdate
-                'phone' => 'required|string|max:15|unique:users,phone,' . $user->id, // Pengecualian untuk phone yang sedang diupdate
-                'username' => 'required|string|max:255|unique:users,username,' . $user->id, // Pengecualian untuk username yang sedang diupdate
-                'password' => 'nullable|string|min:8', // password bisa diabaikan
-                'status' => 'required|in:active,suspended',
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+            'phone' => 'nullable|string|max:255|unique:users,phone,' . $id,
+            'password' => 'nullable|string|min:8',
+            'status' => 'required|in:active,suspended',
+        ]);
+
+        $updateData = [
+            'full_name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'status' => $request->status,
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password_hash'] = bcrypt($request->password);
+        }
+
+        $user->update($updateData);
+
+        return response()->json(['success' => true, 'message' => 'User berhasil diupdate!']);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+
+        // Delete related teacher or student records
+        if ($user->teacher) {
+            $user->teacher->delete();
+        }
+        if ($user->student) {
+            $user->student->delete();
+        }
+
+        $user->delete();
+        return response()->json(['success' => true, 'message' => 'User berhasil dihapus!']);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('query');
+        $users = User::where('name', 'like', '%' . $query . '%')
+            ->orWhere('email', 'like', '%' . $query . '%')
+            ->with('roles')
+            ->get();
+        return response()->json($users);
+    }
+
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|mimes:xlsx,xls',
             ]);
 
-            // Update data user
-            $user->full_name = $validated['name'];
-            $user->email = $validated['email'];
-            $user->phone = $validated['phone'];
-            $user->username = $validated['username'];
-            $user->status = $validated['status'];
+            Excel::import(new UsersImport, $request->file('file'));
 
-            // Update password hanya jika diisi
-            if (!empty($validated['password'])) {
-                $user->password_hash = Hash::make($validated['password']);
-            }
-
-            $user->save();
-
-            // Mengembalikan response sukses yang konsisten
-            return response()->json(['success' => true, 'message' => 'User berhasil diperbarui!']);
-        } catch (ValidationException $e) {
-            // Mengembalikan response gagal validasi
-            return response()->json(['success' => false, 'message' => 'Validasi gagal', 'errors' => $e->errors()], 422);
+            return response()->json(['success' => true, 'message' => 'Users berhasil diimpor!']);
         } catch (\Exception $e) {
-            // Mengembalikan response gagal karena error lain
+            return response()->json(['success' => false, 'message' => 'Gagal mengimpor users: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Bulk delete users
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:users,id',
+            ]);
+
+            User::whereIn('id', $request->ids)->delete();
+
+            return response()->json(['success' => true, 'message' => 'User berhasil dihapus!']);
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
 
-
-    public function destroy($id)
+    // Bulk activate users
+    public function bulkStatusActive(Request $request)
     {
         try {
-            // Cari user berdasarkan ID
-            $user = User::findOrFail($id);
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:users,id',
+            ]);
 
-            // Hapus data terkait
-            Teacher::where('user_id', $id)->delete();
-            Student::where('user_id', $id)->delete();
-            $user->roles()->detach();
+            User::whereIn('id', $request->ids)->update(['status' => 'active']);
 
-            // Hapus user
-            $user->delete();
-
-            // Mengembalikan response sukses yang konsisten
-            return response()->json(['success' => true, 'message' => 'User berhasil dihapus!']);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Jika user tidak ditemukan
-            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
+            return response()->json(['success' => true, 'message' => 'Status user berhasil diubah ke aktif!']);
         } catch (\Exception $e) {
-            // Jika user tidak ditemukan atau error lainnya
-            return response()->json(['success' => false, 'message' => 'Gagal menghapus user: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Bulk suspend users
+    public function bulkStatusSuspended(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:users,id',
+            ]);
+
+            User::whereIn('id', $request->ids)->update(['status' => 'suspended']);
+
+            return response()->json(['success' => true, 'message' => 'Status user berhasil diubah ke suspended!']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
 }

@@ -5,7 +5,7 @@
                 <p class="mb-0">
                     <script>
                         document.write(new Date().getFullYear())
-                    </script> &copy; Taplox.</a>
+                    </script> &copy; Aksara Tech.</a>
                 </p>
             </div>
         </div>

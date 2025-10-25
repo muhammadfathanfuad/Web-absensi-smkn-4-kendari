@@ -15,7 +15,12 @@ class Attendance extends Model
         'student_id',
         'status',
         'check_in_time',
+        'check_out_time',
         'notes',
+        'session_id',
+        'session_number',
+        'is_on_time',
+        'late_minutes',
     ];
 
     public function student()
@@ -27,5 +32,10 @@ class Attendance extends Model
     public function classSession()
     {
         return $this->belongsTo(ClassSession::class);
+    }
+
+    public function attendanceSession()
+    {
+        return $this->belongsTo(AttendanceSession::class, 'session_id');
     }
 }

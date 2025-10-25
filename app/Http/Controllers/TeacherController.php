@@ -2,139 +2,138 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Teacher;
-use App\Models\User;
-use App\Models\Role;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use App\Models\Student;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\TeachersImport;
 
 class TeacherController extends Controller
 {
-    // Menampilkan data guru
-    // 
-
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil data guru dengan relasi ke data user
         $teachers = Teacher::with('user')->get();
-
-        // Kembalikan data dalam bentuk JSON untuk Grid.js
-        return response()->json($teachers->map(function ($teacher) {
-            return [
-                'id' => $teacher->user_id,
-                'user' => $teacher->user, // Relasi dengan user
-                'nip' => $teacher->nip,
-                'department' => $teacher->department,
-                'title' => $teacher->title,
-            ];
-        })->map(function ($guru) {
-            return [
-                $guru['user']?->full_name ?? "-",
-                $guru['nip'] ?? "-",
-                $guru['department'] ?? "-",
-                $guru['title'] ?? "-",
-                [
-                    'id' => $guru['id'],
-                    'user_name' => $guru['user']?->full_name ?? "-",
-                    'nip' => $guru['nip'],
-                    'department' => $guru['department'],
-                    'title' => $guru['title'],
-                ],
-            ];
-        }));
+        return response()->json($teachers);
     }
 
-
-    // Menambahkan guru baru
     public function store(Request $request)
     {
-        try {
-            // Validasi input
-            $validated = $request->validate([
-                'user_username' => 'required|exists:users,username',
-                'nip' => 'nullable|unique:teachers,nip',
-                'department' => 'nullable|string|max:255',
-                'title' => 'nullable|string|max:255',
+        $request->validate([
+            'email' => 'required|string|email|max:255|exists:users,email',
+            'nip' => 'required|string|max:255',
+            'kode_guru' => 'required|string|max:255',
+            'department' => 'required|string|max:255|exists:subjects,name',
+        ]);
+
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User dengan email tersebut tidak ditemukan!']);
+        }
+
+        // Check if already a teacher
+        if ($user->teacher) {
+            return response()->json(['success' => false, 'message' => 'User tersebut sudah menjadi guru!']);
+        }
+
+        $user->roles()->syncWithoutDetaching([2]); // teacher role
+
+        $teacher = Teacher::create([
+            'user_id' => $user->id,
+            'nip' => $request->nip,
+            'kode_guru' => $request->kode_guru,
+            'department' => $request->department,
+        ]);
+
+        // Otomatis hubungkan guru dengan mata pelajaran yang dipilih
+        $this->connectTeacherToSelectedSubject($teacher, $request->department);
+
+        return response()->json(['success' => true, 'message' => 'Guru berhasil ditambahkan dan terhubung dengan mata pelajaran!']);
+    }
+
+    /**
+     * Menghubungkan guru dengan mata pelajaran yang dipilih
+     * ClassSubject akan dibuat tanpa class_id (akan diisi nanti saat mata pelajaran ditambahkan ke kelas)
+     */
+    private function connectTeacherToSelectedSubject($teacher, $subjectName)
+    {
+        // Cari mata pelajaran berdasarkan nama yang dipilih
+        $subject = \App\Models\Subject::where('name', $subjectName)->first();
+        
+        if ($subject) {
+            // Buat ClassSubject tanpa class_id (akan diisi nanti)
+            \App\Models\ClassSubject::create([
+                'teacher_id' => $teacher->user_id,
+                'subject_id' => $subject->id,
+                'class_id' => null, // Akan diisi nanti saat mata pelajaran ditambahkan ke kelas
             ]);
-
-            // Cari user berdasarkan username
-            $user = User::where('username', $validated['user_username'])->first();
-
-            // Cek apakah user sudah terdaftar sebagai murid
-            if (Student::where('user_id', $user->id)->exists()) {
-                return response()->json(['success' => false, 'message' => 'User sudah terdaftar sebagai murid, tidak bisa didaftarkan sebagai guru.'], 422);
-            }
-
-            // Cek apakah user sudah terdaftar sebagai guru
-            if (Teacher::where('user_id', $user->id)->exists()) {
-                return response()->json(['success' => false, 'message' => 'User sudah terdaftar sebagai guru.'], 422);
-            }
-
-            // Menambahkan data guru baru
-            Teacher::create([
-                'user_id' => $user->id,
-                'nip' => $validated['nip'],
-                'department' => $validated['department'],
-                'title' => $validated['title'],
-            ]);
-
-            // Tetapkan role teacher ke user
-            $role = Role::where('name', 'teacher')->first();
-            $user->roles()->attach($role);
-
-            return response()->json(['success' => true, 'message' => 'Guru berhasil ditambahkan!']);
-        } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Validasi gagal: ' . collect($e->errors())->flatten()->implode(', ')], 422);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
 
-    // Update data guru
     public function update(Request $request, $id)
     {
+        $teacher = Teacher::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $teacher->user_id,
+            'nip' => 'required|string|max:255',
+            'kode_guru' => 'required|string|max:255',
+            'department' => 'required|string|max:255',
+        ]);
+
+        $teacher->user->update([
+            'full_name' => $request->name,
+            'email' => $request->email,
+        ]);
+
+        $teacher->update([
+            'nip' => $request->nip,
+            'kode_guru' => $request->kode_guru,
+            'department' => $request->department,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Guru berhasil diupdate!']);
+    }
+
+    public function destroy($id)
+    {
+        $teacher = Teacher::findOrFail($id);
+        $teacher->user->delete();
+        $teacher->delete();
+        return response()->json(['success' => true, 'message' => 'Guru berhasil dihapus!']);
+    }
+
+    public function import(Request $request)
+    {
         try {
-            // Cari data guru berdasarkan ID
-            $teacher = Teacher::findOrFail($id);
-
-            // Validasi input
-            $validated = $request->validate([
-                'nip' => 'nullable|unique:teachers,nip,' . $id . ',user_id',
-                'department' => 'nullable|string|max:255',
-                'title' => 'nullable|string|max:255',
+            $request->validate([
+                'file' => 'required|mimes:xlsx,xls,csv',
             ]);
 
-            // Update data guru
-            $teacher->update([
-                'nip' => $validated['nip'],
-                'department' => $validated['department'],
-                'title' => $validated['title'],
-            ]);
+            Excel::import(new TeachersImport, $request->file('file'));
 
-            return response()->json(['success' => true, 'message' => 'Guru berhasil diperbarui!']);
-        } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Validasi gagal: ' . collect($e->errors())->flatten()->implode(', ')], 422);
+            return response()->json(['success' => true, 'message' => 'Guru berhasil diimpor!']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal mengimpor guru: ' . $e->getMessage()], 500);
         }
     }
 
-    // Hapus data guru
-    public function destroy($id)
+    // Bulk delete teachers
+    public function bulkDelete(Request $request)
     {
         try {
-            // Cari data guru berdasarkan ID
-            $teacher = Teacher::findOrFail($id);
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:teachers,user_id',
+            ]);
 
-            // Hapus data guru
-            $teacher->delete();
+            Teacher::whereIn('user_id', $request->ids)->delete();
 
             return response()->json(['success' => true, 'message' => 'Guru berhasil dihapus!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
+
+
 }

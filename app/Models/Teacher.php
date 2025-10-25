@@ -13,7 +13,7 @@ class Teacher extends Model
     public $incrementing = false; // Non-incrementing karena foreign key
     protected $keyType = 'int'; // Gunakan tipe int untuk user_id
 
-    protected $fillable = ['user_id', 'nip', 'department', 'title'];
+    protected $fillable = ['user_id', 'nip', 'department', 'kode_guru'];
 
     // Relasi ke user
     public function user()
@@ -25,6 +25,12 @@ class Teacher extends Model
     public function classes()
     {
         return $this->hasMany(Classroom::class, 'homeroom_teacher_id');
+    }
+
+    // Relasi ke class subjects
+    public function classSubjects()
+    {
+        return $this->hasMany(ClassSubject::class, 'teacher_id', 'user_id');
     }
 }
 
