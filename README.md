@@ -1,5 +1,5 @@
 <div align="center">
-<img src="public/images/logo.png" alt="Logo SMKN 4 Kendari" width="120" />
+<img src="public/images/logokkn.png" alt="Logo KKN" width="120" />
 <h1>Website Absensi Sekolah PresenZ</h1>
 <p>
 Sistem Absensi Siswa modern, real-time, dan berbasis QR Code.
