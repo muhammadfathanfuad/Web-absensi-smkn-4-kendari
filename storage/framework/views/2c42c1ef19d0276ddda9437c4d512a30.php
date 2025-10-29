@@ -76,8 +76,8 @@
                                 <td colspan="7" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="bx bx-info-circle fs-32"></i>
-                                        <p class="mb-0 mt-2">Anda belum memiliki delegasi</p>
-                                        <small>Admin akan menunjuk Anda sebagai delegasi jika diperlukan</small>
+                                        <p class="mb-0 mt-2">Anda belum memiliki Tugas menggantikan guru untuk mengabsen</p>
+                                        <small>Guru akan menunjuk Anda sebagai Pengganti jika diperlukan</small>
                                     </div>
                                 </td>
                             </tr>

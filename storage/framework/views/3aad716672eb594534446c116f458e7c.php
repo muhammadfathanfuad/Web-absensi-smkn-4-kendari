@@ -162,6 +162,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Notification -->
+    <div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalLabel">Notifikasi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="notificationIcon" class="mb-3">
+                        <i class="bx bx-check-circle fs-48 text-success d-block mx-auto"></i>
+                    </div>
+                    <p class="mb-0" id="notificationMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>
@@ -1071,26 +1092,5 @@
         });
     </script>
 <?php $__env->stopPush(); ?>
-
-<!-- Modal Notification -->
-<div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="notificationModalLabel">Notifikasi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <div id="notificationIcon" class="mb-3">
-                    <i class="bx bx-check-circle fs-48 text-success d-block mx-auto"></i>
-                </div>
-                <p class="mb-0" id="notificationMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <?php echo $__env->make('layouts.vertical-murid', ['subtitle' => 'Scan QR Absensi'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/murid/qr-absensi.blade.php ENDPATH**/ ?>
