@@ -10,7 +10,7 @@
                 <h4 class="mb-sm-0 font-size-18">Pengumuman</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('murid.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Siswa</li>
                         <li class="breadcrumb-item active">Pengumuman</li>
                     </ol>
                 </div>

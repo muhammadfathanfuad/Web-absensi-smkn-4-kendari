@@ -1,7 +1,7 @@
 @extends('layouts.vertical-murid', ['subtitle' => 'Scan QR Absensi'])
 
 @section('content')
-    @include('layouts.partials.page-title', ['title' => 'Scan QR Absensi', 'subtitle' => 'Murid'])
+    @include('layouts.partials.page-title', ['title' => 'Siswa', 'subtitle' => 'Scan QR Absensi'])
 
     <div class="row justify-content-center">
         <div class="col-md-8">

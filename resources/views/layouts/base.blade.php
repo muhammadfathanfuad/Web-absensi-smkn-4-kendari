@@ -17,6 +17,10 @@
     @yield('content')
 
     @include('layouts.partials/vendor-scripts')
+    
+    {{-- Time Override Scripts --}}
+    <script src="{{ asset('js/time-override.js') }}"></script>
+    <script src="{{ asset('js/time-override-init.js') }}"></script>
 
     @yield('scripts')
 

@@ -29,7 +29,7 @@
                          <span class="nav-icon">
                               <i class='bx  bx-qr-scan'  ></i> 
                          </span>
-                         <span class="nav-text"> ScanQR </span>
+                         <span class="nav-text"> Absensi </span>
                     </a>
                     <a class="nav-link" href="{{ route('any', 'jadwal-mengajar') }}">
                          <span class="nav-icon">
@@ -41,7 +41,13 @@
                          <span class="nav-icon">
                               <i class='bx  bx-history'  ></i>    
                          </span>
-                         <span class="nav-text"> Status Absensi </span>
+                         <span class="nav-text"> Riwayat Absensi </span>
+                    </a>
+                    <a class="nav-link" href="{{ route('guru.delegasi') }}">
+                         <span class="nav-icon">
+                              <i class='bx bx-transfer'></i>    
+                         </span>
+                         <span class="nav-text"> Tugas Pengganti </span>
                     </a>
                     <a class="nav-link" href="{{ route('any', 'pengumuman-guru') }}">
                          <span class="nav-icon">

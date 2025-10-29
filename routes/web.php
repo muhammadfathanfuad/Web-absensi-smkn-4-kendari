@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/time-override/clear-time', [\App\Http\Controllers\TimeOverrideController::class, 'clearTime'])->name('time-override.clear-time');
     Route::get('/time-override/status', [\App\Http\Controllers\TimeOverrideController::class, 'getStatus'])->name('time-override.status');
     Route::get('/time-override/scenarios', [\App\Http\Controllers\TimeOverrideController::class, 'getScenarios'])->name('time-override.scenarios');
+    Route::get('/time-override/js-data', [\App\Http\Controllers\TimeOverrideController::class, 'getJSData'])->name('time-override.js-data');
 });
 
 // Root route
@@ -266,6 +267,54 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
             'message' => $message
         ]);
     })->name('admin.pengaturan.profile');
+    
+    // Admin upload photo
+    Route::post('/admin/pengaturan/photo', function (\Illuminate\Http\Request $request) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:200',
+        ], [
+            'photo.required' => 'Foto harus dipilih.',
+            'photo.image' => 'File harus berupa gambar.',
+            'photo.mimes' => 'Format foto harus jpeg, png, jpg, atau gif.',
+            'photo.max' => 'Ukuran foto maksimal 200KB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => implode(', ', $validator->errors()->all())
+            ], 422);
+        }
+
+        try {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            
+            // Delete old photo if exists
+            if ($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('users/' . $user->photo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete('users/' . $user->photo);
+            }
+            
+            // Store new photo
+            $fileName = time() . '_' . $user->id . '.' . $request->file('photo')->getClientOriginalExtension();
+            $path = $request->file('photo')->storeAs('users', $fileName, 'public');
+            
+            // Update user photo
+            $user->photo = $fileName;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Foto profil berhasil diperbarui.',
+                'photo_url' => \Illuminate\Support\Facades\Storage::url($path)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengunggah foto: ' . $e->getMessage()
+            ], 500);
+        }
+    })->name('admin.pengaturan.photo');
+    
     Route::post('/admin/pengaturan/clear-cache', function () {
         // Clear cache functionality will be implemented here
         return response()->json(['success' => true, 'message' => 'Cache berhasil dihapus']);
@@ -299,6 +348,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         // Send message functionality will be implemented here
         return response()->json(['success' => true, 'message' => 'Pesan berhasil dikirim']);
     })->name('admin.bantuan.send-message');
+
+    // Delegasi routes
+    Route::get('/admin/delegasi', [\App\Http\Controllers\Admin\DelegationController::class, 'index'])->name('admin.delegasi');
+    Route::post('/admin/delegasi', [\App\Http\Controllers\Admin\DelegationController::class, 'store'])->name('admin.delegasi.store');
+    Route::post('/admin/delegasi/check-email', [\App\Http\Controllers\Admin\DelegationController::class, 'checkEmail'])->name('admin.delegasi.check-email');
+    Route::put('/admin/delegasi/{id}', [\App\Http\Controllers\Admin\DelegationController::class, 'update'])->name('admin.delegasi.update');
+    Route::delete('/admin/delegasi/{id}', [\App\Http\Controllers\Admin\DelegationController::class, 'destroy'])->name('admin.delegasi.destroy');
 
 });
 
@@ -347,13 +403,18 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
         return view('guru.pengumuman-guru');
     })->name('guru.pengumuman-guru');
     
-    Route::get('/pengaturan-guru', function () {
-        return view('guru.pengaturan-guru');
-    })->name('guru.pengaturan-guru');
+    Route::get('/pengaturan-guru', [\App\Http\Controllers\Guru\PengaturanController::class, 'index'])->name('guru.pengaturan-guru');
+    Route::put('/pengaturan-guru/profil', [\App\Http\Controllers\Guru\PengaturanController::class, 'updateProfil'])->name('guru.pengaturan.update-profil');
+    Route::post('/pengaturan-guru/password', [\App\Http\Controllers\Guru\PengaturanController::class, 'updatePassword'])->name('guru.pengaturan.update-password');
+    Route::post('/pengaturan-guru/photo', [\App\Http\Controllers\Guru\PengaturanController::class, 'updatePhoto'])->name('guru.pengaturan.photo');
     
     Route::get('/bantuan-guru', function () {
         return view('guru.bantuan-guru');
     })->name('guru.bantuan-guru');
+    
+    // Delegasi routes
+    Route::get('/guru/delegasi', [\App\Http\Controllers\Guru\DelegationController::class, 'index'])->name('guru.delegasi');
+    Route::get('/guru/delegasi/today-count', [\App\Http\Controllers\Guru\DelegationController::class, 'getTodayCount'])->name('guru.delegasi.today-count');
     
 });
 
@@ -388,8 +449,19 @@ Route::middleware(['auth', 'role:student'])->group(function () {
     });
     
     Route::get('/student/pengaturan', function () {
-        return view('murid.pengaturan');
+        $user = Auth::user();
+        return view('murid.pengaturan', compact('user'));
     })->name('murid.pengaturan');
+    Route::post('/student/pengaturan/profile', [\App\Http\Controllers\Murid\PengaturanController::class, 'updateProfile'])->name('murid.pengaturan.profile');
+    Route::post('/student/pengaturan/password', [\App\Http\Controllers\Murid\PengaturanController::class, 'updatePassword'])->name('murid.pengaturan.password');
+    Route::post('/student/pengaturan/photo', [\App\Http\Controllers\Murid\PengaturanController::class, 'updatePhoto'])->name('murid.pengaturan.photo');
+    
+    // Delegasi routes untuk murid
+    Route::get('/student/delegasi', [\App\Http\Controllers\Murid\DelegationController::class, 'index'])->name('murid.delegasi');
+    
+    // Routes untuk generate QR dan stop session dari delegasi (murid)
+    Route::post('/student/delegasi/generate-qr', [\App\Http\Controllers\Guru\AbsensiController::class, 'generateQrCode'])->name('murid.delegasi.generate-qr');
+    Route::post('/student/delegasi/stop-session', [\App\Http\Controllers\Guru\AbsensiController::class, 'stopSession'])->name('murid.delegasi.stop-session');
     
     Route::get('/student/bantuan', function () {
         return view('murid.bantuan');
@@ -410,12 +482,18 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/api/announcements/students', [\App\Http\Controllers\Admin\AnnouncementController::class, 'getForStudents'])->name('api.announcements.students');
     Route::post('/api/announcements/{announcement}/mark-read', [\App\Http\Controllers\Admin\AnnouncementController::class, 'markAsRead'])->name('api.announcements.mark-read');
     Route::post('/api/announcements/{announcement}/mark-unread', [\App\Http\Controllers\Admin\AnnouncementController::class, 'markAsUnread'])->name('api.announcements.mark-unread');
+    
+    // API routes for notifications
+    Route::get('/api/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'getUnreadCount'])->name('api.notifications.unread-count');
+    Route::get('/api/notifications/recent', [\App\Http\Controllers\NotificationController::class, 'getRecent'])->name('api.notifications.recent');
+    Route::post('/api/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('api.notifications.mark-read');
+    Route::post('/api/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
 });
 
 
 // Catch-all routes
 Route::group(['prefix' => '/', 'middleware' => 'auth'], function () {
-    Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])->name('third');
     Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])->name('second');
+    Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])->name('third');
     Route::get('{any}', [RoutingController::class, 'root'])->name('any');
 });

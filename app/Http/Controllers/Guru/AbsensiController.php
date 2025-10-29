@@ -13,18 +13,24 @@ use App\Models\Student;
 use App\Models\ClassSession;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\SessionDelegation;
 use App\Models\Subject;
+use App\Models\Classroom;
 use App\Services\TimeOverrideService;
 use Illuminate\Support\Str;
 
 class AbsensiController extends Controller
 {
     // Menampilkan halaman scanner/QR generator
-    public function showScanner()
+    public function showScanner(Request $request)
     {
         $teacherId = Auth::id();
         $dayOfWeek = TimeOverrideService::dayOfWeek();
 
+        // Check if there's a timetable_id parameter (for delegation)
+        $timetableId = $request->input('timetable_id');
+        
+        // Get regular teacher schedules
         $jadwalQuery = Timetable::with(['classSubject.subject', 'classSubject.class'])
             ->whereHas('classSubject.teacher', function($query) use ($teacherId) {
                 $query->where('user_id', $teacherId);
@@ -32,9 +38,33 @@ class AbsensiController extends Controller
             ->where('day_of_week', $dayOfWeek)
             ->orderBy('start_time', 'asc')
             ->get();
+        
+        // Get delegated schedules for this teacher
+        $delegatedSchedules = SessionDelegation::with(['timetable.classSubject.subject', 'timetable.classSubject.class', 'timetable' => function($query) {
+                $query->where('day_of_week', TimeOverrideService::dayOfWeek());
+            }])
+            ->where('delegated_to_user_id', $teacherId)
+            ->where('status', 'active')
+            ->where(function($query) {
+                $query->where('type', 'permanent')
+                      ->orWhere(function($q) {
+                          $q->where('type', 'temporary')
+                            ->where('valid_until', '>=', TimeOverrideService::today());
+                      });
+            })
+            ->get()
+            ->filter(function($delegation) {
+                return $delegation->timetable && $delegation->timetable->day_of_week === TimeOverrideService::dayOfWeek();
+            })
+            ->map(function($delegation) {
+                return $delegation->timetable;
+            });
+        
+        // Merge regular and delegated schedules
+        $allSchedules = $jadwalQuery->merge($delegatedSchedules)->unique('id');
 
         // Group by class_subject_id and type to merge consecutive times
-        $grouped = $jadwalQuery->groupBy(function ($item) {
+        $grouped = $allSchedules->groupBy(function ($item) {
             return $item->class_subject_id . '-' . ($item->type ?? 'teori');
         });
 
@@ -77,7 +107,101 @@ class AbsensiController extends Controller
             }
         }
 
-        return view('guru.scan-qr', compact('jadwalHariIni'));
+        // Data rekap riwayat absensi hari ini
+        $rekapRiwayat = $this->getRekapRiwayatAbsensi($teacherId);
+
+        return view('guru.scan-qr', compact('jadwalHariIni', 'rekapRiwayat'));
+    }
+
+    // Method untuk mendapatkan rekap riwayat absensi hari ini
+    private function getRekapRiwayatAbsensi($teacherId)
+    {
+        try {
+            $today = TimeOverrideService::today();
+            
+            // Ambil semua jadwal guru hari ini
+            $dayOfWeek = TimeOverrideService::dayOfWeek();
+            $timetablesToday = Timetable::with(['classSubject.subject', 'classSubject.class', 'classSubject.teacher'])
+                ->whereHas('classSubject.teacher', function($query) use ($teacherId) {
+                    $query->where('user_id', $teacherId);
+                })
+                ->where('day_of_week', $dayOfWeek)
+                ->get();
+
+            // Group by class_subject_id to merge duplicate subjects in same class
+            $grouped = $timetablesToday->groupBy(function ($item) {
+                return $item->class_subject_id;
+            });
+
+            $rekapData = collect();
+
+            foreach ($grouped as $group) {
+                // Sort by start_time
+                $sortedGroup = $group->sortBy('start_time');
+
+                // Get earliest start time and latest end time
+                $earliestStart = $sortedGroup->first()->start_time;
+                $latestEnd = $sortedGroup->last()->end_time;
+
+                // Use first timetable as base for data
+                $firstTimetable = $sortedGroup->first();
+
+                // Ambil data absensi untuk semua jadwal dalam grup ini hari ini
+                $allAttendances = collect();
+                foreach ($sortedGroup as $timetable) {
+                    $attendances = Attendance::with(['student.user'])
+                        ->whereHas('classSession', function($query) use ($timetable, $today) {
+                            $query->where('timetable_id', $timetable->id)
+                                  ->where('date', $today);
+                        })
+                        ->get();
+                    $allAttendances = $allAttendances->merge($attendances);
+                }
+
+                // Hitung statistik dari semua absensi dalam grup
+                $totalStudents = Student::where('class_id', $firstTimetable->classSubject->class_id)->count();
+                $hadir = $allAttendances->where('status', 'H')->count();
+                $terlambat = $allAttendances->where('status', 'T')->count();
+                $izin = $allAttendances->where('status', 'I')->count();
+                $sakit = $allAttendances->where('status', 'S')->count();
+                $alpa = $totalStudents - $hadir - $terlambat - $izin - $sakit;
+                
+                // Hitung persentase kehadiran
+                $persentase = $totalStudents > 0 ? round((($hadir + $terlambat) / $totalStudents) * 100, 1) : 0;
+
+                $rekapData->push([
+                    'timetable_id' => $firstTimetable->id,
+                    'mata_pelajaran' => $firstTimetable->classSubject->subject->name ?? 'N/A',
+                    'kelas' => $firstTimetable->classSubject->class->name ?? 'N/A',
+                    'jam' => Carbon::parse($earliestStart)->format('H:i') . ' - ' . Carbon::parse($latestEnd)->format('H:i'),
+                    'total_siswa' => $totalStudents,
+                    'hadir' => $hadir,
+                    'terlambat' => $terlambat,
+                    'izin' => $izin,
+                    'sakit' => $sakit,
+                    'alpa' => $alpa,
+                    'persentase' => $persentase,
+                    'status_badge' => $this->getStatusBadge($persentase)
+                ]);
+            }
+
+            return $rekapData->sortBy('jam');
+        } catch (\Exception $e) {
+            Log::error('Error getting rekap riwayat absensi: ' . $e->getMessage());
+            return collect();
+        }
+    }
+
+    // Helper method untuk menentukan warna badge berdasarkan persentase
+    private function getStatusBadge($persentase)
+    {
+        if ($persentase >= 90) {
+            return 'bg-success-subtle text-success';
+        } elseif ($persentase >= 75) {
+            return 'bg-warning-subtle text-warning';
+        } else {
+            return 'bg-danger-subtle text-danger';
+        }
     }
 
     // Generate QR Code yang disederhanakan
@@ -98,42 +222,66 @@ class AbsensiController extends Controller
                 'timetable_id' => 'required|exists:timetables,id',
             ]);
 
-            $timetable = Timetable::with('classSubject.subject', 'classSubject.class')->find($request->timetable_id);
+            $timetable = Timetable::with('classSubject.subject', 'classSubject.class', 'classSubject.teacher.user')->find($request->timetable_id);
             
             if (!$timetable) {
                 Log::error('Timetable not found with ID: ' . $request->timetable_id);
                 return response()->json(['error' => 'Timetable tidak ditemukan dengan ID: ' . $request->timetable_id], 404);
             }
+            
             $user = Auth::user()->load('teacher');
 
-            if (!$user->teacher) {
-                return response()->json(['error' => 'Data guru (NIP) tidak ditemukan.'], 404);
+            // CEK APAKAH USER INI DAPAT DELEGASI?
+            $delegation = \App\Models\SessionDelegation::where('timetable_id', $timetable->id)
+                ->where('delegated_to_user_id', $user->id)
+                ->where('status', 'active')
+                ->where(function($query) {
+                    $query->where('type', 'permanent')
+                          ->orWhere(function($q) {
+                              $q->where('type', 'temporary')
+                                ->where('valid_until', '>=', now()->toDateString());
+                          });
+                })
+                ->first();
+
+            // Jika bukan guru dan tidak ada delegasi, tolak
+            if (!$user->teacher && !$delegation) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk membuka QR ini.'], 403);
             }
+
+            // Tentukan flags
+            $isDelegated = $delegation ? true : false;
+            $originalTeacherId = $timetable->classSubject->teacher->user_id;
+            $openedByUserId = $user->id;
+            $delegationReason = $delegation ? $delegation->admin_notes : null;
 
         // Pastikan ada ClassSession untuk hari ini
         $classSession = ClassSession::firstOrCreate(
             ['timetable_id' => $timetable->id, 'date' => TimeOverrideService::today()],
-            ['status' => 'ongoing', 'opened_by' => $user->id]
+            ['status' => 'ongoing', 'opened_by' => $openedByUserId]
         );
 
         // Generate session token yang unik
-        $sessionToken = md5($timetable->id . $user->id . time() . rand(1000, 9999));
+        $sessionToken = md5($timetable->id . $user->id . TimeOverrideService::timestamp() . rand(1000, 9999));
         
         // Waktu expire 2 jam
-        $expiresAt = now()->addHours(2);
+        $expiresAt = TimeOverrideService::now()->addHours(2);
         
         // Buat data QR yang disederhanakan - hanya field essential
         $qrData = [
             'session_id' => $sessionToken,
             'timetable_id' => $timetable->id,
-            'teacher_id' => $user->id,
-            'checksum' => hash('sha256', $sessionToken . $timetable->id . $user->id)
+            'teacher_id' => $originalTeacherId,
+            'checksum' => hash('sha256', $sessionToken . $timetable->id . $originalTeacherId)
         ];
 
         // Simpan session ke database
         $attendanceSession = AttendanceSession::create([
             'timetable_id' => $timetable->id,
-            'teacher_id' => $user->id,
+            'teacher_id' => $originalTeacherId, // Guru asli tetap
+            'opened_by_user_id' => $openedByUserId, // NEW
+            'is_delegated' => $isDelegated, // NEW
+            'delegation_reason' => $delegationReason, // NEW
             'session_number' => 1,
             'session_token' => $sessionToken,
             'qr_data' => $qrData,
@@ -172,7 +320,7 @@ class AbsensiController extends Controller
         // Cek session masih aktif
         $session = AttendanceSession::where('session_token', $qrData['session_id'])
             ->where('is_active', true)
-            ->where('expires_at', '>', now())
+            ->where('expires_at', '>', TimeOverrideService::now())
             ->first();
 
         if (!$session) {
@@ -201,7 +349,7 @@ class AbsensiController extends Controller
         // Tentukan status berdasarkan waktu scan
         $timetable = Timetable::findOrFail($qrData['timetable_id']);
         $classStartTime = Carbon::parse($timetable->start_time);
-        $currentTime = now();
+        $currentTime = TimeOverrideService::now();
         $lateMinutes = $currentTime->diffInMinutes($classStartTime);
 
         // Tentukan status berdasarkan waktu
@@ -322,10 +470,9 @@ class AbsensiController extends Controller
                 Log::error('Error checking table existence:', ['error' => $e->getMessage()]);
             }
 
-            $session = AttendanceSession::where('session_token', $sessionToken)
-                ->where('teacher_id', $teacherId)
-                ->first();
-                
+            // Cari session berdasarkan token saja terlebih dahulu
+            $session = AttendanceSession::where('session_token', $sessionToken)->first();
+
             Log::info('Session query result:', ['session' => $session ? $session->toArray() : null]);
 
             if (!$session) {
@@ -333,8 +480,23 @@ class AbsensiController extends Controller
                 return response()->json(['error' => 'Session tidak ditemukan'], 404);
             }
 
-            Log::info('Session found, deactivating:', ['session' => $session->toArray()]);
-            
+            // Otorisasi:
+            // - Guru asli (teacher_id) boleh menghentikan
+            // - Pengguna yang membuka (opened_by_user_id) juga boleh menghentikan (kasus delegasi)
+            $isOwnerTeacher = ((int)$session->teacher_id === (int)$teacherId);
+            $isOpenedByUser = ((int)$session->opened_by_user_id === (int)$teacherId);
+
+            if (!$isOwnerTeacher && !$isOpenedByUser) {
+                Log::warning('Unauthorized stopSession attempt', [
+                    'session_teacher_id' => $session->teacher_id,
+                    'opened_by_user_id' => $session->opened_by_user_id,
+                    'request_user_id' => $teacherId,
+                ]);
+                return response()->json(['error' => 'Anda tidak berhak menghentikan sesi ini'], 403);
+            }
+
+            Log::info('Session authorized for deactivation, proceeding...', ['session_id' => $session->id]);
+
             // Try to deactivate the session
             try {
                 $session->deactivate();
@@ -367,23 +529,72 @@ class AbsensiController extends Controller
     // Menampilkan halaman status absensi (existing)
     public function showStatus(Request $request)
     {
-        $subjects = Subject::orderBy('name')->get();
+        // Get logged in teacher
+        $teacherId = Auth::id();
+        
+        // Get only subjects that the teacher teaches
+        $subjects = Subject::whereHas('classSubjects.teacher', function($q) use ($teacherId) {
+            $q->where('user_id', $teacherId);
+        })->orderBy('name')->get();
+        
+        // Get only classrooms that the teacher teaches
+        $classrooms = Classroom::whereHas('classSubjects.teacher', function($q) use ($teacherId) {
+            $q->where('user_id', $teacherId);
+        })->orderBy('grade')->orderBy('name')->get();
+        
         $selectedSubjectId = $request->input('subject_id');
-        $selectedDate = $request->input('date', TimeOverrideService::today());
+        $selectedClassroomId = $request->input('classroom_id');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
 
-        $query = Attendance::with(['student.user', 'classSession.timetable.classSubject.subject'])
-            ->whereHas('classSession', function ($q) use ($selectedDate) {
-                $q->where('date', $selectedDate);
+        // Query dasar dengan semua relasi yang diperlukan
+        // Hanya ambil attendance dari kelas yang diajarkan oleh guru yang login
+        $query = Attendance::with([
+            'student.user',
+            'student.classroom',
+            'classSession.timetable.classSubject.subject',
+            'classSession.timetable.classSubject.class',
+            'classSession.timetable.classSubject.teacher'
+        ])->whereHas('classSession.timetable.classSubject.teacher', function($q) use ($teacherId) {
+            $q->where('user_id', $teacherId);
+        });
+
+        // Filter berdasarkan rentang tanggal
+        if ($dateFrom && $dateTo) {
+            $query->whereHas('classSession', function ($q) use ($dateFrom, $dateTo) {
+                $q->whereBetween('date', [$dateFrom, $dateTo]);
             });
+        } elseif ($dateFrom) {
+            // Jika hanya date_from, tampilkan data pada tanggal tersebut
+            $query->whereHas('classSession', function ($q) use ($dateFrom) {
+                $q->where('date', $dateFrom);
+            });
+        }
 
+        // Filter berdasarkan mata pelajaran jika dipilih
         if ($selectedSubjectId) {
             $query->whereHas('classSession.timetable.classSubject', function ($q) use ($selectedSubjectId) {
                 $q->where('subject_id', $selectedSubjectId);
             });
         }
 
+        // Filter berdasarkan kelas jika dipilih
+        if ($selectedClassroomId) {
+            $query->whereHas('student', function ($q) use ($selectedClassroomId) {
+                $q->where('class_id', $selectedClassroomId);
+            });
+        }
+
         $attendances = $query->latest('id')->get();
 
-        return view('guru.status-absensi', compact('subjects', 'attendances', 'selectedSubjectId', 'selectedDate'));
+        return view('guru.status-absensi', compact(
+            'subjects', 
+            'classrooms',
+            'attendances', 
+            'selectedSubjectId',
+            'selectedClassroomId',
+            'dateFrom',
+            'dateTo'
+        ));
     }
 }

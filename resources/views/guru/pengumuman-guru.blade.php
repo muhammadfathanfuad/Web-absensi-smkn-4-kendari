@@ -1,7 +1,7 @@
 @extends('layouts.vertical-guru', ['subtitle' => 'Pengumuman'])
 
 @section('content')
-    @include('layouts.partials.page-title', ['title' => 'Pengumuman', 'subtitle' => 'Guru'])
+    @include('layouts.partials.page-title', ['title' => 'Guru', 'subtitle' => 'Pengumuman'])
 
     {{-- Pengumuman Terbaru --}}
     <div class="row">

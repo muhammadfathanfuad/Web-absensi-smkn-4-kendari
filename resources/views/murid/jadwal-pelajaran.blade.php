@@ -10,7 +10,7 @@
                 <h4 class="mb-sm-0 font-size-18">Jadwal Pelajaran</h4>
                     <div class="page-title-right">
                         <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('murid.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Siswa</li>
                         <li class="breadcrumb-item active">Jadwal Pelajaran</li>
                         </ol>
                     </div>
@@ -25,7 +25,7 @@
                 <div class="card-header">
                     <h4 class="card-title mb-0 d-flex align-items-center">
                         <i class="bx bx-calendar-check me-2"></i>
-                        Jadwal Pelajaran Hari Ini - {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y') }}
+                        Jadwal Pelajaran Hari Ini - {{ \App\Services\TimeOverrideService::localeFormat('dddd, D MMMM Y') }}
                     </h4>
                 </div>
                     <div class="card-body">
@@ -69,7 +69,7 @@
                                         </td>
                                         <td>
                                             @php
-                                                $now = \Carbon\Carbon::now();
+                                                $now = \App\Services\TimeOverrideService::now();
                                                 $startTime = \Carbon\Carbon::parse($tt->start_time);
                                                 $endTime = \Carbon\Carbon::parse($tt->end_time);
                                             @endphp
@@ -111,6 +111,14 @@
                     </h4>
                 </div>
                     <div class="card-body">
+                        {{-- Tombol Print untuk Semua Jadwal Pelajaran --}}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Jadwal Pelajaran Lengkap</h5>
+                            <button type="button" class="btn btn-outline-primary" onclick="printJadwalPelajaran()">
+                                <iconify-icon icon="solar:printer-outline" class="fs-16 me-2"></iconify-icon>
+                                Print
+                            </button>
+                        </div>
                     {{-- Filter Hari --}}
                     <div class="row mb-3">
                         <div class="col-md-3">
@@ -141,7 +149,7 @@
                         </div>
                     </div>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="printableJadwalPelajaran">
                         <table class="table table-hover table-centered" id="allScheduleTable">
                             <thead class="table-light">
                                 <tr>
@@ -255,5 +263,114 @@ document.addEventListener('DOMContentLoaded', function() {
     dayFilter.addEventListener('change', filterTable);
     subjectFilter.addEventListener('change', filterTable);
             });
+
+    function printJadwalPelajaran() {
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+        
+        // Get the table HTML and remove badge classes
+        const tableContainer = document.getElementById('printableJadwalPelajaran');
+        const tableClone = tableContainer.cloneNode(true);
+        
+        // Remove badge classes from all elements
+        const badges = tableClone.querySelectorAll('.badge');
+        badges.forEach(badge => {
+            badge.className = badge.className.replace(/badge[^"]*/g, '').trim();
+            badge.style.border = 'none';
+            badge.style.padding = '0';
+            badge.style.backgroundColor = 'transparent';
+            badge.style.color = '#000';
+        });
+        
+        // Remove text-muted elements (kode mata pelajaran)
+        const textMutedElements = tableClone.querySelectorAll('.text-muted');
+        textMutedElements.forEach(element => {
+            element.remove();
+        });
+        
+        const tableHTML = tableClone.innerHTML;
+        
+        // Create complete print document
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Jadwal Pelajaran Lengkap</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                        background: white;
+                    }
+                    .print-header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 15px;
+                    }
+                    .print-header h3 {
+                        margin: 0 0 10px 0;
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+                    .print-header p {
+                        margin: 5px 0;
+                        font-size: 14px;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    .table th,
+                    .table td {
+                        border: 1px solid #000;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    .table thead th {
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                    }
+                    .badge {
+                        border: none !important;
+                        padding: 0 !important;
+                        font-size: 14px !important;
+                        background-color: transparent !important;
+                        color: #000 !important;
+                        font-weight: normal !important;
+                    }
+                    .text-muted {
+                        display: none !important;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h3>JADWAL PELAJARAN LENGKAP</h3>
+                    <p>SMK Negeri 4 Kendari</p>
+                    <p>Tanggal Print: ${new Date().toLocaleDateString('id-ID', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    })}</p>
+                </div>
+                ${tableHTML}
+            </body>
+            </html>
+        `;
+        
+        // Write content to new window
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        
+        // Wait for content to load then print
+        printWindow.onload = function() {
+            printWindow.print();
+            printWindow.close();
+        };
+    }
         </script>
 @endpush

@@ -25,7 +25,7 @@
     </style>
 @endsection
 
-@include('layouts.partials.page-title', ['title' => 'jadwal', 'subtitle' => 'jadwal pelajaran'])
+@include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Jadwal Pelajaran'])
 
 <div class="row">
         <div class="card">

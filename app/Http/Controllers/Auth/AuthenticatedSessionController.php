@@ -34,6 +34,12 @@ class AuthenticatedSessionController extends Controller
 
         // Check user role and redirect accordingly
         $user = Auth::user();
+        
+        // Update last login timestamp and IP address
+        $user->update([
+            'last_login_at' => now(),
+            'last_ip' => $request->ip(),
+        ]);
 
         // Check if user has any roles
         if (!$user->roles()->exists()) {

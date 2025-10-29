@@ -34,7 +34,7 @@ class DashboardMuridController extends Controller
 
         $timetables = collect();
         if ($classId) {
-            $timetables = Timetable::with(['classSubject.subject', 'classSubject.teacher.user', 'classSubject.class'])
+            $rawTimetables = Timetable::with(['classSubject.subject', 'classSubject.teacher.user', 'classSubject.class'])
                 ->whereHas('classSubject', function($query) use ($classId) {
                     $query->where('class_id', $classId);
                 })
@@ -42,6 +42,30 @@ class DashboardMuridController extends Controller
                 ->where('is_active', true)
                 ->orderBy('start_time')
                 ->get();
+
+            // Group by class_subject_id to merge consecutive time slots for the same subject in the same class
+            $grouped = $rawTimetables->groupBy('class_subject_id');
+
+            foreach ($grouped as $classSubjectId => $timetableGroup) {
+                $firstTimetable = $timetableGroup->first();
+                $sorted = $timetableGroup->sortBy('start_time');
+                
+                // Get earliest start time and latest end time
+                $earliestStart = $sorted->first()->start_time;
+                $latestEnd = $sorted->last()->end_time;
+                
+                $timetables->push([
+                    'id' => $firstTimetable->id,
+                    'class_subject_id' => $firstTimetable->class_subject_id,
+                    'day_of_week' => $firstTimetable->day_of_week,
+                    'start_time' => $earliestStart,
+                    'end_time' => $latestEnd,
+                    'subject' => $firstTimetable->classSubject->subject->name ?? 'N/A',
+                    'teacher_name' => $firstTimetable->classSubject->teacher->user->full_name ?? 'N/A',
+                    'class_name' => $firstTimetable->classSubject->class->grade . ' - ' . $firstTimetable->classSubject->class->name,
+                    'type' => $firstTimetable->type ?? 'teori',
+                ]);
+            }
         }
 
         // Attendance summary counts for the logged-in student
@@ -50,7 +74,38 @@ class DashboardMuridController extends Controller
         $sakitCount = Attendance::where('student_id', $user->id)->where('status', 'S')->count();
         $alpaCount = Attendance::where('student_id', $user->id)->where('status', 'A')->count();
 
-        return view('murid.dashboard', compact('timetables', 'student', 'hadirCount', 'izinCount', 'sakitCount', 'alpaCount', 'namaSiswa'));
+        // Calculate daily winrate for the last 7 days
+        $winrateData = [];
+        $dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+        
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            
+            // Get total expected sessions for this day
+            $dayOfWeek = $date->dayOfWeek === 0 ? 7 : $date->dayOfWeek; // Convert Sunday from 0 to 7
+            $expectedSessions = 0;
+            
+            if ($classId) {
+                $expectedSessions = Timetable::whereHas('classSubject', function($query) use ($classId) {
+                        $query->where('class_id', $classId);
+                    })
+                    ->where('day_of_week', $dayOfWeek)
+                    ->where('is_active', true)
+                    ->count();
+            }
+            
+            // Get actual attendance for this day
+            $attendedSessions = Attendance::where('student_id', $user->id)
+                ->whereDate('created_at', $date->format('Y-m-d'))
+                ->whereIn('status', ['H', 'T']) // Hadir or Terlambat
+                ->count();
+            
+            // Calculate winrate
+            $winrate = $expectedSessions > 0 ? round(($attendedSessions / $expectedSessions) * 100, 1) : 0;
+            $winrateData[] = $winrate;
+        }
+
+        return view('murid.dashboard', compact('timetables', 'student', 'hadirCount', 'izinCount', 'sakitCount', 'alpaCount', 'namaSiswa', 'winrateData'));
     }
 
     /**

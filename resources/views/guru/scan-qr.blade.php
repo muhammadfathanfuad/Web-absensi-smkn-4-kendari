@@ -1,7 +1,7 @@
 @extends('layouts.vertical-guru', ['subtitle' => 'Scan QR Absensi'])
 
 @section('content')
-    @include('layouts.partials.page-title', ['title' => 'Scan QR', 'subtitle' => 'Absensi'])
+    @include('layouts.partials.page-title', ['title' => 'Guru', 'subtitle' => 'Absensi'])
 
     <div class="row">
         <div class="col-lg-6">
@@ -135,156 +135,34 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-xs me-2">
-                                                <span class="avatar-title rounded-circle bg-primary-subtle text-primary">
-                                                    <iconify-icon icon="solar:book-outline" class="fs-12"></iconify-icon>
-                                                </span>
+                                @forelse ($rekapRiwayat as $index => $rekap)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $rekap['mata_pelajaran'] }}</td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary py-1 px-2">{{ $rekap['kelas'] }}</span>
+                                        </td>
+                                        <td>{{ $rekap['jam'] }}</td>
+                                        <td>{{ $rekap['total_siswa'] }}</td>
+                                        <td>{{ $rekap['hadir'] }}</td>
+                                        <td>{{ $rekap['terlambat'] }}</td>
+                                        <td>{{ $rekap['izin'] }}</td>
+                                        <td>{{ $rekap['sakit'] }}</td>
+                                        <td>{{ $rekap['alpa'] }}</td>
+                                        <td>
+                                            <span class="badge {{ $rekap['status_badge'] }} py-1 px-2">{{ $rekap['persentase'] }}%</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="11" class="text-center py-4">
+                                            <div class="text-muted d-flex flex-column align-items-center">
+                                                <iconify-icon icon="solar:clipboard-outline" class="fs-48 mb-2"></iconify-icon>
+                                                Belum ada data rekap absensi hari ini.
                                             </div>
-                                            Matematika
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary-subtle text-primary py-1 px-2">XII RPL 1</span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-semibold">07:00 - 08:30</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info-subtle text-info py-1 px-2">30</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success-subtle text-success py-1 px-2">
-                                            <i class="bx bxs-circle text-success me-1"></i>25
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning-subtle text-warning py-1 px-2">
-                                            <i class="bx bxs-circle text-warning me-1"></i>3
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info-subtle text-info py-1 px-2">
-                                            <i class="bx bxs-circle text-info me-1"></i>1
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning-subtle text-warning py-1 px-2">
-                                            <i class="bx bxs-circle text-warning me-1"></i>1
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-danger-subtle text-danger py-1 px-2">
-                                            <i class="bx bxs-circle text-danger me-1"></i>0
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-semibold text-success">83.33%</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-xs me-2">
-                                                <span class="avatar-title rounded-circle bg-success-subtle text-success">
-                                                    <iconify-icon icon="solar:book-outline" class="fs-12"></iconify-icon>
-                                                </span>
-                                            </div>
-                                            Bahasa Indonesia
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary-subtle text-primary py-1 px-2">XII RPL 1</span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-semibold">08:30 - 10:00</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info-subtle text-info py-1 px-2">30</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success-subtle text-success py-1 px-2">
-                                            <i class="bx bxs-circle text-success me-1"></i>28
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning-subtle text-warning py-1 px-2">
-                                            <i class="bx bxs-circle text-warning me-1"></i>1
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info-subtle text-info py-1 px-2">
-                                            <i class="bx bxs-circle text-info me-1"></i>0
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning-subtle text-warning py-1 px-2">
-                                            <i class="bx bxs-circle text-warning me-1"></i>1
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-danger-subtle text-danger py-1 px-2">
-                                            <i class="bx bxs-circle text-danger me-1"></i>0
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-semibold text-success">93.33%</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>3</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-xs me-2">
-                                                <span class="avatar-title rounded-circle bg-warning-subtle text-warning">
-                                                    <iconify-icon icon="solar:book-outline" class="fs-12"></iconify-icon>
-                                                </span>
-                                            </div>
-                                            Pemrograman Web
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary-subtle text-primary py-1 px-2">XII RPL 2</span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-semibold">10:00 - 11:30</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info-subtle text-info py-1 px-2">28</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success-subtle text-success py-1 px-2">
-                                            <i class="bx bxs-circle text-success me-1"></i>20
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning-subtle text-warning py-1 px-2">
-                                            <i class="bx bxs-circle text-warning me-1"></i>5
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info-subtle text-info py-1 px-2">
-                                            <i class="bx bxs-circle text-info me-1"></i>2
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning-subtle text-warning py-1 px-2">
-                                            <i class="bx bxs-circle text-warning me-1"></i>1
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-danger-subtle text-danger py-1 px-2">
-                                            <i class="bx bxs-circle text-danger me-1"></i>0
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-semibold text-warning">71.43%</span>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -389,6 +267,29 @@
         // Pastikan QRCode library sudah ter-load
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded - Checking QRCode library...');
+            
+            // Check if timetable_id is in URL (for delegation)
+            const urlParams = new URLSearchParams(window.location.search);
+            const timetableId = urlParams.get('timetable_id');
+            
+            if (timetableId) {
+                // Find the matching dropdown item and trigger click
+                const dropdownItems = document.querySelectorAll('.dropdown-item[data-timetable-id]');
+                const targetItem = Array.from(dropdownItems).find(item => 
+                    item.getAttribute('data-timetable-id') === timetableId
+                );
+                
+                if (targetItem) {
+                    console.log('Auto-selecting timetable:', timetableId);
+                    // Wait a bit for the DOM to fully initialize
+                    setTimeout(() => {
+                        targetItem.click();
+                    }, 500);
+                } else {
+                    console.error('Timetable ID not found in dropdown:', timetableId);
+                    alert('Jadwal yang dipilih tidak tersedia atau bukan jadwal hari ini.');
+                }
+            }
             console.log('qrcode-generator type:', typeof qrcode);
             
             // Cek apakah qrcode-generator library tersedia
@@ -872,9 +773,10 @@
             });
         }
 
-        // Fungsi untuk menampilkan notifikasi dengan modal
+        // Fungsi untuk menampilkan notifikasi dengan modal (reuse instance agar tombol close/tutup selalu berfungsi)
         function showNotification(message, type = 'info') {
-            const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+            const modalEl = document.getElementById('notificationModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             const modalLabel = document.getElementById('notificationModalLabel');
             const modalMessage = document.getElementById('notificationMessage');
             const modalIcon = document.getElementById('notificationIcon');
@@ -897,7 +799,16 @@
             // Set message
             modalMessage.textContent = message;
             
-            // Tampilkan modal
+            // Pastikan tombol Close/Tutup menutup instance yang sama
+            const closeBtn = modalEl.querySelector('.btn-close');
+            const dismissBtn = modalEl.querySelector('.btn-light[data-bs-dismiss="modal"]');
+            if (closeBtn) {
+                closeBtn.onclick = () => modal.hide();
+            }
+            if (dismissBtn) {
+                dismissBtn.onclick = () => modal.hide();
+            }
+
             modal.show();
         }
 

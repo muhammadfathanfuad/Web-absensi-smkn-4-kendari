@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class LeaveRequestController extends Controller
 {
@@ -19,11 +20,10 @@ class LeaveRequestController extends Controller
     {
         $user = Auth::user();
         
-        // Get recent leave requests for the student
+        // Get recent leave requests for the student with pagination
         $recentRequests = LeaveRequest::where('student_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+            ->paginate(5);
 
         return view('murid.permohonan-izin', compact('recentRequests'));
     }
@@ -55,7 +55,7 @@ class LeaveRequestController extends Controller
             'tanggalSelesai' => 'nullable|date|after_or_equal:tanggalMulai',
             'tanggalSelesaiNormal' => 'nullable|date|after_or_equal:tanggalMulai',
             'alasan' => 'required|string|max:1000',
-            'dokumenPendukung' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048'
+            'dokumenPendukung' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:512'
         ], [
             'jenisIzin.required' => 'Jenis izin harus dipilih.',
             'tanggalMulai.required' => 'Tanggal mulai harus diisi.',
@@ -65,7 +65,7 @@ class LeaveRequestController extends Controller
             'alasan.required' => 'Alasan izin harus diisi.',
             'alasan.max' => 'Alasan izin maksimal 1000 karakter.',
             'dokumenPendukung.mimes' => 'Dokumen pendukung harus berupa PDF, JPG, atau PNG.',
-            'dokumenPendukung.max' => 'Dokumen pendukung maksimal 2MB.'
+            'dokumenPendukung.max' => 'Dokumen pendukung maksimal 500KB.'
         ]);
 
         if ($validator->fails()) {
@@ -98,6 +98,24 @@ class LeaveRequestController extends Controller
         try {
             $user = Auth::user();
             Log::info('User ID: ' . $user->id);
+            
+            // Check for existing duplicate request within the last 5 seconds
+            $existingRequest = LeaveRequest::where('student_id', $user->id)
+                ->where('leave_type', $request->jenisIzin)
+                ->where('start_date', $request->tanggalMulai)
+                ->where('end_date', $endDate)
+                ->where('reason', $request->alasan)
+                ->where('created_at', '>=', now()->subSeconds(5))
+                ->first();
+            
+            if ($existingRequest) {
+                Log::warning('Duplicate request detected within 5 seconds, ignoring.');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Permohonan izin berhasil diajukan dan akan diproses dalam 1-2 hari kerja.',
+                    'data' => $existingRequest
+                ]);
+            }
             
             // Handle file upload
             $supportingDocument = null;
@@ -167,9 +185,26 @@ class LeaveRequestController extends Controller
     {
         $user = Auth::user();
         
-        $leaveRequest = LeaveRequest::where('student_id', $user->id)
+        $leaveRequest = LeaveRequest::with(['student', 'processedBy', 'teacherNotes.teacher', 'teacherNotes.subject'])
+            ->where('student_id', $user->id)
             ->where('id', $id)
             ->firstOrFail();
+
+        // If AJAX request, return JSON for modal
+        if (request()->expectsJson() || request()->wantsJson()) {
+            // Add full URL for supporting document if it exists
+            if ($leaveRequest->supporting_document) {
+                // Use asset() helper to get the proper URL
+                $documentPath = str_replace('storage/', '', $leaveRequest->supporting_document);
+                $leaveRequest->document_url = asset('storage/' . $leaveRequest->supporting_document);
+                Log::info('Document URL: ' . $leaveRequest->document_url);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'leaveRequest' => $leaveRequest
+            ]);
+        }
 
         return view('murid.detail-permohonan-izin', compact('leaveRequest'));
     }

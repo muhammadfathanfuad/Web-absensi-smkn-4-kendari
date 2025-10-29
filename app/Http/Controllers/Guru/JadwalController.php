@@ -21,7 +21,7 @@ class JadwalController extends Controller
         $dayOfWeek = TimeOverrideService::dayOfWeek();
 
         // --- Ambil Jadwal untuk Hari Ini (Logika ini sudah benar) ---
-        $jadwalHariIni = Timetable::with(['classSubject.class.room', 'classSubject.subject'])
+        $rawJadwalHariIni = Timetable::with(['classSubject.class.room', 'classSubject.subject'])
             ->whereHas('classSubject.teacher', function($query) use ($teacherId) {
                 $query->where('user_id', $teacherId);
             })
@@ -29,15 +29,78 @@ class JadwalController extends Controller
             ->orderBy('start_time', 'asc')
             ->get();
 
-        // --- Ambil Semua Jadwal Semester Ini (Logika ini juga sudah benar) ---
-        $semuaJadwal = Timetable::with(['classSubject.class.room', 'classSubject.subject'])
+        // Group by class_subject_id to merge duplicate subjects in same class
+        $grouped = $rawJadwalHariIni->groupBy(function ($item) {
+            return $item->class_subject_id;
+        });
+
+        $jadwalHariIni = collect();
+
+        foreach ($grouped as $group) {
+            // Sort by start_time
+            $sortedGroup = $group->sortBy('start_time');
+
+            // Get earliest start time and latest end time
+            $earliestStart = $sortedGroup->first()->start_time;
+            $latestEnd = $sortedGroup->last()->end_time;
+
+            // Create merged entry using first item as base
+            $firstJadwal = $sortedGroup->first();
+            
+            // Get actual student count from database
+            $jumlahMurid = \App\Models\Student::where('class_id', $firstJadwal->classSubject->class_id)->count();
+            
+            $jadwalHariIni->push((object)[
+                'id' => $firstJadwal->id,
+                'start_time' => $earliestStart,
+                'end_time' => $latestEnd,
+                'classSubject' => $firstJadwal->classSubject,
+                'jumlah_murid' => $jumlahMurid
+            ]);
+        }
+
+        // --- Ambil Semua Jadwal Semester Ini dengan penggabungan ---
+        $rawSemuaJadwal = Timetable::with(['classSubject.class.room', 'classSubject.subject'])
             ->whereHas('classSubject.teacher', function($query) use ($teacherId) {
                 $query->where('user_id', $teacherId);
             })
             ->orderBy('day_of_week', 'asc')
             ->orderBy('start_time', 'asc')
-            ->get()
-            ->groupBy('day_of_week');
+            ->get();
+
+        // Group by day_of_week and class_subject_id to merge duplicate subjects
+        $groupedSemester = $rawSemuaJadwal->groupBy(function ($item) {
+            return $item->day_of_week . '-' . $item->class_subject_id;
+        });
+
+        $semuaJadwal = collect();
+
+        foreach ($groupedSemester as $group) {
+            // Sort by start_time
+            $sortedGroup = $group->sortBy('start_time');
+
+            // Get earliest start time and latest end time
+            $earliestStart = $sortedGroup->first()->start_time;
+            $latestEnd = $sortedGroup->last()->end_time;
+
+            // Create merged entry using first item as base
+            $firstJadwal = $sortedGroup->first();
+            
+            // Get actual student count from database
+            $jumlahMurid = \App\Models\Student::where('class_id', $firstJadwal->classSubject->class_id)->count();
+            
+            $semuaJadwal->push((object)[
+                'id' => $firstJadwal->id,
+                'day_of_week' => $firstJadwal->day_of_week,
+                'start_time' => $earliestStart,
+                'end_time' => $latestEnd,
+                'classSubject' => $firstJadwal->classSubject,
+                'jumlah_murid' => $jumlahMurid
+            ]);
+        }
+
+        // Group by day_of_week for display
+        $semuaJadwal = $semuaJadwal->groupBy('day_of_week');
 
         $days = [
             1 => 'Senin',

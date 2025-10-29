@@ -53,13 +53,13 @@ class ScanController extends Controller
             
             $attendanceSession = \App\Models\AttendanceSession::where('session_token', $request->session_token)
                 ->where('is_active', true)
-                ->where('expires_at', '>', now())
+                ->where('expires_at', '>', TimeOverrideService::now())
                 ->first();
 
             if (!$attendanceSession) {
                 Log::warning('Session not found or expired:', [
                     'session_token' => $request->session_token,
-                    'current_time' => now()->toISOString()
+                    'current_time' => TimeOverrideService::now()->toISOString()
                 ]);
                 return response()->json(['success' => false, 'message' => 'Sesi absensi sudah berakhir atau tidak aktif.'], 400);
             }
