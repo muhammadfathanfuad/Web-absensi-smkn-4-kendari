@@ -192,5 +192,5 @@ Proyek ini dilisensikan di bawah **MIT License**. Lihat file `composer.json` unt
 -----
 
 <div align="center">
-Dibuat dengan ❤️ oleh <a href="[https://github.com/muhammadfathanfuad](https://www.google.com/search?q=https://github.com/muhammadfathanfuad)">Tim Web KKN Tematik Teknik Informatika UHO 2025</a>
+Dibuat dengan ☣️ oleh <a href="[https://github.com/muhammadfathanfuad](https://www.google.com/search?q=https://github.com/muhammadfathanfuad)">Tim Web KKN Tematik Teknik Informatika UHO 2025</a>
 </div>
