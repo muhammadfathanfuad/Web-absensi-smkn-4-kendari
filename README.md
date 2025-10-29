@@ -1,5 +1,5 @@
 <div align="center">
-<img src="public/images/logokkn.png" alt="Logo KKN" width="120" />
+<img src="public/images/logoKKN.png" alt="Logo KKN" width="120" />
 <h1>Website Absensi Sekolah PresenZ</h1>
 <p>
 Sistem Absensi Siswa modern, real-time, dan berbasis QR Code.
