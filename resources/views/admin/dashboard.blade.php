@@ -2,7 +2,7 @@
 
 @section('content')
 
-@include('layouts.partials.page-title', ['title' => 'Dashboard', 'subtitle' => 'Admin'])
+@include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Dashboard'])
 
 
 {{-- Welcome Card --}}

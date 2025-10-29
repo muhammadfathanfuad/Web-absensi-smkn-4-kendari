@@ -49,6 +49,12 @@
                          </span>
                          <span class="nav-text"> Pengumuman </span>
                     </a>
+                    <a class="nav-link" href="{{ route('admin.delegasi') }}">
+                         <span class="nav-icon">
+                              <i class='bx bx-user-check'></i>    
+                         </span>
+                         <span class="nav-text"> Manajemen Pengganti </span>
+                    </a>
                     <a class="nav-link" href="{{ route('any', 'admin.pengaturan') }}">
                          <span class="nav-icon">
                               <i class='bx bx-cog'></i>    

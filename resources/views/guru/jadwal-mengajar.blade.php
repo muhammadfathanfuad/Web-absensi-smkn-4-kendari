@@ -1,7 +1,7 @@
 @extends('layouts.vertical-guru', ['subtitle' => 'Jadwal Mengajar'])
 
 @section('content')
-    @include('layouts.partials.page-title', ['title' => 'Jadwal Mengajar', 'subtitle' => 'Guru'])
+    @include('layouts.partials.page-title', ['title' => 'Guru', 'subtitle' => 'Jadwal Mengajar'])
 
     {{-- Jadwal Hari Ini --}}
     <div class="card">
@@ -16,7 +16,7 @@
                     <h4 class="card-title mb-1">
                         Jadwal Mengajar Hari Ini
                     </h4>
-                    <p class="text-muted mb-0">{{ \Carbon\Carbon::now()->translatedFormat('l, j F Y') }}</p>
+                    <p class="text-muted mb-0">{{ \App\Services\TimeOverrideService::translatedFormat('l, j F Y') }}</p>
                 </div>
             </div>
         </div>
@@ -35,7 +35,7 @@
                     <tbody>
                         @forelse ($jadwalHariIni as $index => $jadwal)
                             @php
-                                $currentTime = \Carbon\Carbon::now();
+                                $currentTime = \App\Services\TimeOverrideService::now();
                                 $startTime = \Carbon\Carbon::parse($jadwal->start_time);
                                 $endTime = \Carbon\Carbon::parse($jadwal->end_time);
                                 $isUpcoming = $startTime->isFuture() && $startTime->diffInMinutes($currentTime) <= 30;
@@ -57,12 +57,17 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-primary-subtle text-primary py-1 px-2">{{ $jadwal->classSubject->class->name ?? 'N/A' }}</span>
+                                    <span class="badge bg-primary-subtle text-primary py-1 px-2">
+                                        {{ $jadwal->classSubject->class->name ?? 'N/A' }}
+                                        @if($jadwal->classSubject->class->grade ?? null)
+                                            -{{ $jadwal->classSubject->class->grade }}
+                                        @endif
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="badge bg-info-subtle text-info py-1 px-2">
                                         <iconify-icon icon="solar:users-group-rounded-outline" class="fs-12 me-1"></iconify-icon>
-                                        {{ rand(25, 35) }} Siswa
+                                        {{ $jadwal->jumlah_murid ?? 0 }} Siswa
                                     </span>
                                 </td>
                                 <td>
@@ -115,7 +120,16 @@
             </div>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            {{-- Tombol Print untuk Jadwal Semester --}}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Jadwal Mengajar Semester Ini</h5>
+                <button type="button" class="btn btn-outline-success" onclick="printJadwalSemester()">
+                    <iconify-icon icon="solar:printer-outline" class="fs-16 me-2"></iconify-icon>
+                    Print
+                </button>
+            </div>
+            
+            <div class="table-responsive" id="printableJadwalSemester">
                 <table class="table table-hover table-centered">
                     <thead class="table-light">
                         <tr>
@@ -151,12 +165,17 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-info-subtle text-info py-1 px-2">{{ $jadwal->classSubject->class->name ?? 'N/A' }}</span>
+                                            <span class="badge bg-info-subtle text-info py-1 px-2">
+                                                {{ $jadwal->classSubject->class->name ?? 'N/A' }}
+                                                @if($jadwal->classSubject->class->grade ?? null)
+                                                    -{{ $jadwal->classSubject->class->grade }}
+                                                @endif
+                                            </span>
                                         </td>
                                         <td>
                                             <span class="badge bg-warning-subtle text-warning py-1 px-2">
                                                 <iconify-icon icon="solar:users-group-rounded-outline" class="fs-12 me-1"></iconify-icon>
-                                                {{ rand(25, 35) }} Siswa
+                                                {{ $jadwal->jumlah_murid ?? 0 }} Siswa
                                             </span>
                                         </td>
                                         <td>
@@ -188,4 +207,108 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+<script>
+    function printJadwalSemester() {
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+        
+        // Get the table HTML and remove badge classes
+        const tableContainer = document.getElementById('printableJadwalSemester');
+        const tableClone = tableContainer.cloneNode(true);
+        
+        // Remove badge classes from all elements
+        const badges = tableClone.querySelectorAll('.badge');
+        badges.forEach(badge => {
+            badge.className = badge.className.replace(/badge[^"]*/g, '').trim();
+            badge.style.border = 'none';
+            badge.style.padding = '0';
+            badge.style.backgroundColor = 'transparent';
+            badge.style.color = '#000';
+        });
+        
+        const tableHTML = tableClone.innerHTML;
+        
+        // Create complete print document
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Jadwal Mengajar Semester Ini</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                        background: white;
+                    }
+                    .print-header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 15px;
+                    }
+                    .print-header h3 {
+                        margin: 0 0 10px 0;
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+                    .print-header p {
+                        margin: 5px 0;
+                        font-size: 14px;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    .table th,
+                    .table td {
+                        border: 1px solid #000;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    .table thead th {
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                    }
+                    .badge {
+                        border: none !important;
+                        padding: 0 !important;
+                        font-size: 14px !important;
+                        background-color: transparent !important;
+                        color: #000 !important;
+                        font-weight: normal !important;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h3>JADWAL MENGAJAR SEMESTER INI</h3>
+                    <p>SMK Negeri 4 Kendari</p>
+                    <p>Tanggal Print: ${new Date().toLocaleDateString('id-ID', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    })}</p>
+                </div>
+                ${tableHTML}
+            </body>
+            </html>
+        `;
+        
+        // Write content to new window
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        
+        // Wait for content to load then print
+        printWindow.onload = function() {
+            printWindow.print();
+            printWindow.close();
+        };
+    }
+</script>
 @endsection

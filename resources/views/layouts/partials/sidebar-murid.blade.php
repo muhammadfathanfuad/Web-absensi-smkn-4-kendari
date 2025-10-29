@@ -43,6 +43,12 @@
                     </span>
                     <span class="nav-text"> Riwayat Absensi </span>
                 </a>
+                <a class="nav-link" href="{{ route('murid.delegasi') }}">
+                    <span class="nav-icon">
+                        <i class='bx bx-transfer'></i>
+                    </span>
+                    <span class="nav-text"> Tugas Absensi </span>
+                </a>
                 <a class="nav-link" href="{{ route('murid.pengumuman') }}">
                     <span class="nav-icon">
                         <i class='bx bx-news'></i>

@@ -50,10 +50,16 @@ class TimeOverrideController extends Controller
         return response()->json(TimeOverrideService::getInfo());
     }
 
-    public function getScenarios()
+    public function getJSData()
     {
+        $timeInfo = TimeOverrideService::getInfo();
+        
         return response()->json([
-            'scenarios' => TimeOverrideService::getPresetScenarios()
+            'is_active' => $timeInfo['is_active'],
+            'current_time' => $timeInfo['current_time'],
+            'real_time' => $timeInfo['real_time'],
+            'override_datetime' => $timeInfo['override_datetime'],
+            'js_time' => TimeOverrideService::toISOString()
         ]);
     }
 }

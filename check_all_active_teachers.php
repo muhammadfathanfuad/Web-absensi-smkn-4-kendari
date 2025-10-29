@@ -11,7 +11,10 @@ echo "Mencari semua guru aktif dan mata pelajaran yang mereka ajarkan:\n\n";
 // Cari semua guru aktif
 $activeTeachers = \App\Models\Teacher::with(['user', 'classSubjects.subject'])
     ->whereHas('user', function($query) {
-        $query->where('status', 'active');
+        $query->where('status', 'active')
+              ->whereHas('roles', function($roleQuery) {
+                  $roleQuery->where('name', 'teacher');
+              });
     })
     ->get();
 

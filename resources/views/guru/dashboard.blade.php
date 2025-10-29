@@ -3,7 +3,7 @@
 @section('content')
 
     {{-- Mengubah judul halaman --}}
-    @include('layouts.partials.page-title', ['title' => 'Dashboard', 'subtitle' => 'Guru'])
+    @include('layouts.partials.page-title', ['title' => 'Guru', 'subtitle' => 'Dashboard'])
 
     {{-- Welcome Card dan Chart Jam Mengajar --}}
     <div class="row">
@@ -19,7 +19,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h5 class="mb-1">Selamat Datang, {{ $namaGuru }}!</h5>
-                            <p class="text-muted mb-0">Dashboard Guru - {{ \Carbon\Carbon::now()->translatedFormat('l, j F Y') }}</p>
+                            <p class="text-muted mb-0">Dashboard Guru - {{ \App\Services\TimeOverrideService::translatedFormat('l, j F Y') }}</p>
                         </div>
                     </div>
                 </div>
@@ -242,8 +242,8 @@
                                 @empty
                                     <tr>
                                         <td colspan="5" class="text-center py-4">
-                                            <div class="text-muted">
-                                                <iconify-icon icon="solar:calendar-x-outline" class="fs-48 d-block mb-2"></iconify-icon>
+                                            <div class="text-muted d-flex flex-column align-items-center">
+                                                <iconify-icon icon="solar:calendar-x-outline" class="fs-48 mb-2"></iconify-icon>
                                                 Tidak ada jadwal mengajar hari ini.
                                             </div>
                                         </td>
@@ -319,8 +319,8 @@
                                 @empty
                                      <tr>
                                         <td colspan="6" class="text-center py-4">
-                                            <div class="text-muted">
-                                                <iconify-icon icon="solar:check-circle-outline" class="fs-48 d-block mb-2"></iconify-icon>
+                                            <div class="text-muted d-flex flex-column align-items-center">
+                                                <iconify-icon icon="solar:check-circle-outline" class="fs-48 mb-2"></iconify-icon>
                                                 Tidak ada permohonan izin hari ini.
                                             </div>
                                         </td>
@@ -407,8 +407,8 @@
                                 @empty
                                     <tr>
                                         <td colspan="6" class="text-center py-4">
-                                            <div class="text-muted">
-                                                <iconify-icon icon="solar:clipboard-outline" class="fs-48 d-block mb-2"></iconify-icon>
+                                            <div class="text-muted d-flex flex-column align-items-center">
+                                                <iconify-icon icon="solar:clipboard-outline" class="fs-48 mb-2"></iconify-icon>
                                                 Belum ada data kehadiran siswa hari ini.
                                             </div>
                                         </td>
@@ -575,11 +575,11 @@
                     </div>
                 </div>
                 
-                ${request.supporting_document ? `
+                ${request.supporting_document && request.document_url ? `
                 <div class="row mt-3">
                     <div class="col-12">
                         <h6 class="text-muted">Dokumen Pendukung</h6>
-                        <a href="/storage/${request.supporting_document}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <a href="${encodeURI(request.document_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
                             <i class="bx bx-file"></i> Lihat Dokumen
                         </a>
                     </div>

@@ -1,7 +1,7 @@
 @extends('layouts.vertical-murid', ['subtitle' => 'Dashboard'])
 
 @section('content')
-    @include('layouts.partials.page-title', ['title' => 'Dashboard', 'subtitle' => 'Murid'])
+    @include('layouts.partials.page-title', ['title' => 'Siswa', 'subtitle' => 'Dashboard'])
 
     <div class="row">
         <div class="col-xl-8">
@@ -231,8 +231,8 @@
                                 @forelse ($timetables ?? collect() as $i => $tt)
                                     @php
                                         $currentTime = \App\Services\TimeOverrideService::now();
-                                        $startTime = \Carbon\Carbon::parse($tt->start_time);
-                                        $endTime = \Carbon\Carbon::parse($tt->end_time);
+                                        $startTime = \Carbon\Carbon::parse($tt['start_time']);
+                                        $endTime = \Carbon\Carbon::parse($tt['end_time']);
                                         $isUpcoming = $startTime->isFuture() && $startTime->diffInMinutes($currentTime) <= 30;
                                         $isCurrent = $currentTime->between($startTime, $endTime);
                                         $isPast = $endTime->isPast();
@@ -246,14 +246,14 @@
                                                         <iconify-icon icon="solar:book-outline" class="fs-12"></iconify-icon>
                                                     </span>
                                                 </div>
-                                                {{ optional($tt->classSubject->subject)->name ?? '—' }}
+                                                {{ $tt['subject'] ?? '—' }}
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-info-subtle text-info py-1 px-2">{{ optional(optional($tt->classSubject->teacher)->user)->name ?? '—' }}</span>
+                                            <span class="badge bg-info-subtle text-info py-1 px-2">{{ $tt['teacher_name'] ?? '—' }}</span>
                                         </td>
                                         <td>
-                                            <span class="fw-semibold">{{ \Carbon\Carbon::parse($tt->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($tt->end_time)->format('H:i') }}</span>
+                                            <span class="fw-semibold">{{ \Carbon\Carbon::parse($tt['start_time'])->format('H:i') }} - {{ \Carbon\Carbon::parse($tt['end_time'])->format('H:i') }}</span>
                                         </td>
                                         <td>
                                             @if($isUpcoming)
@@ -292,8 +292,12 @@
 
 @push('scripts')
     <script>
-        // Data untuk chart winrate
-        var winrateData = [85, 92, 78, 95, 88, 90, 87];
+        // Data untuk chart winrate dari database
+        @php
+            $defaultWinrate = [0, 0, 0, 0, 0, 0, 0];
+            $finalWinrate = $winrateData ?? $defaultWinrate;
+        @endphp
+        var winrateData = @json($finalWinrate);
     </script>
     @vite(['resources/js/pages/dashboard-murid.js'])
 @endpush

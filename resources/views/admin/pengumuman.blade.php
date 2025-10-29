@@ -2,7 +2,7 @@
 
 @section('content')
 
-@include('layouts.partials.page-title', ['title' => 'Pengumuman', 'subtitle' => 'Admin'])
+@include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Pengumuman'])
 
 {{-- Create Announcement Button --}}
 <div class="row mb-4">

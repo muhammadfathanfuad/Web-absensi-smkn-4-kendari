@@ -17,6 +17,10 @@
     <?php echo $__env->yieldContent('content'); ?>
 
     <?php echo $__env->make('layouts.partials/vendor-scripts', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    
+    
+    <script src="<?php echo e(asset('js/time-override.js')); ?>"></script>
+    <script src="<?php echo e(asset('js/time-override-init.js')); ?>"></script>
 
     <?php echo $__env->yieldContent('scripts'); ?>
 

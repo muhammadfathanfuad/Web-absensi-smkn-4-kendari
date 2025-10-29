@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-    @include('layouts.partials.page-title', ['title' => 'Manajemen', 'subtitle' => 'Manajemen Pengguna'])
+    @include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Manajemen Pengguna'])
 
     <div class="row">
         <div class="card">
@@ -391,7 +391,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Apakah Anda yakin ingin menghapus guru ini?</p>
+                    <p>Apakah Anda yakin ingin menghapus guru ini?<br>Data guru juga akan dihapus dari tabel user.</p>
                     <input type="hidden" id="deleteGuruId">
                 </div>
                 <div class="modal-footer">
@@ -411,7 +411,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Apakah Anda yakin ingin menghapus murid ini?</p>
+                    <p>Apakah Anda yakin ingin menghapus murid ini?<br>Data murid juga akan dihapus dari tabel user.</p>
                     <input type="hidden" id="deleteMuridId">
                 </div>
                 <div class="modal-footer">

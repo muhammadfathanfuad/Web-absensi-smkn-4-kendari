@@ -15,7 +15,7 @@
                 <h4 class="mb-sm-0 font-size-18">Riwayat Absensi</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('murid.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Siswa</li>
                         <li class="breadcrumb-item active">Riwayat Absensi</li>
                     </ol>
                 </div>
@@ -58,7 +58,16 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
+                    {{-- Tombol Print untuk Riwayat Absensi --}}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Riwayat Absensi Saya</h5>
+                        <button type="button" class="btn btn-outline-primary" onclick="printRiwayatAbsensi()">
+                            <iconify-icon icon="solar:printer-outline" class="fs-16 me-2"></iconify-icon>
+                            Print
+                        </button>
+                    </div>
+
+                    <div class="table-responsive" id="printableRiwayatAbsensi">
                         <table class="table table-bordered table-striped table-hover dt-responsive nowrap w-100">
                             <thead>
                                 <tr>
@@ -176,12 +185,12 @@
 
                     {{-- Pagination --}}
                     @if($attendances->hasPages())
-                        <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                             <div class="text-muted">
                                 Menampilkan {{ $attendances->firstItem() }} sampai {{ $attendances->lastItem() }} dari {{ $attendances->total() }} data
                             </div>
-                            <div>
-                                {{ $attendances->appends(request()->query())->links() }}
+                            <div class="d-flex">
+                                {{ $attendances->appends(request()->query())->links('pagination::bootstrap-4') }}
                             </div>
                         </div>
                     @endif
@@ -206,5 +215,119 @@
                 }
             }
         });
+
+        function printRiwayatAbsensi() {
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            
+            // Get the table HTML and remove badge classes
+            const tableContainer = document.getElementById('printableRiwayatAbsensi');
+            const tableClone = tableContainer.cloneNode(true);
+            
+            // Remove badge classes from all elements
+            const badges = tableClone.querySelectorAll('.badge');
+            badges.forEach(badge => {
+                badge.className = badge.className.replace(/badge[^"]*/g, '').trim();
+                badge.style.border = 'none';
+                badge.style.padding = '0';
+                badge.style.backgroundColor = 'transparent';
+                badge.style.color = '#000';
+            });
+            
+            const tableHTML = tableClone.innerHTML;
+            
+            // Get filter information
+            const fromDate = document.getElementById('date-from').value;
+            const toDate = document.getElementById('date-to').value;
+            let filterInfo = '';
+            
+            if (fromDate && toDate) {
+                const from = new Date(fromDate).toLocaleDateString('id-ID');
+                const to = new Date(toDate).toLocaleDateString('id-ID');
+                filterInfo = `Filter: ${from} - ${to}`;
+            } else {
+                filterInfo = 'Menampilkan: Semua data absensi';
+            }
+            
+            // Create complete print document
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Riwayat Absensi Saya</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 20px;
+                            background: white;
+                        }
+                        .print-header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border-bottom: 2px solid #000;
+                            padding-bottom: 15px;
+                        }
+                        .print-header h3 {
+                            margin: 0 0 10px 0;
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                        .print-header p {
+                            margin: 5px 0;
+                            font-size: 14px;
+                        }
+                        .table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                        }
+                        .table th,
+                        .table td {
+                            border: 1px solid #000;
+                            padding: 8px;
+                            text-align: left;
+                        }
+                        .table thead th {
+                            background-color: #f5f5f5;
+                            font-weight: bold;
+                        }
+                        .badge {
+                            border: none !important;
+                            padding: 0 !important;
+                            font-size: 14px !important;
+                            background-color: transparent !important;
+                            color: #000 !important;
+                            font-weight: normal !important;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-header">
+                        <h3>RIWAYAT ABSENSI SAYA</h3>
+                        <p>SMK Negeri 4 Kendari</p>
+                        <p>Tanggal Print: ${new Date().toLocaleDateString('id-ID', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        })}</p>
+                        <p>${filterInfo}</p>
+                    </div>
+                    ${tableHTML}
+                </body>
+                </html>
+            `;
+            
+            // Write content to new window
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            
+            // Wait for content to load then print
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
     </script>
 @endsection

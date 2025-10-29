@@ -172,7 +172,10 @@ class DashboardController extends Controller
             
             $performance = Teacher::with(['user', 'classes'])
                 ->whereHas('user', function($query) {
-                    $query->where('status', 'active'); // Only active teachers
+                    $query->where('status', 'active')
+                          ->whereHas('roles', function($roleQuery) {
+                              $roleQuery->where('name', 'teacher');
+                          });
                 })
                 ->get()
                 ->map(function ($teacher) use ($last7Days, $today) {
@@ -417,7 +420,8 @@ class DashboardController extends Controller
         try {
             $activities = collect();
         
-        // Recent attendance sessions
+        // Recent attendance sessions (last 30 days only)
+        $thirtyDaysAgo = Carbon::now()->subDays(30);
         $recentSessions = DB::table('attendance_sessions')
             ->join('users', 'attendance_sessions.teacher_id', '=', 'users.id')
             ->join('timetables', 'attendance_sessions.timetable_id', '=', 'timetables.id')
@@ -431,6 +435,7 @@ class DashboardController extends Controller
                 'classes.name as class_name',
                 'attendance_sessions.is_active'
             )
+            ->where('attendance_sessions.created_at', '>=', $thirtyDaysAgo)
             ->orderBy('attendance_sessions.created_at', 'desc')
             ->limit(10)
             ->get();
@@ -447,8 +452,9 @@ class DashboardController extends Controller
             ]);
         }
         
-        // Recent leave requests
+        // Recent leave requests (last 30 days only)
         $recentLeaveRequests = LeaveRequest::with(['student'])
+            ->where('created_at', '>=', $thirtyDaysAgo)
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -474,7 +480,8 @@ class DashboardController extends Controller
         try {
             $activities = collect();
         
-        // Recent attendance sessions
+        // Recent attendance sessions (last 30 days only)
+        $thirtyDaysAgo = Carbon::now()->subDays(30);
         $recentSessions = DB::table('attendance_sessions')
             ->join('users', 'attendance_sessions.teacher_id', '=', 'users.id')
             ->join('timetables', 'attendance_sessions.timetable_id', '=', 'timetables.id')
@@ -488,6 +495,7 @@ class DashboardController extends Controller
                 'classes.name as class_name',
                 'attendance_sessions.is_active'
             )
+            ->where('attendance_sessions.created_at', '>=', $thirtyDaysAgo)
             ->orderBy('attendance_sessions.created_at', 'desc')
             ->limit(20) // Get more data for pagination
             ->get();
@@ -506,8 +514,9 @@ class DashboardController extends Controller
             ]);
         }
         
-        // Recent leave requests
+        // Recent leave requests (last 30 days only)
         $recentLeaveRequests = LeaveRequest::with(['student'])
+            ->where('created_at', '>=', $thirtyDaysAgo)
             ->orderBy('created_at', 'desc')
             ->limit(10) // Get more data for pagination
             ->get();
@@ -560,6 +569,12 @@ class DashboardController extends Controller
     {
         try {
             return Teacher::with(['user', 'classes'])
+                ->whereHas('user', function($query) {
+                    $query->where('status', 'active')
+                          ->whereHas('roles', function($roleQuery) {
+                              $roleQuery->where('name', 'teacher');
+                          });
+                })
                 ->get()
                 ->map(function ($teacher) {
                     $totalHours = Timetable::whereHas('classSubject.teacher', function($query) use ($teacher) {
@@ -591,7 +606,10 @@ class DashboardController extends Controller
             
             $allTeachers = Teacher::with(['user', 'classes'])
                 ->whereHas('user', function($query) {
-                    $query->where('status', 'active');
+                    $query->where('status', 'active')
+                          ->whereHas('roles', function($roleQuery) {
+                              $roleQuery->where('name', 'teacher');
+                          });
                 })
                 ->get()
                 ->map(function ($teacher) use ($last7Days, $today) {

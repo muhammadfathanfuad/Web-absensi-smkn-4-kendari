@@ -89,6 +89,86 @@ class TimeOverrideService
     }
 
     /**
+     * Get current timestamp (real or overridden)
+     */
+    public static function timestamp()
+    {
+        return self::now()->timestamp;
+    }
+
+    /**
+     * Get current time in specific format
+     */
+    public static function format($format = 'Y-m-d H:i:s')
+    {
+        return self::now()->format($format);
+    }
+
+    /**
+     * Get current time for JavaScript (ISO string)
+     */
+    public static function toISOString()
+    {
+        return self::now()->toISOString();
+    }
+
+    /**
+     * Get current time for JavaScript (JSON)
+     */
+    public static function toJSON()
+    {
+        return self::now()->toJSON();
+    }
+
+    /**
+     * Get current time with locale formatting
+     */
+    public static function translatedFormat($format)
+    {
+        return self::now()->translatedFormat($format);
+    }
+
+    /**
+     * Get current time with locale formatting (Indonesian)
+     */
+    public static function localeFormat($format)
+    {
+        return self::now()->locale('id')->isoFormat($format);
+    }
+
+    /**
+     * Get current time as Carbon instance for comparisons
+     */
+    public static function carbon()
+    {
+        return self::now();
+    }
+
+    /**
+     * Get current time for database queries
+     */
+    public static function forDatabase()
+    {
+        return self::now()->toDateTimeString();
+    }
+
+    /**
+     * Get current date for database queries
+     */
+    public static function dateForDatabase()
+    {
+        return self::now()->toDateString();
+    }
+
+    /**
+     * Get current time for file naming
+     */
+    public static function forFilename()
+    {
+        return self::now()->format('Ymd_His');
+    }
+
+    /**
      * Get preset scenarios
      */
     public static function getPresetScenarios()

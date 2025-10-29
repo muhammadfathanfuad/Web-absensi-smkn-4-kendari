@@ -2,7 +2,7 @@
 
 @section('content')
 
-@include('layouts.partials.page-title', ['title' => 'Pengaturan', 'subtitle' => 'Admin'])
+@include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Pengaturan'])
 
 {{-- Profile Settings --}}
 <div class="row mb-4">
@@ -15,6 +15,19 @@
                 </h4>
             </div>
             <div class="card-body">
+                {{-- Foto Profil --}}
+                <div class="text-center mb-4">
+                    <div class="avatar-lg mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <img id="avatarPreview" src="{{ auth()->user()->photo ? asset('storage/users/' . auth()->user()->photo) : '/images/users/avatar-1.jpg' }}" alt="Avatar" class="rounded-circle img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('photoInput').click()">
+                        <i class="bx bx-camera me-1"></i>
+                        Ganti Foto
+                    </button>
+                    <div id="photoError" class="text-danger mt-2" style="display: none;"></div>
+                </div>
+                
                 <form id="profileForm">
                     @csrf
                     <div class="row">
@@ -218,6 +231,80 @@
     // Load database statistics on page load
     document.addEventListener('DOMContentLoaded', function() {
         loadDatabaseStats();
+        
+        // Handle photo upload
+        const photoInput = document.getElementById('photoInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const photoError = document.getElementById('photoError');
+        
+        if (photoInput) {
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                
+                if (!file) {
+                    return;
+                }
+                
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    photoError.textContent = 'File harus berupa gambar';
+                    photoError.style.display = 'block';
+                    return;
+                }
+                
+                // Validate file size (200KB = 200 * 1024 bytes)
+                const maxSize = 200 * 1024;
+                if (file.size > maxSize) {
+                    photoError.textContent = 'Ukuran file maksimal 200KB';
+                    photoError.style.display = 'block';
+                    return;
+                }
+                
+                // Clear error
+                photoError.style.display = 'none';
+                
+                // Preview image
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    avatarPreview.src = event.target.result;
+                    // Ensure circular shape with fixed dimensions
+                    avatarPreview.style.width = '100%';
+                    avatarPreview.style.height = '100%';
+                    avatarPreview.style.objectFit = 'cover';
+                };
+                reader.readAsDataURL(file);
+                
+                // Upload photo automatically
+                uploadPhoto(file);
+            });
+        }
+        
+        function uploadPhoto(file) {
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            
+            fetch('/admin/pengaturan/photo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message || 'Foto profil berhasil diperbarui.');
+                } else {
+                    showAlert('error', data.message || 'Gagal memperbarui foto profil.');
+                    // Revert to original photo on error
+                    avatarPreview.src = '/images/users/avatar-1.jpg';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Terjadi kesalahan saat mengunggah foto.');
+                // Revert to original photo on error
+                avatarPreview.src = '/images/users/avatar-1.jpg';
+            });
+        }
     });
 
     function loadDatabaseStats() {

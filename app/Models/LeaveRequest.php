@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LeaveRequest extends Model
 {
@@ -40,6 +41,11 @@ class LeaveRequest extends Model
     public function processedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function teacherNotes(): HasMany
+    {
+        return $this->hasMany(LeaveRequestTeacherNote::class);
     }
 
     public function getLeaveTypeDisplayAttribute(): string

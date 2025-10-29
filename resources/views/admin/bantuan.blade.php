@@ -2,7 +2,7 @@
 
 @section('content')
 
-@include('layouts.partials.page-title', ['title' => 'Bantuan', 'subtitle' => 'Admin'])
+@include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Bantuan'])
 
 {{-- Quick Help Cards --}}
 <div class="row mb-4">

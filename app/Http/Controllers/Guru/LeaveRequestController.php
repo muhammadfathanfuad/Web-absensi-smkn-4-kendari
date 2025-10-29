@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
+use App\Models\LeaveRequestTeacherNote;
 use App\Models\Timetable;
 use App\Models\ClassSession;
 use App\Models\Attendance;
@@ -11,6 +12,7 @@ use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class LeaveRequestController extends Controller
@@ -115,6 +117,12 @@ class LeaveRequestController extends Controller
                 'overall_status' => $leaveRequest->overall_status ?? 'pending'
             ];
 
+            // Add full URL for supporting document if it exists
+            if ($leaveRequest->supporting_document) {
+                $data['document_url'] = asset('storage/' . $leaveRequest->supporting_document);
+                Log::info('Document URL: ' . $data['document_url']);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $data
@@ -163,7 +171,8 @@ class LeaveRequestController extends Controller
             ->whereHas('classSubject', function($query) use ($student) {
                 $query->where('class_id', $student->class_id);
             })
-            ->exists();
+            ->with('classSubject.subject')
+            ->first();
 
         if (!$hasAccess) {
             return response()->json(['error' => 'Anda tidak mengajar di kelas siswa ini.'], 403);
@@ -175,6 +184,15 @@ class LeaveRequestController extends Controller
         $leaveRequest->processed_at = now();
         $leaveRequest->admin_notes = $request->notes;
         $leaveRequest->save();
+
+        // Save teacher note
+        LeaveRequestTeacherNote::create([
+            'leave_request_id' => $leaveRequest->id,
+            'teacher_id' => $teacher->user_id,
+            'subject_id' => $hasAccess->classSubject->subject_id,
+            'action' => 'approve',
+            'note' => $request->notes
+        ]);
 
         return response()->json([
             'success' => true,
@@ -219,7 +237,8 @@ class LeaveRequestController extends Controller
             ->whereHas('classSubject', function($query) use ($student) {
                 $query->where('class_id', $student->class_id);
             })
-            ->exists();
+            ->with('classSubject.subject')
+            ->first();
 
         if (!$hasAccess) {
             return response()->json(['error' => 'Anda tidak mengajar di kelas siswa ini.'], 403);
@@ -231,6 +250,15 @@ class LeaveRequestController extends Controller
         $leaveRequest->processed_at = now();
         $leaveRequest->admin_notes = $request->notes;
         $leaveRequest->save();
+
+        // Save teacher note
+        LeaveRequestTeacherNote::create([
+            'leave_request_id' => $leaveRequest->id,
+            'teacher_id' => $teacher->user_id,
+            'subject_id' => $hasAccess->classSubject->subject_id,
+            'action' => 'reject',
+            'note' => $request->notes
+        ]);
 
         return response()->json([
             'success' => true,

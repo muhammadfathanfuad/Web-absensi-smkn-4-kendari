@@ -14,6 +14,9 @@ class AttendanceSession extends Model
     protected $fillable = [
         'timetable_id',
         'teacher_id',
+        'opened_by_user_id',
+        'is_delegated',
+        'delegation_reason',
         'session_number',
         'session_token',
         'qr_data',
@@ -37,6 +40,11 @@ class AttendanceSession extends Model
     public function teacher()
     {
         return $this->belongsTo(Teacher::class, 'teacher_id', 'user_id');
+    }
+
+    public function openedBy()
+    {
+        return $this->belongsTo(User::class, 'opened_by_user_id');
     }
 
     public function attendances()
