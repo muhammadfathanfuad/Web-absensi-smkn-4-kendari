@@ -301,6 +301,79 @@ class AbsensiController extends Controller
             'qr_data' => $qrData
         ]);
 
+        // SOLUSI MASALAH 1: Jika yang membuka QR adalah siswa delegasi, otomatis catat absensinya
+        if ($isDelegated && !$user->teacher) {
+            $student = Student::where('user_id', $user->id)->first();
+            if ($student) {
+                // Pastikan siswa terdaftar di kelas yang sesuai
+                $timetableClassId = $timetable->classSubject?->class_id;
+                if (isset($student->class_id) && $timetableClassId && $student->class_id == $timetableClassId) {
+                    // Cek apakah sudah ada absensi untuk siswa ini di session ini
+                    $existingAttendance = Attendance::where('student_id', $user->id)
+                        ->where('class_session_id', $classSession->id)
+                        ->first();
+
+                    if (!$existingAttendance) {
+                        // Tentukan status berdasarkan waktu
+                        $timezone = 'Asia/Makassar';
+                        $jamMasuk = Carbon::parse($timetable->start_time, $timezone);
+                        $jamScan = TimeOverrideService::now()->setTimezone($timezone);
+                        
+                        $status = 'H';
+                        $note = 'Hadir (sebagai delegasi)';
+                        $isOnTime = true;
+                        $lateMinutes = 0;
+
+                        if ($jamScan->isAfter($jamMasuk)) {
+                            $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
+                            if ($lateMinutes > 15) {
+                                $status = 'T';
+                                $note = 'Terlambat ' . $lateMinutes . ' menit (sebagai delegasi)';
+                                $isOnTime = false;
+                            } else {
+                                $note = 'Hadir tepat waktu (sebagai delegasi)';
+                            }
+                        }
+
+                        // Check for leave request
+                        $today = TimeOverrideService::today();
+                        $leaveRequestStatus = \App\Http\Controllers\Guru\LeaveRequestController::checkLeaveRequestForAttendance(
+                            $user->id,
+                            $timetable->id,
+                            $today
+                        );
+
+                        if ($leaveRequestStatus) {
+                            $status = $leaveRequestStatus;
+                            $note = $status === 'I' 
+                                ? 'Izin (disetujui oleh guru) - sebagai delegasi' 
+                                : 'Alpha (permohonan izin ditolak) - sebagai delegasi';
+                            $isOnTime = false;
+                        }
+
+                        // Catat absensi siswa delegasi
+                        Attendance::create([
+                            'class_session_id' => $classSession->id,
+                            'student_id' => $user->id,
+                            'session_id' => $attendanceSession->id,
+                            'session_number' => 1,
+                            'status' => $status,
+                            'check_in_time' => TimeOverrideService::now()->format('H:i:s'),
+                            'is_on_time' => $isOnTime,
+                            'late_minutes' => $lateMinutes,
+                            'notes' => $note,
+                        ]);
+
+                        Log::info('Auto attendance recorded for student delegate:', [
+                            'student_id' => $user->id,
+                            'timetable_id' => $timetable->id,
+                            'status' => $status
+                        ]);
+                    }
+                }
+            }
+        }
+
         // Return dengan JSON_FORCE_OBJECT untuk memastikan format konsisten
         return response()->json($qrData, 200, [], JSON_NUMERIC_CHECK);
         

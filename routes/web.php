@@ -429,8 +429,7 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/guru/permohonan-izin', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'index'])->name('guru.permohonan-izin');
     Route::post('/guru/permohonan-izin', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'store'])->name('guru.permohonan-izin.store');
     
-    // Teacher Presence
-    Route::post('/guru/presence', [\App\Http\Controllers\Guru\TeacherPresenceController::class, 'store'])->name('guru.presence.store');
+    // Teacher Presence (Read-only status, no manual recording)
     Route::get('/guru/presence/today-status', [\App\Http\Controllers\Guru\TeacherPresenceController::class, 'getTodayStatus'])->name('guru.presence.today-status');
     Route::get('/guru/permohonan-izin/{id}', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'show'])->name('guru.permohonan-izin.show');
     Route::post('/guru/permohonan-izin/get-timetables', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'getTimetablesForDateRange'])->name('guru.permohonan-izin.get-timetables');
