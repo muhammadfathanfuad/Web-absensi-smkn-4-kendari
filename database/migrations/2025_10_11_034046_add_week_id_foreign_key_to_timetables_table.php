@@ -8,12 +8,13 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * Add foreign key for week_id to timetables table.
+     * This is separated because weeks table is created after timetables table.
      */
     public function up(): void
     {
         Schema::table('timetables', function (Blueprint $table) {
-            $table->unsignedBigInteger('class_subject_id')->nullable()->after('term_id');
-            $table->foreign('class_subject_id')->references('id')->on('class_subjects')->nullOnDelete();
+            $table->foreign('week_id')->references('id')->on('weeks')->nullOnDelete();
         });
     }
 
@@ -23,8 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('timetables', function (Blueprint $table) {
-            $table->dropForeign(['class_subject_id']);
-            $table->dropColumn('class_subject_id');
+            $table->dropForeign(['week_id']);
         });
     }
 };

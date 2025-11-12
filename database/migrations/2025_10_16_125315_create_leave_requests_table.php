@@ -24,6 +24,10 @@ return new class extends Migration
             $table->text('admin_notes')->nullable();
             $table->foreignId('processed_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('processed_at')->nullable();
+            // Teacher approval fields (consolidated from add_teacher_approval_fields migration)
+            $table->json('approved_by_teachers')->nullable()->comment('Array of teacher user_ids who approved this request');
+            $table->json('rejected_by_teachers')->nullable()->comment('Array of teacher user_ids who rejected this request');
+            $table->enum('overall_status', ['pending', 'approved', 'rejected', 'partially_approved'])->default('pending');
             $table->timestamps();
         });
     }

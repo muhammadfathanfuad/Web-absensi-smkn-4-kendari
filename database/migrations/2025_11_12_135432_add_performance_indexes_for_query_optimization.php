@@ -68,15 +68,16 @@ return new class extends Migration
                 $table->index('day_of_week', 'timetables_day_of_week_index');
             }
             
-            // Index untuk query berdasarkan is_active (filter aktif/non-aktif)
-            if (!$this->hasIndex('timetables', 'timetables_is_active_index')) {
-                $table->index('is_active', 'timetables_is_active_index');
-            }
+            // Note: is_active column was removed from timetables table in consolidation
+            // Index untuk query berdasarkan is_active (filter aktif/non-aktif) - REMOVED
+            // if (!$this->hasIndex('timetables', 'timetables_is_active_index')) {
+            //     $table->index('is_active', 'timetables_is_active_index');
+            // }
             
-            // Composite index untuk query: day_of_week + is_active
-            if (!$this->hasIndex('timetables', 'timetables_day_of_week_is_active_index')) {
-                $table->index(['day_of_week', 'is_active'], 'timetables_day_of_week_is_active_index');
-            }
+            // Composite index untuk query: day_of_week + is_active - REMOVED
+            // if (!$this->hasIndex('timetables', 'timetables_day_of_week_is_active_index')) {
+            //     $table->index(['day_of_week', 'is_active'], 'timetables_day_of_week_is_active_index');
+            // }
         });
 
         // Cek apakah tabel class_subjects memiliki kolom class_subject_id di timetables
@@ -136,8 +137,9 @@ return new class extends Migration
         // Hapus index dari tabel timetables
         Schema::table('timetables', function (Blueprint $table) {
             $table->dropIndex('timetables_day_of_week_index');
-            $table->dropIndex('timetables_is_active_index');
-            $table->dropIndex('timetables_day_of_week_is_active_index');
+            // Note: is_active index was removed because column doesn't exist
+            // $table->dropIndex('timetables_is_active_index');
+            // $table->dropIndex('timetables_day_of_week_is_active_index');
             
             if (Schema::hasColumn('timetables', 'class_subject_id')) {
                 $table->dropIndex('timetables_class_subject_id_index');
