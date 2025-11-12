@@ -6,34 +6,27 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Seed the application's database.
+     * Base data seeder for initial access to the system.
+     * 
+     * Run: php artisan db:seed
+     */
     public function run(): void
     {
-        // Urutan ini SANGAT PENTING untuk menghindari error relasi
+        // Base data seeder - urutan penting untuk menghindari error relasi
         $this->call([
-            // 1. Data master yang tidak bergantung pada data lain
+            // 1. Create roles (admin, teacher, student)
             RolesTableSeeder::class,
-            RoomsTableSeeder::class,
-            SubjectsTableSeeder::class,
-            TermsTableSeeder::class,
-
-            // 2. Data pengguna
-            UsersTableSeeder::class,
-
-            // 3. Data yang bergantung pada pengguna (user)
-            UserRolesTableSeeder::class,
-            TeachersTableSeeder::class,
-
-            // 4. Data yang bergantung pada data master dan guru
-            ClassesTableSeeder::class,
-
-            // 5. Data yang bergantung pada pengguna (user) dan kelas
-            StudentsTableSeeder::class,
-
-            // 6. Data relasi jadwal
-            WeeksTableSeeder::class,
-            ClassSubjectsTableSeeder::class,
-            TimetablesTableSeeder::class,
-            ClassSessionsTableSeeder::class,
+            
+            // 2. Create admin user
+            BaseUsersSeeder::class,
+            
+            // 3. Assign admin role to admin user
+            BaseUserRolesSeeder::class,
         ]);
+        
+        $this->command->info('✅ Base data seeding completed!');
+        $this->command->info('📧 Login with: admin@example.com / password');
     }
 }
