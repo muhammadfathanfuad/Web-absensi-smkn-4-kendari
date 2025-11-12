@@ -82,3 +82,79 @@ if (!function_exists('time_translated')) {
     }
 }
 
+if (!function_exists('user_photo_url')) {
+    /**
+     * Get user photo URL with fallback support
+     * 
+     * Handles cases where symlink might not exist on server
+     * Falls back to direct storage access or default avatar
+     * 
+     * @param string|null $photo Photo filename
+     * @param string $default Default avatar path
+     * @return string Photo URL
+     */
+    function user_photo_url($photo = null, $default = '/images/users/avatar-1.jpg')
+    {
+        // Jika tidak ada foto, return default
+        if (!$photo) {
+            return asset($default);
+        }
+        
+        // Path ke file di storage
+        $storagePath = storage_path('app/public/users/' . $photo);
+        
+        // Cek apakah symlink public/storage ada
+        $symlinkExists = file_exists(public_path('storage'));
+        
+        if ($symlinkExists) {
+            // Symlink ada, gunakan path normal via asset()
+            $publicPath = 'storage/users/' . $photo;
+            
+            // Cek apakah file benar-benar ada (melalui symlink)
+            if (file_exists(public_path($publicPath))) {
+                return asset($publicPath);
+            }
+        }
+        
+        // Symlink tidak ada atau file tidak ditemukan via symlink
+        // Coba akses langsung dari storage (jika path bisa diakses)
+        // Ini akan bekerja jika file ada di storage meskipun symlink tidak ada
+        // dan server mengizinkan akses langsung ke storage
+        
+        // Cek apakah file ada di storage
+        if (file_exists($storagePath)) {
+            // Jika symlink tidak ada, gunakan route fallback
+            // Route ini akan serve file dari storage
+            return route('storage.users', ['filename' => $photo]);
+        }
+        
+        // File tidak ditemukan, return default
+        return asset($default);
+    }
+}
+
+if (!function_exists('user_photo_exists')) {
+    /**
+     * Check if user photo file exists
+     * 
+     * @param string|null $photo Photo filename
+     * @return bool
+     */
+    function user_photo_exists($photo = null)
+    {
+        if (!$photo) {
+            return false;
+        }
+        
+        // Cek via symlink
+        $symlinkPath = public_path('storage/users/' . $photo);
+        if (file_exists($symlinkPath)) {
+            return true;
+        }
+        
+        // Cek langsung di storage
+        $storagePath = storage_path('app/public/users/' . $photo);
+        return file_exists($storagePath);
+    }
+}
+

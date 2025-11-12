@@ -2,6 +2,26 @@
 
 @section('title', 'Pengumuman')
 
+@section('css')
+<style>
+    /* Footer sticky di mobile */
+    @media (max-width: 575.98px) {
+        .page-content {
+            padding-bottom: 60px;
+        }
+        
+        .footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1000;
+            width: 100% !important;
+        }
+    }
+</style>
+@endsection
+
 @section('content')
     {{-- Page Title --}}
     <div class="row">
@@ -231,7 +251,15 @@
 
 @push('scripts')
 <script>
-let allAnnouncements = [];
+    // CRITICAL: Prevent duplicate declarations - use window-level variable
+    if (typeof window._pengumumanVars === 'undefined') {
+        window._pengumumanVars = {
+            allAnnouncements: []
+        };
+    }
+    
+    // Use local reference for convenience
+    var allAnnouncements = window._pengumumanVars.allAnnouncements;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadAnnouncements();
@@ -264,6 +292,7 @@ function checkForUpdates() {
                     // Data has changed, update the display
                     localStorage.setItem('announcements_students', currentData);
                     allAnnouncements = data.data;
+                    window._pengumumanVars.allAnnouncements = data.data; // Sync with window
                     renderAnnouncements(data.data);
                     
                     // Show subtle notification that data was updated
@@ -301,6 +330,7 @@ function loadAnnouncements() {
         .then(data => {
             if (data.success) {
                 allAnnouncements = data.data;
+                window._pengumumanVars.allAnnouncements = data.data; // Sync with window
                 renderAnnouncements(allAnnouncements);
             } else {
                 showNoAnnouncements();
@@ -447,7 +477,11 @@ function filterPengumuman() {
     }
 
 function viewAnnouncement(id) {
-    const announcement = allAnnouncements.find(ann => ann.id === id);
+    // Use window-level variable to ensure consistency
+    const announcements = (window._pengumumanVars && window._pengumumanVars.allAnnouncements) 
+        ? window._pengumumanVars.allAnnouncements 
+        : allAnnouncements;
+    const announcement = announcements.find(ann => ann.id === id);
     if (!announcement) {
         showNotification('Pengumuman tidak ditemukan', false);
         return;

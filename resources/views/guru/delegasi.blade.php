@@ -1,5 +1,25 @@
 @extends('layouts.vertical-guru', ['subtitle' => 'Delegasi Saya'])
 
+@section('css')
+<style>
+    /* Footer sticky di mobile */
+    @media (max-width: 575.98px) {
+        .page-content {
+            padding-bottom: 60px;
+        }
+        
+        .footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1000;
+            width: 100% !important;
+        }
+    }
+</style>
+@endsection
+
 @section('content')
 @include('layouts.partials.page-title', ['title' => 'Guru', 'subtitle' => 'Pengganti Absensi'])
 
@@ -24,43 +44,117 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($myDelegations as $delegasi)
+                            @php
+                                // Group delegations by subject, day, and class
+                                $groupedDelegations = [];
+                                $dayNames = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'];
+                                
+                                foreach ($myDelegations as $delegasi) {
+                                    if (!is_object($delegasi) || !isset($delegasi->id) || !$delegasi->timetable) {
+                                        continue;
+                                    }
+                                    
+                                    $timetable = $delegasi->timetable;
+                                    $dayOfWeek = $timetable->day_of_week ?? null;
+                                    $subjectId = ($timetable->classSubject && is_object($timetable->classSubject) && $timetable->classSubject->subject) 
+                                        ? $timetable->classSubject->subject->id 
+                                        : null;
+                                    $classId = ($timetable->classSubject && is_object($timetable->classSubject) && $timetable->classSubject->class) 
+                                        ? $timetable->classSubject->class->id 
+                                        : null;
+                                    
+                                    // Create unique key based on subject, day, and class
+                                    $key = $subjectId . '_' . $dayOfWeek . '_' . $classId;
+                                    
+                                    if (!isset($groupedDelegations[$key])) {
+                                        $classSubject = $timetable->classSubject;
+                                        $groupedDelegations[$key] = [
+                                            'day_of_week' => $dayOfWeek,
+                                            'subject_name' => ($classSubject && is_object($classSubject) && $classSubject->subject) 
+                                                ? $classSubject->subject->name 
+                                                : 'N/A',
+                                            'class_name' => ($classSubject && is_object($classSubject) && $classSubject->class) 
+                                                ? $classSubject->class->name 
+                                                : 'N/A',
+                                            'original_teacher' => ($delegasi->originalTeacher && is_object($delegasi->originalTeacher) && $delegasi->originalTeacher->user && is_object($delegasi->originalTeacher->user)) 
+                                                ? $delegasi->originalTeacher->user->full_name 
+                                                : 'N/A',
+                                            'type' => $delegasi->type ?? 'N/A',
+                                            'start_times' => [],
+                                            'delegations' => []
+                                        ];
+                                    }
+                                    
+                                    // Add start time
+                                    if ($timetable->start_time) {
+                                        $groupedDelegations[$key]['start_times'][] = $timetable->start_time;
+                                    }
+                                    
+                                    // Add delegation to group
+                                    $groupedDelegations[$key]['delegations'][] = $delegasi;
+                                }
+                                
+                                // Find earliest start time for each group
+                                foreach ($groupedDelegations as $key => &$group) {
+                                    if (!empty($group['start_times'])) {
+                                        $earliestStart = null;
+                                        foreach ($group['start_times'] as $time) {
+                                            if ($time) {
+                                                $timeObj = \Carbon\Carbon::parse($time);
+                                                if ($earliestStart === null || $timeObj->lt(\Carbon\Carbon::parse($earliestStart))) {
+                                                    $earliestStart = $time;
+                                                }
+                                            }
+                                        }
+                                        $group['earliest_start'] = $earliestStart;
+                                    } else {
+                                        $group['earliest_start'] = null;
+                                    }
+                                }
+                                unset($group);
+                            @endphp
+                            
+                            @forelse($groupedDelegations as $key => $group)
+                            @php
+                                $dayName = isset($dayNames[$group['day_of_week']]) ? $dayNames[$group['day_of_week']] : 'N/A';
+                                $timeDisplay = 'N/A';
+                                if ($group['earliest_start']) {
+                                    $timeDisplay = \Carbon\Carbon::parse($group['earliest_start'])->format('H:i');
+                                }
+                                
+                                // Get first delegation for action check
+                                $firstDelegation = $group['delegations'][0];
+                                $delegationDayNumber = $firstDelegation->timetable->day_of_week;
+                                $todayDayNumber = $today->dayOfWeekIso;
+                                $isToday = ($todayDayNumber === $delegationDayNumber);
+                                
+                                $isWithinTemporaryPeriod = true;
+                                if ($firstDelegation->type === 'temporary') {
+                                    $validFrom = \Carbon\Carbon::parse($firstDelegation->valid_from)->startOfDay();
+                                    $validUntil = \Carbon\Carbon::parse($firstDelegation->valid_until)->endOfDay();
+                                    $todayDate = $today->startOfDay();
+                                    $isWithinTemporaryPeriod = $todayDate->isBetween($validFrom, $validUntil, true);
+                                }
+                                
+                                // Get first timetable ID for QR action
+                                $firstTimetableId = $firstDelegation->timetable->id;
+                            @endphp
                             <tr>
-                                @php
-                                    $dayNames = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'];
-                                    $dayName = $dayNames[$delegasi->timetable->day_of_week] ?? 'N/A';
-                                @endphp
                                 <td>{{ $dayName }}</td>
-                                <td>{{ $delegasi->timetable->classSubject->subject->name ?? 'N/A' }}</td>
-                                <td>{{ $delegasi->timetable->classSubject->class->name ?? 'N/A' }}</td>
-                                <td>{{ Carbon\Carbon::parse($delegasi->timetable->start_time)->format('H:i') }} - {{ Carbon\Carbon::parse($delegasi->timetable->end_time)->format('H:i') }}</td>
-                                <td>{{ $delegasi->originalTeacher->user->full_name ?? 'N/A' }}</td>
+                                <td>{{ $group['subject_name'] }}</td>
+                                <td>{{ $group['class_name'] }}</td>
+                                <td>{{ $timeDisplay }}</td>
+                                <td>{{ $group['original_teacher'] }}</td>
                                 <td>
-                                    @if($delegasi->type == 'permanent')
+                                    @if($group['type'] == 'permanent')
                                         <span class="badge bg-info">Permanent</span>
                                     @else
                                         <span class="badge bg-warning">Temporary</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @php
-                                        // day_of_week adalah integer (1=Senin, 2=Selasa, ..., 7=Minggu)
-                                        // dayOfWeekIso juga mengembalikan 1=Senin, 2=Selasa, ..., 7=Minggu
-                                        $delegationDayNumber = $delegasi->timetable->day_of_week;
-                                        $todayDayNumber = $today->dayOfWeekIso;
-                                        $isToday = ($todayDayNumber === $delegationDayNumber);
-                                        
-                                        $isWithinTemporaryPeriod = true;
-                                        if ($delegasi->type === 'temporary') {
-                                            $validFrom = \Carbon\Carbon::parse($delegasi->valid_from)->startOfDay();
-                                            $validUntil = \Carbon\Carbon::parse($delegasi->valid_until)->endOfDay();
-                                            $todayDate = $today->startOfDay();
-                                            // Gunakan isBetween dengan inclusive untuk memastikan tanggal boundary termasuk
-                                            $isWithinTemporaryPeriod = $todayDate->isBetween($validFrom, $validUntil, true);
-                                        }
-                                    @endphp
                                     @if($isToday && $isWithinTemporaryPeriod)
-                                    <a href="{{ route('guru.absensi.scan', ['timetable_id' => $delegasi->timetable->id]) }}" class="btn btn-sm btn-primary">
+                                    <a href="{{ route('guru.absensi.scan', ['timetable_id' => $firstTimetableId]) }}" class="btn btn-sm btn-primary">
                                         <i class="bx bx-qr-scan"></i> Buka QR
                                     </a>
                                     @else

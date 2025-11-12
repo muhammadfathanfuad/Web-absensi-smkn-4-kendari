@@ -57,7 +57,7 @@
                               <span class="d-flex align-items-center">
                                    <div style="width: 32px; height: 32px; overflow: hidden; border-radius: 50%;">
                                        <img class="rounded-circle" width="32" height="32" style="width: 100%; height: 100%; object-fit: cover;"
-                                            src="{{ auth()->user()->photo ? asset('storage/users/' . auth()->user()->photo) : '/images/users/avatar-1.jpg' }}"
+                                            src="{{ user_photo_url(auth()->user()->photo) }}"
                                             alt="avatar-{{ auth()->user()->id }}">
                                    </div>
                               </span>
@@ -116,40 +116,374 @@
 
 @push('scripts')
 <script>
+// Handle notification redirect based on type (global function)
+window.handleNotificationRedirect = function(notifType, element) {
+    // Close dropdown first
+    const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('notificationDropdown'));
+    if (dropdown) {
+        dropdown.hide();
+    }
+    
+    // Determine redirect URL based on notification type and user role
+    let redirectUrl = null;
+    
+        @auth
+            @if(auth()->user()->roles()->where('name', 'teacher')->exists())
+                // Teacher routes
+                if (notifType === 'announcement') {
+                    redirectUrl = '{{ route("guru.pengumuman") }}';
+                } else if (notifType === 'delegation') {
+                    redirectUrl = '{{ route("guru.delegasi") }}';
+                } else if (notifType === 'leave_request') {
+                    redirectUrl = '{{ route("guru.dashboard") }}#list-siswa-izin-hari-ini';
+                }
+            @elseif(auth()->user()->roles()->where('name', 'student')->exists())
+                // Student routes
+                if (notifType === 'announcement') {
+                    redirectUrl = '{{ route("murid.pengumuman") }}';
+                } else if (notifType === 'delegation') {
+                    redirectUrl = '{{ route("murid.delegasi") }}';
+                } else if (notifType === 'leave_request') {
+                    redirectUrl = '{{ route("murid.permohonan-izin") }}';
+                }
+            @elseif(auth()->user()->roles()->where('name', 'admin')->exists())
+                // Admin routes
+                if (notifType === 'announcement') {
+                    redirectUrl = '{{ route("admin.pengumuman") }}';
+                } else if (notifType === 'delegation') {
+                    redirectUrl = '{{ route("admin.delegasi") }}';
+                } else if (notifType === 'leave_request') {
+                    redirectUrl = '{{ route("admin.delegasi") }}#permohonan-izin'; // Redirect to delegasi page with permohonan izin tab active
+                }
+            @endif
+        @endauth
+    
+    // Redirect if URL is determined
+    if (redirectUrl) {
+        // Small delay to allow dropdown to close
+        setTimeout(() => {
+            // If URL contains hash, navigate to it
+            if (redirectUrl.includes('#')) {
+                window.location.href = redirectUrl;
+            } else {
+            window.location.href = redirectUrl;
+            }
+        }, 100);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
-    let notificationPollInterval = null;
+    // CRITICAL: Don't load notifications on DOMContentLoaded
+    // Wait for page load to complete first to prevent blocking
+    // Notifications will be loaded after SSE connection is established
     
-    // Load notifications on page load
+    // CRITICAL: Prevent multiple SSE instances - use window-level flag
+    if (window._sseInitialized) {
+        return;
+    }
+    window._sseInitialized = true;
+    
+    // Setup Server-Sent Events (SSE) for real-time notifications
+    let eventSource = null;
+    let sseInitTimeout = null;
+    let isNavigating = false; // Reset untuk page baru
+    let sseInitialized = false; // Flag untuk prevent double initialization
+    let sseConnecting = false; // Flag untuk prevent multiple simultaneous connections
+    
+    // Function to close SSE connection - AGGRESSIVE untuk fast navigation
+    function closeSSEConnection() {
+        // Set navigating flag immediately
+        isNavigating = true;
+        
+        if (eventSource) {
+            try {
+                // Nullify all event handlers FIRST (prevent any callbacks from firing)
+                eventSource.onopen = null;
+                eventSource.onerror = null;
+                eventSource.onmessage = null;
+                
+                // Remove all event listeners
+                if (eventSource.removeEventListener) {
+                    // Try to remove notification listener if exists
+                    try {
+                        eventSource.removeEventListener('notification', function(){});
+                    } catch(e) {}
+                }
+                
+                // Close the connection
+                eventSource.close();
+            } catch (e) {
+                // Ignore errors
+            }
+            eventSource = null;
+        }
+        
+        // Reset flags
+        sseInitialized = false;
+        sseConnecting = false;
+        window._sseInitialized = false; // Reset window-level flag
+        
+        // Clear initialization timeout if exists
+        if (sseInitTimeout) {
+            clearTimeout(sseInitTimeout);
+            sseInitTimeout = null;
+        }
+    }
+    
+    // Initialize SSE connection after page loads with delay
+    // SSE akan connect setelah 3 detik setelah page load selesai (sama seperti admin)
+    // CRITICAL: Gunakan once: true untuk prevent multiple load event handlers
+    window.addEventListener('load', function() {
+        // Prevent multiple initialization
+        if (sseInitialized || sseConnecting) {
+            return;
+        }
+        
+        if (typeof EventSource === 'undefined') {
+            return;
+        }
+        
+        // Mark as initializing
+        sseConnecting = true;
+        
+        // Delay SSE connection untuk tidak mempengaruhi initial page load
+        // Sama seperti implementasi admin: delay 3 detik
+        sseInitTimeout = setTimeout(function() {
+            // Double check: hanya connect jika page masih active dan tidak navigating
+            // CRITICAL: Check juga apakah sudah ada connection yang aktif
+            if (!isNavigating && !sseInitialized && !eventSource && document.readyState === 'complete' && !document.hidden) {
+                // Close any existing connection first (safety check)
+                if (eventSource) {
+                    try {
+                        eventSource.close();
+                    } catch(e) {}
+                    eventSource = null;
+                }
+                
+                const sseUrl = '{{ route("api.notifications.stream") }}';
+                eventSource = new EventSource(sseUrl);
+                sseInitialized = true; // Mark as initialized immediately
+            
+                // Load notification count when connection opens
+                eventSource.onopen = function() {
+                    // Don't process if navigating
+                    if (isNavigating) {
+                        return;
+                    }
+                    sseConnecting = false; // Mark as no longer connecting
+                    loadNotificationCount();
+                };
+                
+                // Handle notification events
+                eventSource.addEventListener('notification', function(e) {
+                    // CRITICAL: Don't process events if navigating or connection invalid
+                    if (isNavigating || !eventSource || eventSource.readyState === EventSource.CLOSED) {
+                        return;
+                    }
+                    
+                    try {
+                        const notification = JSON.parse(e.data);
+                        
+                        // Double check: still not navigating
+                        if (isNavigating) {
+                            return;
+                        }
+                        
+                        // Update notification count
+                        loadNotificationCount();
+                        
+                        // Update notification list if dropdown is open
+                        const dropdown = document.getElementById('notificationDropdown');
+                        if (dropdown?.getAttribute('aria-expanded') === 'true') {
     loadNotifications();
-    loadNotificationCount();
+                        }
+                        
+                        // Show popup for new notification
+                        const shownKey = `notif_shown_${notification.id}`;
+                        if (!sessionStorage.getItem(shownKey)) {
+                            showNotificationPopup(notification);
+                            sessionStorage.setItem(shownKey, 'true');
+                        }
+                    } catch (error) {
+                        // Silent error handling
+                    }
+                });
+                
+                // Handle errors
+                eventSource.onerror = function(e) {
+                    // Don't process if navigating
+                    if (isNavigating) {
+                        return;
+                    }
+                    
+                    // Check readyState
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        sseInitialized = false;
+                        sseConnecting = false;
+                        eventSource = null;
+                        return;
+                    }
+                    
+                    // If CONNECTING, it means EventSource is trying to reconnect
+                    // Prevent auto-reconnect by closing and resetting flags
+                    if (eventSource.readyState === EventSource.CONNECTING) {
+                        try {
+                            eventSource.close();
+                        } catch(err) {}
+                        sseInitialized = false;
+                        sseConnecting = false;
+                        eventSource = null;
+                        return;
+                    }
+                    // For OPEN state errors, close connection to prevent auto-reconnect
+                    if (eventSource.readyState === EventSource.OPEN) {
+                        try {
+                            eventSource.close();
+                        } catch(err) {}
+                        sseInitialized = false;
+                        sseConnecting = false;
+                        eventSource = null;
+                    }
+                };
+            } else {
+                // Reset flag if connection was not created
+                sseConnecting = false;
+            }
+        }, 3000); // Delay 3 detik setelah page load (sama seperti admin)
+    }, { once: true }); // CRITICAL: once: true untuk prevent multiple load handlers
     
-    // Poll for new notifications every 30 seconds
-    notificationPollInterval = setInterval(() => {
-        loadNotificationCount();
-        loadNotifications(true); // Silent refresh
-    }, 30000);
+    // Close SSE connection saat navigation - CRITICAL: Close on mousedown (BEFORE click)
+    // Ini memberikan waktu lebih banyak untuk close sebelum navigation terjadi
+    document.addEventListener('mousedown', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && link.href) {
+            const href = link.getAttribute('href');
+            const isInternalLink = href && !href.startsWith('#') && 
+                                 !href.startsWith('javascript:') && 
+                                 href !== '#' && 
+                                 !link.target &&
+                                 !link.hasAttribute('data-bs-toggle') && 
+                                 !link.hasAttribute('data-bs-target') &&
+                                 !link.hasAttribute('data-bs-dismiss');
+            
+            if (isInternalLink) {
+                // Close SSE immediately on mousedown (before click fires)
+                closeSSEConnection();
+            }
+        }
+    }, { capture: true, passive: true });
+    
+    // Backup: Also close on click (in case mousedown missed)
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && link.href) {
+            const href = link.getAttribute('href');
+            const isInternalLink = href && !href.startsWith('#') && 
+                                 !href.startsWith('javascript:') && 
+                                 href !== '#' && 
+                                 !link.target &&
+                                 !link.hasAttribute('data-bs-toggle') && 
+                                 !link.hasAttribute('data-bs-target') &&
+                                 !link.hasAttribute('data-bs-dismiss');
+            
+            if (isInternalLink && eventSource) {
+                // Force close if still open
+                closeSSEConnection();
+            }
+        }
+    }, { capture: true, passive: true });
+    
+    // Close SSE connection saat form submission (GET method untuk navigation)
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (form && form.tagName === 'FORM' && form.method.toLowerCase() === 'get') {
+            isNavigating = true;
+            closeSSEConnection();
+        }
+    }, { capture: true });
+    
+    // Close SSE connection on page unload/refresh - AGGRESSIVE
+    window.addEventListener('beforeunload', function() {
+        closeSSEConnection();
+        // Reset window-level flag untuk allow reconnect di page baru
+        window._sseInitialized = false;
+        // Force stop all network requests if possible
+        try {
+            if (window.stop) {
+                window.stop();
+            }
+        } catch (e) {
+            // Ignore errors
+        }
+    }, { passive: true });
+    
+    // Close SSE connection on pagehide (lebih reliable untuk refresh)
+    window.addEventListener('pagehide', function(e) {
+        closeSSEConnection();
+        // If page is being unloaded (not just hidden), force stop
+        if (e.persisted === false) {
+            try {
+                if (window.stop) {
+                    window.stop();
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+        }
+    }, { passive: true });
+    
+    // Close SSE connection saat tab hidden (visibility change)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            closeSSEConnection();
+        } else {
+            // Tab visible again - reset navigating flag untuk allow reconnect
+            // Tapi jangan reconnect otomatis, biarkan page load handler yang handle
+            isNavigating = false;
+        }
+    });
     
     // Load notification count
     function loadNotificationCount() {
-        fetch('{{ route("api.notifications.unread-count") }}')
+        // CRITICAL: Don't load if navigating
+        if (isNavigating || document.readyState === 'unloading') {
+            return;
+        }
+        
+        // Prevent multiple simultaneous requests
+        if (window._loadingNotificationCount) {
+            return;
+        }
+        
+        window._loadingNotificationCount = true;
+        
+        fetch('{{ route("api.notifications.unread-count") }}', {
+            cache: 'no-cache',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(response => response.json())
             .then(data => {
                 const badge = document.getElementById('notificationBadge');
                 const count = document.getElementById('notificationCount');
                 
+                if (badge && count) {
                 if (data.count > 0) {
                     badge.style.display = 'block';
                     count.textContent = data.count > 99 ? '99+' : data.count;
                 } else {
                     badge.style.display = 'none';
                 }
-                
-                // Show popup if there are new unread notifications
-                if (data.count > 0) {
-                    checkAndShowNewNotifications();
                 }
             })
-            .catch(error => console.error('Error loading notification count:', error));
+            .catch(error => {
+                console.error('Error loading notification count:', error);
+            })
+            .finally(() => {
+                window._loadingNotificationCount = false;
+            });
     }
     
     // Load notifications list
@@ -185,7 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 list.innerHTML = notifications.map(notif => `
-                    <a href="#" class="list-group-item list-group-item-action ${!notif.is_read ? 'bg-light' : ''}" data-id="${notif.id}">
+                    <a href="#" class="list-group-item list-group-item-action ${!notif.is_read ? 'bg-light' : ''}" 
+                       data-id="${notif.id}" 
+                       data-type="${notif.type || ''}" 
+                       data-related-id="${notif.related_id || ''}" 
+                       data-related-type="${notif.related_type || ''}">
                         <div class="d-flex w-100 justify-content-between align-items-start">
                             <div class="flex-grow-1">
                                 <h6 class="mb-1 ${!notif.is_read ? 'fw-bold' : ''}">${notif.title}</h6>
@@ -206,9 +544,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.addEventListener('click', function(e) {
                         if (!e.target.classList.contains('mark-read-btn')) {
                             const notifId = this.getAttribute('data-id');
+                            const notifType = this.getAttribute('data-type');
+                            
+                            // Mark as read
                             if (notifId) {
                                 markAsRead(notifId);
                             }
+                            
+                            // Redirect based on notification type
+                            window.handleNotificationRedirect(notifType, this);
                         }
                     });
                 });
@@ -262,30 +606,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Check for new notifications and show popup
-    function checkAndShowNewNotifications() {
-        fetch('{{ route("api.notifications.recent") }}?limit=1&unread_only=1')
-            .then(response => response.json())
-            .then(notifications => {
-                if (notifications.length > 0) {
-                    const latest = notifications[0];
-                    // Check if already shown (using sessionStorage)
-                    const shownKey = `notif_shown_${latest.id}`;
-                    if (!sessionStorage.getItem(shownKey)) {
-                        showNotificationPopup(latest);
-                        sessionStorage.setItem(shownKey, 'true');
-                    }
-                }
-            })
-            .catch(error => console.error('Error checking new notifications:', error));
-    }
-    
     // Show notification popup
     function showNotificationPopup(notification) {
         // Create popup element
         const popup = document.createElement('div');
         popup.className = 'notification-popup alert alert-info alert-dismissible fade show position-fixed';
-        popup.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        popup.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer;';
         popup.innerHTML = `
             <div class="d-flex align-items-start">
                 <iconify-icon icon="solar:bell-bold" class="fs-24 me-2"></iconify-icon>
@@ -294,9 +620,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="mb-0 small">${notification.message}</p>
                     <small class="text-muted">${notification.created_at}</small>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" onclick="event.stopPropagation();"></button>
             </div>
         `;
+        
+        // Add click handler to redirect
+        popup.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('btn-close')) {
+                window.handleNotificationRedirect(notification.type || '', popup);
+            }
+        });
         
         document.body.appendChild(popup);
         

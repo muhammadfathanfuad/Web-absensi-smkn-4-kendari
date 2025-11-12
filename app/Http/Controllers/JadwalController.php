@@ -13,6 +13,7 @@ use App\Imports\SubjectsImport;
 use App\Imports\EnhancedTimetableImport;
 use App\Imports\ClassesImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 class JadwalController extends Controller
 {
     public function jadwalPelajaran()
@@ -48,6 +49,20 @@ class JadwalController extends Controller
             $query->where('term_id', $request->term_id);
         } else {
             \Log::info('No term_id filter applied');
+        }
+
+        // Filter by class_id if provided
+        if ($request->has('class_id') && $request->class_id) {
+            \Log::info('Filtering by class_id: ' . $request->class_id);
+            $query->whereHas('classSubject.class', function($q) use ($request) {
+                $q->where('id', $request->class_id);
+            });
+        }
+
+        // Filter by day_of_week if provided
+        if ($request->has('day') && $request->day) {
+            \Log::info('Filtering by day: ' . $request->day);
+            $query->where('day_of_week', $request->day);
         }
 
         $timetables = $query->orderBy('day_of_week')
@@ -1166,6 +1181,176 @@ class JadwalController extends Controller
                 'success' => false,
                 'message' => 'Gagal menghapus mata pelajaran: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function export(Request $request)
+    {
+        try {
+            Log::info('Export Jadwal X request received', $request->all());
+
+            // Validate format parameter
+            $format = $request->get('format', 'pdf');
+            if (!in_array($format, ['pdf'])) {
+                $format = 'pdf';
+            }
+
+            // Get filter parameters
+            $termId = $request->get('term_id');
+            $classId = $request->get('class_id');
+            $day = $request->get('day');
+
+            $days = [
+                1 => 'Senin',
+                2 => 'Selasa',
+                3 => 'Rabu',
+                4 => 'Kamis',
+                5 => 'Jumat',
+                6 => 'Sabtu',
+                7 => 'Minggu',
+            ];
+
+            $query = Timetable::with(['classSubject.class', 'classSubject.subject', 'classSubject.teacher.user', 'term'])
+                ->whereHas('classSubject.class', function($query) {
+                    $query->where('grade', '10');
+                });
+
+            // Filter by term_id if provided
+            if ($termId) {
+                $query->where('term_id', $termId);
+            }
+
+            // Filter by class_id if provided
+            if ($classId) {
+                $query->whereHas('classSubject.class', function($q) use ($classId) {
+                    $q->where('id', $classId);
+                });
+            }
+
+            // Filter by day_of_week if provided
+            if ($day) {
+                $query->where('day_of_week', $day);
+            }
+
+            $timetables = $query->orderBy('day_of_week')
+                ->orderBy('start_time')
+                ->get();
+
+            // Group by day_of_week, class_subject_id, type
+            $grouped = $timetables->groupBy(function ($item) {
+                return $item->day_of_week . '-' . $item->class_subject_id . '-' . ($item->type ?? 'teori');
+            });
+
+            $jadwals = collect();
+
+            foreach ($grouped as $group) {
+                // Sort by start_time
+                $sortedGroup = $group->sortBy('start_time');
+
+                // Merge consecutive times
+                $mergedTimes = [];
+                $currentStart = null;
+                $currentEnd = null;
+
+                foreach ($sortedGroup as $jadwal) {
+                    if ($currentStart === null) {
+                        $currentStart = $jadwal->start_time;
+                        $currentEnd = $jadwal->end_time;
+                    } elseif ($jadwal->start_time === $currentEnd) {
+                        $currentEnd = $jadwal->end_time;
+                    } else {
+                        $mergedTimes[] = ['start' => $currentStart, 'end' => $currentEnd];
+                        $currentStart = $jadwal->start_time;
+                        $currentEnd = $jadwal->end_time;
+                    }
+                }
+                if ($currentStart !== null) {
+                    $mergedTimes[] = ['start' => $currentStart, 'end' => $currentEnd];
+                }
+
+                // Create entries for each merged time
+                foreach ($mergedTimes as $time) {
+                    // Find the jadwal entry that matches this time range
+                    $matchingJadwal = $sortedGroup->first(function($j) use ($time) {
+                        $jStart = is_object($j->start_time) ? $j->start_time->format('H:i:s') : (is_string($j->start_time) ? date('H:i:s', strtotime($j->start_time)) : '00:00:00');
+                        $tStart = is_object($time['start']) ? $time['start']->format('H:i:s') : (is_string($time['start']) ? date('H:i:s', strtotime($time['start'])) : '00:00:00');
+                        return $jStart === $tStart;
+                    });
+                    
+                    // Fallback to first jadwal if no match found
+                    if (!$matchingJadwal) {
+                        $matchingJadwal = $sortedGroup->first();
+                    }
+                    
+                    // Format jenis kelas: use location_type if available, otherwise use type
+                    // location_type: 'lab' -> 'Lab', 'theory' -> 'Teori'
+                    // type: 'praktik' -> 'Praktik', 'teori' -> 'Teori'
+                    $locationType = $matchingJadwal->location_type ?? null;
+                    $type = $matchingJadwal->type ?? 'teori';
+                    
+                    if ($locationType === 'lab') {
+                        $typeDisplay = 'Lab';
+                    } elseif ($locationType === 'theory') {
+                        $typeDisplay = 'Teori';
+                    } elseif ($type === 'praktik' || $type === 'Praktik') {
+                        $typeDisplay = 'Praktik';
+                    } else {
+                        $typeDisplay = 'Teori';
+                    }
+                    
+                    $jadwals->push([
+                        'hari' => $days[$matchingJadwal->day_of_week] ?? '-',
+                        'jam' => $time['start'] . ' - ' . $time['end'],
+                        'kelas' => $this->formatClassName($matchingJadwal->classSubject?->class?->name ?? '-', $matchingJadwal->classSubject?->class?->grade ?? ''),
+                        'mapel' => $matchingJadwal->classSubject?->subject?->name ?? '-',
+                        'guru' => $matchingJadwal->classSubject?->teacher?->user?->full_name ?? '-',
+                        'jenis' => $typeDisplay,
+                    ]);
+                }
+            }
+
+            // Sort by day and time
+            $sortedJadwals = $jadwals->sortBy(function($item) use ($days) {
+                $dayOrder = array_flip($days);
+                $dayNum = $dayOrder[$item['hari']] ?? 99;
+                $timeParts = explode(' - ', $item['jam']);
+                $startTime = isset($timeParts[0]) ? strtotime($timeParts[0]) : 0;
+                return $dayNum * 100000 + $startTime;
+            })->values();
+
+            // Get term info
+            $term = $termId ? Term::find($termId) : Term::where('is_active', true)->first();
+            $termName = $term ? $term->name : 'Semester Aktif';
+
+            // Generate filename
+            $filename = 'jadwal_kelas_x_' . date('Ymd') . '.pdf';
+
+            // Generate PDF
+            $pdf = Pdf::loadView('admin.jadwal-pdf', [
+                'jadwals' => $sortedJadwals,
+                'termName' => $termName,
+                'grade' => 'X',
+                'groupInfo' => null, // No group info for Kelas X
+            ]);
+
+            Log::info('Returning PDF file', ['filename' => $filename]);
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error('Export error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+
+            // Return JSON error for AJAX requests
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengexport data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Redirect back with error message for regular requests
+            return redirect()->back()->with('error', 'Gagal mengexport data: ' . $e->getMessage());
         }
     }
 }

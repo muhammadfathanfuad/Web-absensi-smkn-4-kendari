@@ -112,47 +112,65 @@ class ScanController extends Controller
             ]);
         }
 
-        // Enhanced status logic based on scan time
-        $timezone = 'Asia/Makassar';
-        $jamMasuk = Carbon::parse($timetable->start_time, $timezone);
-        $jamSelesai = Carbon::parse($timetable->end_time, $timezone);
-        $jamScan = TimeOverrideService::now()->setTimezone($timezone);
+        // Check for leave request first (for future dates or if student has approved/rejected leave request)
+        $today = TimeOverrideService::today();
+        $leaveRequestStatus = \App\Http\Controllers\Guru\LeaveRequestController::checkLeaveRequestForAttendance(
+            $user->id,
+            $timetable->id,
+            $today
+        );
 
-        // Determine status based on scan time
-        $status = 'A'; // Default: Tidak Hadir
-        $note = null;
-        $isOnTime = false;
-        $lateMinutes = 0;
-
-        if ($jamScan->isBefore($jamMasuk)) {
-            // Scan sebelum jam masuk (tidak mungkin, tapi untuk safety)
-            $status = 'H';
-            $note = 'Hadir lebih awal';
-            $isOnTime = true;
-        } elseif ($jamScan->between($jamMasuk, $jamMasuk->copy()->addMinutes(15))) {
-            // Scan dalam 15 menit pertama setelah jam masuk
-            $status = 'H';
-            $note = 'Hadir tepat waktu';
-            $isOnTime = true;
-        } elseif ($jamScan->between($jamMasuk->copy()->addMinutes(15), $jamSelesai)) {
-            // Scan setelah 15 menit tapi sebelum jam selesai
-            $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
-            $status = 'T';
-            $note = 'Terlambat ' . $lateMinutes . ' menit';
+        // If there's a leave request decision, use that status
+        if ($leaveRequestStatus) {
+            $status = $leaveRequestStatus;
+            $note = $status === 'I' 
+                ? 'Izin (disetujui oleh guru)' 
+                : 'Alpha (permohonan izin ditolak)';
             $isOnTime = false;
+            $lateMinutes = 0;
         } else {
-            // Scan setelah jam selesai
-            $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
-            $status = 'T';
-            $note = 'Terlambat ' . $lateMinutes . ' menit (setelah jam selesai)';
+            // Enhanced status logic based on scan time
+            $timezone = 'Asia/Makassar';
+            $jamMasuk = Carbon::parse($timetable->start_time, $timezone);
+            $jamSelesai = Carbon::parse($timetable->end_time, $timezone);
+            $jamScan = TimeOverrideService::now()->setTimezone($timezone);
+
+            // Determine status based on scan time
+            $status = 'A'; // Default: Tidak Hadir
+            $note = null;
             $isOnTime = false;
+            $lateMinutes = 0;
+
+            if ($jamScan->isBefore($jamMasuk)) {
+                // Scan sebelum jam masuk (tidak mungkin, tapi untuk safety)
+                $status = 'H';
+                $note = 'Hadir lebih awal';
+                $isOnTime = true;
+            } elseif ($jamScan->between($jamMasuk, $jamMasuk->copy()->addMinutes(15))) {
+                // Scan dalam 15 menit pertama setelah jam masuk
+                $status = 'H';
+                $note = 'Hadir tepat waktu';
+                $isOnTime = true;
+            } elseif ($jamScan->between($jamMasuk->copy()->addMinutes(15), $jamSelesai)) {
+                // Scan setelah 15 menit tapi sebelum jam selesai
+                $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
+                $status = 'T';
+                $note = 'Terlambat ' . $lateMinutes . ' menit';
+                $isOnTime = false;
+            } else {
+                // Scan setelah jam selesai
+                $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
+                $status = 'T';
+                $note = 'Terlambat ' . $lateMinutes . ' menit (setelah jam selesai)';
+                $isOnTime = false;
+            }
         }
 
         $attendanceData = [
             'class_session_id' => $classSession->id,
             'student_id' => $user->id,
             'status' => $status,
-            'check_in_time' => $jamScan->format('H:i:s'),
+            'check_in_time' => TimeOverrideService::now()->format('H:i:s'),
             'notes' => $note,
             'is_on_time' => $isOnTime,
             'late_minutes' => $lateMinutes,

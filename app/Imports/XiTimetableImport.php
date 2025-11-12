@@ -16,6 +16,7 @@ class XiTimetableImport implements ToCollection
 {
     private $headers = [];
     private $processedCount = 0;
+    private $duplicateCount = 0; // Counter for duplicate entries
     private $groupType;
     private $termId;
     private $currentHari;
@@ -51,6 +52,7 @@ class XiTimetableImport implements ToCollection
         ];
 
         $this->processedCount = 0;
+        $this->duplicateCount = 0;
         $this->errors = [];
 
         // Auto-detect group type from filename if not provided
@@ -62,27 +64,32 @@ class XiTimetableImport implements ToCollection
         $this->detectFormat($rows);
 
         foreach ($rows as $index => $row) {
-            Log::info("Processing XI row {$index}: " . json_encode($row->toArray()));
+            // Convert row to array if it's a collection
+            $rowArray = is_array($row) ? $row : $row->toArray();
+            Log::info("Processing XI row {$index}: " . json_encode($rowArray));
 
             // Skip empty rows
-            if (empty($row[0]) && empty($row[1])) {
+            if (empty($rowArray[0]) && empty($rowArray[1])) {
                 continue;
             }
+            
+            // Convert row to collection for processing
+            $rowCollection = is_array($row) ? collect($row) : $row;
 
             // Process based on detected format
             if ($this->detectedFormat === 'format1') {
-                $this->processFormat1($row, $index, $term->id, $daysMap, $this->errors);
+                $this->processFormat1($rowCollection, $index, $term->id, $daysMap, $this->errors);
             } elseif ($this->detectedFormat === 'format2') {
-                $this->processFormat2($row, $index, $term->id, $daysMap, $this->errors);
+                $this->processFormat2($rowCollection, $index, $term->id, $daysMap, $this->errors);
             } elseif ($this->detectedFormat === 'format3') {
-                $this->processFormat3($row, $index, $term->id, $daysMap, $this->errors);
+                $this->processFormat3($rowCollection, $index, $term->id, $daysMap, $this->errors);
             } else {
                 // Try both formats
-                $this->processFormat1($row, $index, $term->id, $daysMap, $this->errors);
+                $this->processFormat1($rowCollection, $index, $term->id, $daysMap, $this->errors);
             }
         }
 
-        Log::info("XI timetable import completed. Processed {$this->processedCount} entries.");
+        Log::info("XI timetable import completed. Processed {$this->processedCount} entries, {$this->duplicateCount} duplicates skipped.");
         
         if (!empty($this->errors)) {
             Log::warning("XI import completed with errors: " . implode('; ', $this->errors));
@@ -104,7 +111,14 @@ class XiTimetableImport implements ToCollection
         }
 
         // Check for Format 1: HARI, WAKTU, KELAS1, KELAS2, ...
-        $firstRow = $rows[0];
+        // Convert collection to array if needed
+        $rowsArray = $rows->toArray();
+        $firstRow = $rowsArray[0] ?? null;
+        
+        if (!$firstRow) {
+            $this->detectedFormat = 'format1';
+            return;
+        }
         $hasHariWaktu = false;
         $hasClassColumns = false;
 
@@ -142,8 +156,10 @@ class XiTimetableImport implements ToCollection
         $classRowFound = false;
         
         for ($i = 0; $i < min(5, count($rows)); $i++) {
-            $row = $rows[$i];
-            $rowArray = $row->toArray();
+            $row = $rows->get($i) ?? $rows[$i] ?? null;
+            if (!$row) continue;
+            
+            $rowArray = is_array($row) ? $row : $row->toArray();
             $rowStr = strtolower(implode('|', array_filter($rowArray, function($cell) {
                 return $cell !== null && trim($cell) !== '';
             })));
@@ -152,17 +168,24 @@ class XiTimetableImport implements ToCollection
                 $titleRowFound = true;
             }
             
-            if (strpos($rowStr, 'hari') !== false && strpos($rowStr, 'waktu') !== false) {
+            // Check for HARI and WAKTU, and also check for JAM or JAM KE-
+            $hasHari = strpos($rowStr, 'hari') !== false;
+            $hasWaktu = strpos($rowStr, 'waktu') !== false;
+            $hasJam = (strpos($rowStr, 'jam') !== false);
+            
+            if ($hasHari && $hasWaktu && $hasJam) {
                 $headerRowFound = true;
-                $this->headers = $row->toArray();
+                $this->headers = $rowArray;
                 // Next row likely contains class names; store for later mapping
-                if (isset($rows[$i+1])) {
-                    $this->classHeaderRow = $rows[$i+1]->toArray();
+                $nextRow = $rows->get($i+1) ?? $rows[$i+1] ?? null;
+                if ($nextRow) {
+                    $this->classHeaderRow = is_array($nextRow) ? $nextRow : $nextRow->toArray();
                     $classRowFound = true;
                 }
                 // Week indicators may be in the next-next row
-                if (isset($rows[$i+2])) {
-                    $this->weekIndicators = $rows[$i+2]->toArray();
+                $nextNextRow = $rows->get($i+2) ?? $rows[$i+2] ?? null;
+                if ($nextNextRow) {
+                    $this->weekIndicators = is_array($nextNextRow) ? $nextNextRow : $nextNextRow->toArray();
                 }
                 break;
             }
@@ -172,12 +195,16 @@ class XiTimetableImport implements ToCollection
             // Check if this is actually Format 3 (Class XI specific)
             if (isset($this->classHeaderRow) && isset($this->weekIndicators)) {
                 // Check if we have the Class XI specific pattern
+                // Check for any XI class pattern (TKJA, TKJB, TKJC, RPLA, RPLB, RPLC, KTA, KTB, KK, DKVA, DKVB, PSPTA, PSPTB)
                 $hasClassXiPattern = false;
+                $xiClassPatterns = ['tkja', 'tkjb', 'tkjc', 'rpla', 'rplb', 'rplc', 'kta', 'ktb', 'kk', 'dkva', 'dkvb', 'pspta', 'psptb'];
                 foreach ($this->classHeaderRow as $cell) {
-                    if (strpos(strtolower($cell ?? ''), 'tkja') !== false || 
-                        strpos(strtolower($cell ?? ''), 'rpla') !== false) {
-                        $hasClassXiPattern = true;
-                        break;
+                    $cellLower = strtolower($cell ?? '');
+                    foreach ($xiClassPatterns as $pattern) {
+                        if (strpos($cellLower, $pattern) !== false) {
+                            $hasClassXiPattern = true;
+                            break 2;
+                        }
                     }
                 }
                 
@@ -197,8 +224,10 @@ class XiTimetableImport implements ToCollection
         if (count($rows) >= 6) {
             // Look for the pattern: title rows, then HARI, JAM, WAKTU, KELAS XI
             for ($i = 0; $i < min(6, count($rows)); $i++) {
-                $row = $rows[$i];
-                $rowArray = $row->toArray();
+                $row = $rows->get($i) ?? $rows[$i] ?? null;
+                if (!$row) continue;
+                
+                $rowArray = is_array($row) ? $row : $row->toArray();
                 
                 // Check if this row has HARI, JAM, WAKTU pattern
                 if (isset($rowArray[0]) && isset($rowArray[1]) && isset($rowArray[2])) {
@@ -206,22 +235,31 @@ class XiTimetableImport implements ToCollection
                     $col1 = strtolower(trim($rowArray[1]));
                     $col2 = strtolower(trim($rowArray[2]));
                     
-                    if ($col0 === 'hari' && $col1 === 'jam' && $col2 === 'waktu') {
+                    // Check for HARI, JAM (or JAM KE-), WAKTU pattern
+                    // Handle both "JAM" and "JAM KE-" variations
+                    $col1Normalized = strtolower(preg_replace('/\s+/', ' ', trim($col1)));
+                    $isJamColumn = ($col1 === 'jam' || strpos($col1Normalized, 'jam') !== false);
+                    
+                    if ($col0 === 'hari' && $isJamColumn && $col2 === 'waktu') {
                         // This is the header row, next row should have class names
                         $this->detectedFormat = 'format3';
                         $this->headers = $rowArray; // Store header row
                         
                         // Store class names from next row
-                        if (isset($rows[$i+1])) {
-                            $this->classHeaderRow = $rows[$i+1]->toArray();
+                        $nextRow = $rows->get($i+1) ?? $rows[$i+1] ?? null;
+                        if ($nextRow) {
+                            $this->classHeaderRow = is_array($nextRow) ? $nextRow : $nextRow->toArray();
+                            Log::info("Stored classHeaderRow from row " . ($i+1) . ": " . json_encode($this->classHeaderRow));
                         }
                         
                         // Store week indicators from next-next row
-                        if (isset($rows[$i+2])) {
-                            $this->weekIndicators = $rows[$i+2]->toArray();
+                        $nextNextRow = $rows->get($i+2) ?? $rows[$i+2] ?? null;
+                        if ($nextNextRow) {
+                            $this->weekIndicators = is_array($nextNextRow) ? $nextNextRow : $nextNextRow->toArray();
+                            Log::info("Stored weekIndicators from row " . ($i+2) . ": " . json_encode($this->weekIndicators));
                         }
                         
-                        Log::info("Detected Format 3: Class XI specific format with HARI/JAM/WAKTU structure");
+                        Log::info("Detected Format 3: Class XI specific format with HARI/JAM/WAKTU structure at row {$i}");
                         return;
                     }
                 }
@@ -266,8 +304,9 @@ class XiTimetableImport implements ToCollection
             return;
         }
 
-        $hari = strtolower(trim($row[0] ?? ''));
-        $waktu = trim($row[2] ?? ''); // Format 2: HARI, JAM, WAKTU, KELAS
+        $rowArray = is_array($row) ? $row : $row->toArray();
+        $hari = strtolower(trim($rowArray[0] ?? ''));
+        $waktu = trim($rowArray[2] ?? ''); // Format 2: HARI, JAM, WAKTU, KELAS
 
         if (empty($hari) && !empty($waktu)) {
             $hari = $this->currentHari;
@@ -291,18 +330,36 @@ class XiTimetableImport implements ToCollection
             return;
         }
 
-        $hari = strtolower(trim($row[0] ?? ''));
-        $waktu = trim($row[2] ?? ''); // Format 3: HARI, JAM, WAKTU, then class columns
+        $rowArray = is_array($row) ? $row : $row->toArray();
+        $hari = strtolower(trim($rowArray[0] ?? ''));
+        $waktu = trim($rowArray[2] ?? ''); // Format 3: HARI, JAM, WAKTU, then class columns
 
+        // If hari is empty but waktu is not, use the previous day (carry forward)
         if (empty($hari) && !empty($waktu)) {
-            $hari = $this->currentHari;
+            if ($this->currentHari) {
+                $hari = $this->currentHari;
+                Log::info("Row {$index}: Using previous hari '{$hari}' for waktu '{$waktu}'");
+            } else {
+                Log::warning("Row {$index}: No hari and no previous hari available, skipping row with waktu '{$waktu}'");
+                return;
+            }
         }
 
+        // Update current day if we have a new day
         if (!empty($hari)) {
             $this->currentHari = $hari;
+            Log::info("Row {$index}: Set current hari to '{$hari}'");
         }
 
-        if (empty($hari) || empty($waktu)) {
+        // Skip if both hari and waktu are empty
+        if (empty($hari) && empty($waktu)) {
+            Log::info("Row {$index}: Skipping empty row");
+            return;
+        }
+
+        // Skip if waktu is empty (even if hari exists)
+        if (empty($waktu)) {
+            Log::info("Row {$index}: Skipping row with hari '{$hari}' but no waktu");
             return;
         }
 
@@ -311,8 +368,16 @@ class XiTimetableImport implements ToCollection
 
     private function processTimeSlot($row, $index, $termId, $daysMap, $hari, $waktu, &$errors)
     {
-        $timeParts = preg_split('/\s*-\s*/', $waktu);
+        // Normalize waktu - handle cases like "13.20- 14.00" (space after minus)
+        $waktu = preg_replace('/\s*-\s*/', '-', $waktu);
+        
+        // Log the waktu value for debugging
+        Log::info("Processing time slot - Row {$index}, Hari: {$hari}, Waktu: '{$waktu}'");
+        
+        // Split by minus (now normalized)
+        $timeParts = preg_split('/-/', $waktu);
         if (count($timeParts) !== 2) {
+            Log::warning("Invalid time format in row {$index}: '{$waktu}' - expected format: 'HH.MM-HH.MM' or 'HH:MM-HH:MM'");
             return;
         }
 
@@ -320,23 +385,29 @@ class XiTimetableImport implements ToCollection
         $startTimeRaw = trim($timeParts[0]);
         $endTimeRaw = trim($timeParts[1]);
         
+        Log::info("Parsed time parts - Start: '{$startTimeRaw}', End: '{$endTimeRaw}'");
+        
         // Handle different time formats
         $startTime = $this->formatTime($startTimeRaw);
         $endTime = $this->formatTime($endTimeRaw);
         
         if (!$startTime || !$endTime) {
+            Log::warning("Failed to parse time in row {$index}: Start='{$startTimeRaw}' -> '{$startTime}', End='{$endTimeRaw}' -> '{$endTime}'");
             return;
         }
+        
+        Log::info("Formatted times - Start: {$startTime}, End: {$endTime}");
 
         $dayOfWeek = $daysMap[$hari] ?? null;
         if (!$dayOfWeek) {
+            Log::warning("Invalid day in row {$index}: '{$hari}'");
             return;
         }
 
         // Process class columns with week indicators
         $startCol = $this->detectedFormat === 'format2' ? 3 : ($this->detectedFormat === 'format3' ? 3 : 2);
         
-        // For format3, we need to process pairs of columns (GJ and GNP for each class)
+        // For format3, we need to process pairs of columns (GJL and GNP for each class)
         if ($this->detectedFormat === 'format3') {
             $this->processFormat3ClassColumns($row, $index, $termId, $dayOfWeek, $startTime, $endTime, $startCol, $errors);
         } else {
@@ -602,19 +673,27 @@ class XiTimetableImport implements ToCollection
             'week_alternation' => $weekType
         ];
 
+        // Check for existing entry with exact match on all key fields
+        // This allows multiple time slots for the same subject on the same day
         $existingQuery = XiTimetable::where('term_id', $termId)
             ->where('class_subject_id', $classSubjectId)
             ->where('day_of_week', $dayOfWeek)
             ->where('start_time', $startTime)
             ->where('end_time', $endTime)
             ->where('group_type', $this->groupType)
-            ->where('week_type', $weekType);
+            ->where('week_type', $weekType)
+            ->where('location_type', $locationType);
 
         $existingTimetable = $existingQuery->first();
 
         if (!$existingTimetable) {
-            XiTimetable::create($timetableData);
-            Log::info("Created XI timetable entry for group {$this->groupType}, week {$weekType}, location {$locationType}");
+            $created = XiTimetable::create($timetableData);
+            Log::info("Created XI timetable entry ID {$created->id}: Day {$dayOfWeek}, Time {$startTime}-{$endTime}, Group {$this->groupType}, Week {$weekType}, Location {$locationType}");
+            return true; // Entry created
+        } else {
+            $this->duplicateCount++;
+            Log::info("Skipped duplicate XI timetable entry: Day {$dayOfWeek}, Time {$startTime}-{$endTime}, Group {$this->groupType}, Week {$weekType}, Location {$locationType} (existing ID: {$existingTimetable->id})");
+            return false; // Duplicate entry skipped
         }
     }
 
@@ -628,13 +707,51 @@ class XiTimetableImport implements ToCollection
         return $this->errors;
     }
 
+    public function getDuplicateCount()
+    {
+        return $this->duplicateCount;
+    }
+
     private function processFormat3ClassColumns($row, $index, $termId, $dayOfWeek, $startTime, $endTime, $startCol, &$errors)
     {
         // Process pairs of columns for each class (GJL and GNP)
-        // Based on the Excel structure: TKJA, TKJC, RPLA, RPLC, KTA, DKVA, PSPTA
+        // Get class names dynamically from classHeaderRow (row 5 in Excel)
         // Each class has 2 columns: GJL (ganjil/lab) and GNP (genap/teori)
+        // IMPORTANT: Both columns must be processed as they represent different weeks (ganjil/genap)
         
-        $classNames = ['TKJA', 'TKJC', 'RPLA', 'RPLC', 'KTA', 'DKVA', 'PSPTA'];
+        // Convert row to array for processing
+        $rowArray = is_array($row) ? $row : $row->toArray();
+        
+        // Extract class names from classHeaderRow (starting from column index 3)
+        // Class names are in every other column (GJL column), skipping GNP columns
+        $classNames = [];
+        if (!empty($this->classHeaderRow)) {
+            Log::info("classHeaderRow: " . json_encode($this->classHeaderRow));
+            for ($col = $startCol; $col < count($this->classHeaderRow); $col += 2) {
+                $className = trim($this->classHeaderRow[$col] ?? '');
+                // Skip empty cells and week indicators
+                if (!empty($className) && 
+                    !in_array(strtoupper($className), ['GJL', 'GNP']) &&
+                    strtoupper($className) !== 'GJL' &&
+                    strtoupper($className) !== 'GNP') {
+                    $classNames[] = strtoupper($className);
+                    Log::info("Found class name at column {$col}: {$className}");
+                }
+            }
+        }
+        
+        // Fallback to default class names if classHeaderRow is empty or not detected
+        if (empty($classNames)) {
+            // Default class names based on group type
+            if ($this->groupType === 'A') {
+                $classNames = ['TKJA', 'TKJC', 'RPLA', 'RPLC', 'KTA', 'DKVA', 'PSPTA'];
+            } else {
+                $classNames = ['TKJB', 'RPLB', 'KK', 'KTB', 'DKVB', 'PSPTB'];
+            }
+            Log::warning("Class names not detected from Excel, using default for group {$this->groupType}: " . implode(', ', $classNames));
+        } else {
+            Log::info("Detected class names from Excel: " . implode(', ', $classNames));
+        }
         
         for ($i = 0; $i < count($classNames); $i++) {
             $className = $classNames[$i];
@@ -651,34 +768,32 @@ class XiTimetableImport implements ToCollection
             $gjlColIndex = $startCol + ($i * 2); // GJL column (ganjil/lab)
             $gnpColIndex = $startCol + ($i * 2) + 1; // GNP column (genap/teori)
             
-            // Process GJL (Ganjil/Lab) - this column contains the class name
-            $gjlClassInfo = trim($row[$gjlColIndex] ?? '');
+            // Process GJL (Ganjil/Lab) - this column contains data for odd weeks
+            $gjlClassInfo = trim($rowArray[$gjlColIndex] ?? '');
             if (!empty($gjlClassInfo) && !$this->isSpecialEntry($gjlClassInfo)) {
                 try {
                     $this->processClassInfo($className, $gjlClassInfo, $termId, $dayOfWeek, $startTime, $endTime, 'GJL');
                     $this->processedCount++;
+                    Log::info("Processed GJL (minggu ganjil) for {$className} at row {$index}: '{$gjlClassInfo}'");
                 } catch (\Exception $e) {
-                    $errorMsg = "Error processing XI class {$className} (GJL) in row {$index}: " . $e->getMessage();
+                    $errorMsg = "Error processing XI class {$className} (GJL/minggu ganjil) in row {$index}: " . $e->getMessage();
                     Log::error($errorMsg);
                     $errors[] = $errorMsg;
                 }
             }
             
-            // Process GNP (Genap/Teori) - this column contains the same class info but for genap/teori
-            $gnpClassInfo = trim($row[$gnpColIndex] ?? '');
-            Log::info("Processing GNP for {$className}: col {$gnpColIndex}, data: '{$gnpClassInfo}'");
+            // Process GNP (Genap/Teori) - this column contains data for even weeks
+            $gnpClassInfo = trim($rowArray[$gnpColIndex] ?? '');
             if (!empty($gnpClassInfo) && !$this->isSpecialEntry($gnpClassInfo)) {
                 try {
                     $this->processClassInfo($className, $gnpClassInfo, $termId, $dayOfWeek, $startTime, $endTime, 'GNP');
                     $this->processedCount++;
-                    Log::info("Successfully processed GNP for {$className}");
+                    Log::info("Processed GNP (minggu genap) for {$className} at row {$index}: '{$gnpClassInfo}'");
                 } catch (\Exception $e) {
-                    $errorMsg = "Error processing XI class {$className} (GNP) in row {$index}: " . $e->getMessage();
+                    $errorMsg = "Error processing XI class {$className} (GNP/minggu genap) in row {$index}: " . $e->getMessage();
                     Log::error($errorMsg);
                     $errors[] = $errorMsg;
                 }
-            } else {
-                Log::info("Skipping GNP for {$className}: empty or special entry");
             }
         }
     }
@@ -688,20 +803,42 @@ class XiTimetableImport implements ToCollection
         // Remove any extra spaces and normalize
         $timeString = trim($timeString);
         
-        // Handle formats like "07.00", "7.00", "07:00", "7:00"
+        // Handle Excel time values (decimal like 0.333333 for 08:00)
+        if (is_numeric($timeString) && $timeString < 1 && $timeString > 0) {
+            $totalSeconds = round($timeString * 86400); // Convert to seconds in a day
+            $hours = floor($totalSeconds / 3600);
+            $minutes = floor(($totalSeconds % 3600) / 60);
+            return str_pad($hours, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . ':00';
+        }
+        
+        // Handle formats like "07.00", "7.00", "07:00", "7:00", "08.00", "8.00"
         if (preg_match('/^(\d{1,2})[.:](\d{2})$/', $timeString, $matches)) {
-            $hour = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-            $minute = $matches[2];
-            return $hour . ':' . $minute . ':00';
+            $hour = intval($matches[1]);
+            $minute = intval($matches[2]);
+            
+            // Validate hour and minute ranges
+            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+                Log::warning("Invalid time format: {$timeString} (hour: {$hour}, minute: {$minute})");
+                return null;
+            }
+            
+            return str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minute, 2, '0', STR_PAD_LEFT) . ':00';
         }
         
         // Handle formats like "07.00-08.00" (shouldn't happen here but just in case)
         if (preg_match('/^(\d{1,2})[.:](\d{2})/', $timeString, $matches)) {
-            $hour = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-            $minute = $matches[2];
-            return $hour . ':' . $minute . ':00';
+            $hour = intval($matches[1]);
+            $minute = intval($matches[2]);
+            
+            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+                Log::warning("Invalid time format: {$timeString}");
+                return null;
+            }
+            
+            return str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minute, 2, '0', STR_PAD_LEFT) . ':00';
         }
         
+        Log::warning("Could not parse time format: {$timeString}");
         return null;
     }
 }

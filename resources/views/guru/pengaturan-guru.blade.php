@@ -43,7 +43,7 @@
                     {{-- Foto Profil --}}
                     <div class="text-center mb-4">
                         <div class="avatar-lg mx-auto mb-3" style="width: 120px; height: 120px;">
-                            <img id="avatarPreview" src="{{ Auth::user()->photo ? asset('storage/users/' . Auth::user()->photo) : '/images/users/avatar-1.jpg' }}" alt="Avatar" class="rounded-circle img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                            <img id="avatarPreview" src="{{ user_photo_url(Auth::user()->photo) }}" alt="Avatar" class="rounded-circle img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                         <input type="file" id="photoInput" accept="image/*" style="display: none;">
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('photoInput').click()">

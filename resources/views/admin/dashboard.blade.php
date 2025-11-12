@@ -233,8 +233,9 @@
                 <div dir="ltr">
                     <div id="teacherPerformanceChart" class="apex-charts" style="height: 350px;"></div>
                 </div>
-                <div class="mt-3">
-                    <div class="row text-center">
+                <div class="mt-5">
+                    <!-- Desktop: 4 kolom dalam 1 baris -->
+                    <div class="row text-center d-none d-md-flex">
                         <div class="col-md-3">
                             <div class="border-end">
                                 <h5 class="mb-1 text-primary" id="totalActiveTeachers">{{ $teacherPagination['total'] ?? 0 }}</h5>
@@ -243,19 +244,51 @@
                         </div>
                         <div class="col-md-3">
                             <div class="border-end">
-                                <h5 class="mb-1 text-success" id="totalActualHours">{{ collect($teacherPagination['data'] ?? [])->sum('actual_hours') }}</h5>
+                                <h5 class="mb-1 text-success" id="totalActualHours">{{ round(collect($teacherPagination['data'] ?? [])->sum('actual_hours'), 1) }}</h5>
                                 <p class="text-muted mb-0">Jam Aktual (Halaman Ini)</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="border-end">
-                                <h5 class="mb-1 text-danger" id="totalScheduledHours">{{ collect($teacherPagination['data'] ?? [])->sum('scheduled_hours') }}</h5>
+                                <h5 class="mb-1 text-danger" id="totalScheduledHours">{{ round(collect($teacherPagination['data'] ?? [])->sum('scheduled_hours'), 1) }}</h5>
                                 <p class="text-muted mb-0">Jam Terjadwal (Halaman Ini)</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <h5 class="mb-1 text-warning" id="avgCompliance">{{ count($teacherPagination['data'] ?? []) > 0 ? round(collect($teacherPagination['data'] ?? [])->avg('compliance_rate'), 1) : 0 }}%</h5>
                             <p class="text-muted mb-0">Rata-rata Compliance</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile: 2 kolom dalam 2 baris -->
+                    <div class="row text-center d-md-none">
+                        <!-- Baris 1: Total Guru Aktif dan Jam Aktual -->
+                        <div class="col-6 mb-3">
+                            <div class="stat-item">
+                                <h5 class="mb-1 text-primary" id="totalActiveTeachersMobile">{{ $teacherPagination['total'] ?? 0 }}</h5>
+                                <p class="text-muted mb-0">Total Guru Aktif</p>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-item">
+                                <h5 class="mb-1 text-success" id="totalActualHoursMobile">{{ round(collect($teacherPagination['data'] ?? [])->sum('actual_hours'), 1) }}</h5>
+                                <p class="text-muted mb-0">Jam Aktual (Halaman Ini)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center d-md-none">
+                        <!-- Baris 2: Jam Terjadwal dan Rata-rata Compliance -->
+                        <div class="col-6 mb-3">
+                            <div class="stat-item">
+                                <h5 class="mb-1 text-danger" id="totalScheduledHoursMobile">{{ round(collect($teacherPagination['data'] ?? [])->sum('scheduled_hours'), 1) }}</h5>
+                                <p class="text-muted mb-0">Jam Terjadwal (Halaman Ini)</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h5 class="mb-1 text-warning" id="avgComplianceMobile">{{ count($teacherPagination['data'] ?? []) > 0 ? round(collect($teacherPagination['data'] ?? [])->avg('compliance_rate'), 1) : 0 }}%</h5>
+                                <p class="text-muted mb-0">Rata-rata Compliance</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -692,10 +725,92 @@
     
     /* Responsive legend for smaller screens */
     @media (max-width: 768px) {
-        .apexcharts-legend-series {
-            margin-right: 10px !important;
-            margin-bottom: 5px !important;
+        #attendanceTrendsChart .apexcharts-legend,
+        #attendanceTrendsChart .apexcharts-legend.apexcharts-align-left,
+        .apexcharts-legend {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            justify-content: flex-start !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
         }
+        
+        #attendanceTrendsChart .apexcharts-legend-series,
+        .apexcharts-legend-series {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            margin-right: 0 !important;
+            margin-bottom: 8px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            float: none !important;
+            clear: both !important;
+        }
+        
+        #attendanceTrendsChart .apexcharts-legend-marker,
+        .apexcharts-legend-marker {
+            margin-right: 8px !important;
+            flex-shrink: 0 !important;
+        }
+        
+        #attendanceTrendsChart .apexcharts-legend-text,
+        .apexcharts-legend-text {
+            margin-left: 0 !important;
+        }
+        
+        /* Teacher Performance Chart - Mobile optimization */
+        #teacherPerformanceChart .apexcharts-yaxis {
+            max-width: 90px !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-yaxis-texts-g {
+            max-width: 90px !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-yaxis-label {
+            max-width: 85px !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-inner {
+            margin-left: 95px !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-grid {
+            margin-left: 95px !important;
+        }
+        
+        /* Tooltip optimization for mobile */
+        #teacherPerformanceChart .apexcharts-tooltip {
+            font-size: 10px !important;
+            padding: 6px 8px !important;
+            max-width: 200px !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-tooltip-title {
+            font-size: 10px !important;
+            padding: 4px 0 !important;
+            margin-bottom: 4px !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-tooltip-series-group {
+            padding: 2px 0 !important;
+            font-size: 10px !important;
+        }
+        
+        #teacherPerformanceChart .apexcharts-tooltip-marker {
+            width: 8px !important;
+            height: 8px !important;
+            margin-right: 4px !important;
+        }
+    }
+    
+    .stat-item {
+        padding: 0.5rem 0;
     }
 </style>
 @endsection
@@ -775,12 +890,12 @@
     
     
 
+    // Prepare categories for chart
+    var allCategories = attendanceTrendsData.length > 0 ? attendanceTrendsData.map(item => item.date || '') : ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    
     // Attendance Trends Chart
     var attendanceTrendsOptions = {
         series: [{
-            name: 'Total Kehadiran',
-            data: attendanceTrendsData.length > 0 ? attendanceTrendsData.map(item => item.total || 0) : [0, 0, 0, 0, 0, 0, 0]
-        }, {
             name: 'Hadir',
             data: attendanceTrendsData.length > 0 ? attendanceTrendsData.map(item => item.present || 0) : [0, 0, 0, 0, 0, 0, 0]
         }, {
@@ -795,7 +910,7 @@
                 show: true
             }
         },
-        colors: ['#5156be', '#34c38f', '#f46a6a'],
+        colors: ['#34c38f', '#f46a6a'],
         dataLabels: {
             enabled: false
         },
@@ -804,12 +919,25 @@
             width: 2
         },
         xaxis: {
-            categories: attendanceTrendsData.length > 0 ? attendanceTrendsData.map(item => item.date || '') : ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+            categories: allCategories,
             labels: {
                 style: {
                     fontSize: '12px',
                     fontFamily: 'inherit'
-                }
+                },
+                formatter: function(value) {
+                    // Find index in allCategories array
+                    var index = allCategories.indexOf(value);
+                    
+                    // Show label only every 5 days (every 5th index: 0, 5, 10, 15, etc.)
+                    if (index !== -1 && index % 5 === 0) {
+                        return value;
+                    }
+                    return '';
+                },
+                rotate: -45,
+                rotateAlways: false,
+                hideOverlappingLabels: false
             }
         },
         yaxis: {
@@ -852,11 +980,70 @@
             }
         },
         tooltip: {
+            shared: true,
+            intersect: false,
             style: {
                 fontSize: '12px',
                 fontFamily: 'inherit'
+            },
+            x: {
+                show: true,
+                formatter: function(value, opts) {
+                    try {
+                        // Always show the full date in tooltip regardless of label display
+                        var dataPointIndex = opts && opts.dataPointIndex !== undefined ? opts.dataPointIndex : null;
+                        
+                        if (dataPointIndex !== null && allCategories && allCategories[dataPointIndex] !== undefined) {
+                            // Use the date from allCategories array
+                            return allCategories[dataPointIndex];
+                        }
+                        
+                        // Fallback: try to get from opts.w.globals
+                        if (opts && opts.w && opts.w.globals && opts.w.globals.categoryLabels) {
+                            var categories = opts.w.globals.categoryLabels;
+                            if (dataPointIndex !== null && categories[dataPointIndex] !== undefined) {
+                                return categories[dataPointIndex];
+                            }
+                        }
+                        
+                        // Final fallback: return the value
+                        return value || '';
+                    } catch (e) {
+                        console.error('Error in tooltip x formatter:', e);
+                        return value || '';
+                    }
+                }
+            },
+            y: {
+                formatter: function(value) {
+                    try {
+                        return value + ' siswa';
+                    } catch (e) {
+                        return value;
+                    }
+                }
             }
-        }
+        },
+        responsive: [{
+            breakpoint: 768,
+            options: {
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'left',
+                    fontSize: '12px',
+                    fontFamily: 'inherit',
+                    markers: {
+                        width: 8,
+                        height: 8,
+                        radius: 2
+                    },
+                    itemMargin: {
+                        horizontal: 0,
+                        vertical: 8
+                    }
+                }
+            }
+        }]
     };
 
 
@@ -934,10 +1121,69 @@
             },
             y: {
                 formatter: function (val) {
-                    return val + " jam"
+                    // Just show the value - teacher name is already in title
+                    return val + " jam";
                 }
             }
-        }
+        },
+        responsive: [{
+            breakpoint: 768,
+            options: {
+                chart: {
+                    height: 400
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            fontSize: '10px',
+                            fontFamily: 'inherit'
+                        },
+                        formatter: function(value) {
+                            // Truncate long teacher names on mobile
+                            if (value && value.length > 20) {
+                                return value.substring(0, 18) + '...';
+                            }
+                            return value;
+                        },
+                        maxWidth: 80
+                    }
+                },
+                xaxis: {
+                    labels: {
+                        style: {
+                            fontSize: '10px',
+                            fontFamily: 'inherit'
+                        }
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: true,
+                        columnWidth: '60%',
+                        borderRadius: 4,
+                        barHeight: '70%'
+                    }
+                },
+                legend: {
+                    fontSize: '11px',
+                    itemMargin: {
+                        horizontal: 10,
+                        vertical: 6
+                    }
+                },
+                tooltip: {
+                    style: {
+                        fontSize: '10px',
+                        fontFamily: 'inherit'
+                    },
+                    y: {
+                        formatter: function (val) {
+                            return val + " jam";
+                        }
+                    }
+                }
+            }
+        }]
     };
 
 
@@ -951,7 +1197,108 @@
             // Initialize Attendance Trends Chart
             if (document.getElementById('attendanceTrendsChart')) {
                 var attendanceTrendsChart = new ApexCharts(document.querySelector("#attendanceTrendsChart"), attendanceTrendsOptions);
-                attendanceTrendsChart.render();
+                
+                // Function to force vertical legend on mobile
+                function forceVerticalLegend() {
+                    if (window.innerWidth <= 768) {
+                        var chartContainer = document.querySelector('#attendanceTrendsChart');
+                        if (chartContainer) {
+                            var legend = chartContainer.querySelector('.apexcharts-legend');
+                            if (legend) {
+                                // Inject dynamic style tag for mobile legend
+                                var styleId = 'mobile-legend-style';
+                                var existingStyle = document.getElementById(styleId);
+                                if (!existingStyle) {
+                                    var style = document.createElement('style');
+                                    style.id = styleId;
+                                    style.textContent = '@media (max-width: 768px) { ' +
+                                        '#attendanceTrendsChart .apexcharts-legend { ' +
+                                        'display: flex !important; ' +
+                                        'flex-direction: column !important; ' +
+                                        'align-items: flex-start !important; ' +
+                                        'justify-content: flex-start !important; ' +
+                                        'flex-wrap: nowrap !important; ' +
+                                        'width: 100% !important; } ' +
+                                        '#attendanceTrendsChart .apexcharts-legend-series { ' +
+                                        'display: flex !important; ' +
+                                        'flex-direction: row !important; ' +
+                                        'align-items: center !important; ' +
+                                        'margin-right: 0 !important; ' +
+                                        'margin-bottom: 8px !important; ' +
+                                        'width: 100% !important; ' +
+                                        'max-width: 100% !important; ' +
+                                        'float: none !important; ' +
+                                        'clear: both !important; } }';
+                                    document.head.appendChild(style);
+                                }
+                                
+                                // Also apply inline styles as backup
+                                legend.style.display = 'flex';
+                                legend.style.flexDirection = 'column';
+                                legend.style.alignItems = 'flex-start';
+                                legend.style.justifyContent = 'flex-start';
+                                legend.style.flexWrap = 'nowrap';
+                                legend.style.width = '100%';
+                                
+                                var legendSeries = legend.querySelectorAll('.apexcharts-legend-series');
+                                legendSeries.forEach(function(series) {
+                                    series.style.display = 'flex';
+                                    series.style.flexDirection = 'row';
+                                    series.style.alignItems = 'center';
+                                    series.style.marginRight = '0';
+                                    series.style.marginBottom = '8px';
+                                    series.style.width = '100%';
+                                    series.style.maxWidth = '100%';
+                                    series.style.float = 'none';
+                                    series.style.clear = 'both';
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                attendanceTrendsChart.render().then(function() {
+                    // Apply immediately after render with multiple attempts
+                    setTimeout(forceVerticalLegend, 100);
+                    setTimeout(forceVerticalLegend, 300);
+                    setTimeout(forceVerticalLegend, 500);
+                    
+                    // Use MutationObserver to watch for legend changes
+                    var chartContainer = document.querySelector('#attendanceTrendsChart');
+                    if (chartContainer && window.MutationObserver) {
+                        var observer = new MutationObserver(function(mutations) {
+                            forceVerticalLegend();
+                        });
+                        observer.observe(chartContainer, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            attributeFilter: ['style', 'class']
+                        });
+                    }
+                    
+                    // Re-apply on window resize
+                    var resizeTimeout;
+                    var resizeHandler = function() {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(forceVerticalLegend, 150);
+                    };
+                    window.addEventListener('resize', resizeHandler);
+                    
+                    // Periodic check to ensure legend stays vertical on mobile
+                    var checkInterval = setInterval(function() {
+                        if (window.innerWidth <= 768) {
+                            forceVerticalLegend();
+                        } else {
+                            clearInterval(checkInterval);
+                        }
+                    }, 1000);
+                    
+                    // Clear interval after 10 seconds
+                    setTimeout(function() {
+                        clearInterval(checkInterval);
+                    }, 10000);
+                });
             }
 
 
@@ -1197,16 +1544,27 @@
         var totalScheduledHours = data.reduce((sum, teacher) => sum + (teacher.scheduled_hours || 0), 0);
         var avgCompliance = data.length > 0 ? (data.reduce((sum, teacher) => sum + (teacher.compliance_rate || 0), 0) / data.length).toFixed(1) : 0;
         
-        // Update statistics using vanilla JavaScript
+        // Update statistics for desktop using vanilla JavaScript
         var totalActiveTeachersEl = document.getElementById('totalActiveTeachers');
         var totalActualHoursEl = document.getElementById('totalActualHours');
         var totalScheduledHoursEl = document.getElementById('totalScheduledHours');
         var avgComplianceEl = document.getElementById('avgCompliance');
         
         if (totalActiveTeachersEl) totalActiveTeachersEl.textContent = paginationData.total || 0;
-        if (totalActualHoursEl) totalActualHoursEl.textContent = totalActualHours;
-        if (totalScheduledHoursEl) totalScheduledHoursEl.textContent = totalScheduledHours;
+        if (totalActualHoursEl) totalActualHoursEl.textContent = totalActualHours.toFixed(1);
+        if (totalScheduledHoursEl) totalScheduledHoursEl.textContent = totalScheduledHours.toFixed(1);
         if (avgComplianceEl) avgComplianceEl.textContent = avgCompliance + '%';
+        
+        // Update statistics for mobile
+        var totalActiveTeachersMobileEl = document.getElementById('totalActiveTeachersMobile');
+        var totalActualHoursMobileEl = document.getElementById('totalActualHoursMobile');
+        var totalScheduledHoursMobileEl = document.getElementById('totalScheduledHoursMobile');
+        var avgComplianceMobileEl = document.getElementById('avgComplianceMobile');
+        
+        if (totalActiveTeachersMobileEl) totalActiveTeachersMobileEl.textContent = paginationData.total || 0;
+        if (totalActualHoursMobileEl) totalActualHoursMobileEl.textContent = totalActualHours.toFixed(1);
+        if (totalScheduledHoursMobileEl) totalScheduledHoursMobileEl.textContent = totalScheduledHours.toFixed(1);
+        if (avgComplianceMobileEl) avgComplianceMobileEl.textContent = avgCompliance + '%';
         
         // Update pagination info using specific ID
         var paginationInfoEl = document.getElementById('pagination-info');

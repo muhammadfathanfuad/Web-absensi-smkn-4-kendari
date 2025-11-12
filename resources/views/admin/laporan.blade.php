@@ -14,43 +14,34 @@
                     <form method="GET" action="{{ route('admin.laporan') }}" id="filterForm">
                         <div class="row">
                             <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <label class="form-label mb-0">Jenis Laporan</label>
+                                <div class="report-header-controls d-flex justify-content-between align-items-center mb-3">
+                                    <label class="form-label mb-0 report-label">Jenis Laporan</label>
                                     <div class="btn-group" role="group">
                                         <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
                                             aria-expanded="false" id="exportDropdownBtn">
-                                            <i class="bx bx-download"></i> Export
+                                            <i class="bx bx-download"></i> <span class="d-none d-sm-inline">Export</span>
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" onclick="exportReport('xlsx'); return false;">
-                                                    <i class="bx bx-file"></i> Export Excel (.xlsx)
-                                                </a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="exportReport('csv'); return false;">
-                                                    <i class="bx bx-file-blank"></i> Export CSV (.csv)
+                                            <li><a class="dropdown-item" href="#" onclick="exportReport('pdf'); return false;">
+                                                    <i class="bx bx-file"></i> Export PDF (.pdf)
                                                 </a></li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div class="btn-group w-100" role="group" aria-label="Report type selection">
-                                    <input type="radio" class="btn-check" name="report_type" id="report_overview" value="overview" 
-                                        {{ request('report_type', 'overview') == 'overview' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary" for="report_overview">Ringkasan</label>
+                                <div class="report-tabs-wrapper">
+                                    <div class="btn-group" role="group" aria-label="Report type selection">
+                                        <input type="radio" class="btn-check" name="report_type" id="report_teacher" value="teacher" 
+                                            {{ request('report_type', 'teacher') == 'teacher' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-primary" for="report_teacher">Per Guru</label>
 
-                                    <input type="radio" class="btn-check" name="report_type" id="report_class" value="class" 
-                                        {{ request('report_type') == 'class' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary" for="report_class">Per Kelas</label>
+                                        <input type="radio" class="btn-check" name="report_type" id="report_student" value="student" 
+                                            {{ request('report_type') == 'student' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-primary" for="report_student">Per Siswa</label>
 
-                                    <input type="radio" class="btn-check" name="report_type" id="report_student" value="student" 
-                                        {{ request('report_type') == 'student' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary" for="report_student">Per Siswa</label>
-
-                                    <input type="radio" class="btn-check" name="report_type" id="report_subject" value="subject" 
-                                        {{ request('report_type') == 'subject' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary" for="report_subject">Per Mata Pelajaran</label>
-
-                                    <input type="radio" class="btn-check" name="report_type" id="report_teacher" value="teacher" 
-                                        {{ request('report_type') == 'teacher' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary" for="report_teacher">Per Guru</label>
+                                        <input type="radio" class="btn-check" name="report_type" id="report_class" value="class" 
+                                            {{ request('report_type') == 'class' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-primary" for="report_class">Per Kelas</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -66,7 +57,7 @@
                                         <div class="col-md-4">
                                             <label for="date_from" class="form-label">Dari Tanggal</label>
                                             <input type="date" class="form-control" id="date_from" name="date_from" 
-                                                value="{{ request('date_from', \App\Services\TimeOverrideService::now()->startOfMonth()->format('Y-m-d')) }}">
+                                                value="{{ request('date_from', \App\Services\TimeOverrideService::now()->format('Y-m-d')) }}">
                                         </div>
                                         <div class="col-md-4">
                                             <label for="date_to" class="form-label">Sampai Tanggal</label>
@@ -88,6 +79,26 @@
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Class Filter (Only for Student Report) -->
+                                    <div class="row mt-3" id="classFilterSection" style="display: {{ request('report_type') == 'student' ? 'block' : 'none' }};">
+                                        <div class="col-md-6">
+                                            <label for="class_id" class="form-label">
+                                                <i class="bx bx-group me-2"></i>Filter Kelas
+                                            </label>
+                                            <select class="form-select" id="class_id" name="class_id">
+                                                <option value="">Semua Kelas</option>
+                                                @if(isset($classes) && $classes->count() > 0)
+                                                    @foreach ($classes as $class)
+                                                        <option value="{{ $class->id }}" {{ request('class_id') == $class->id ? 'selected' : '' }}>
+                                                            {{ $class->grade }} - {{ $class->name }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="row mt-2">
                                         <div class="col-12">
                                             <button type="submit" class="btn btn-primary btn-sm">
@@ -108,8 +119,8 @@
     </div>
 
     @php
-        $reportType = request('report_type', 'overview');
-        $dateFrom = request('date_from', \App\Services\TimeOverrideService::now()->startOfMonth()->format('Y-m-d'));
+        $reportType = request('report_type', 'teacher');
+        $dateFrom = request('date_from', \App\Services\TimeOverrideService::now()->format('Y-m-d'));
         $dateTo = request('date_to', \App\Services\TimeOverrideService::now()->format('Y-m-d'));
         
         // Convert date strings to Carbon instances for proper filtering
@@ -128,10 +139,8 @@
 
         // Report type labels
         $reportLabels = [
-            'overview' => 'Ringkasan Umum',
             'class' => 'Laporan Per Kelas',
             'student' => 'Laporan Per Siswa',
-            'subject' => 'Laporan Per Mata Pelajaran',
             'teacher' => 'Laporan Per Guru',
         ];
     @endphp
@@ -148,36 +157,405 @@
         </div>
     </div>
 
-    @if ($reportType == 'overview')
-        <!-- Overview Report -->
+    @if($reportType == 'teacher')
+        <!-- Teacher Report -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h4 class="card-title mb-4">Ringkasan Kehadiran</h4>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="card-title mb-0">Laporan Per Guru</h4>
+                            <div class="search-box">
+                                <div class="position-relative">
+                                    <input type="text" class="form-control" id="teacherSearchInput" placeholder="Cari nama guru atau NIP...">
+                                    <i class="bx bx-search search-icon"></i>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Total Record:</strong></td>
-                                    <td class="text-end">{{ number_format($totalRecords) }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Hadir:</strong></td>
-                                    <td class="text-end text-success">{{ number_format($presentCount) }}
-                                        ({{ $presentPercentage }}%)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Terlambat:</strong></td>
-                                    <td class="text-end text-warning">{{ number_format($lateCount) }}
-                                        ({{ $latePercentage }}%)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Absen:</strong></td>
-                                    <td class="text-end text-danger">{{ number_format($absentCount) }}
-                                        ({{ $absentPercentage }}%)</td>
-                                </tr>
+                            <table id="teacherReportTable" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Guru</th>
+                                        <th>NIP</th>
+                                        <th>Status Kehadiran</th>
+                                        <th>Total Pertemuan</th>
+                                        <th>Total Record</th>
+                                        <th>Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacherTableBody">
+                                    @php
+                                        // Load all teachers data to JSON for client-side pagination
+                                        $allTeachers = \App\Models\Teacher::with('user')->get();
+                                        $perPage = 10;
+                                        $currentPage = request()->get('page', 1);
+                                        $totalPages = ceil($allTeachers->count() / $perPage);
+                                        $teachers = $allTeachers->forPage($currentPage, $perPage);
+                                        
+                                        // Prepare teacher data with calculated stats
+                                        $teachersWithStats = $allTeachers->map(function($teacher) use ($dateFromCarbon, $dateToCarbon, $dateFrom, $dateTo) {
+                                            // Hitung total pertemuan (unique by subject, class, and date)
+                                            $totalPertemuan = 0;
+                                            $pertemuanMap = [];
+                                            $timetables = \App\Models\Timetable::whereHas('classSubject.teacher', function($q) use ($teacher) {
+                                                $q->where('teacher_id', $teacher->user_id);
+                                            })->get();
+                                            
+                                            $startDate = \Carbon\Carbon::parse($dateFrom);
+                                            $endDate = \Carbon\Carbon::parse($dateTo);
+                                            
+                                            while ($startDate->lte($endDate)) {
+                                                $dayOfWeek = $startDate->dayOfWeek;
+                                                $dateStr = $startDate->format('Y-m-d');
+                                                
+                                                // Get timetables for this day
+                                                $dayTimetables = $timetables->filter(function($t) use ($dayOfWeek) {
+                                                    return $t->day_of_week == $dayOfWeek;
+                                                });
+                                                
+                                                foreach ($dayTimetables as $timetable) {
+                                                    if (!$timetable->classSubject) continue;
+                                                    
+                                                    $subjectName = $timetable->classSubject->subject->name ?? 'N/A';
+                                                    $className = $timetable->classSubject->class->name ?? 'N/A';
+                                                    
+                                                    // Create unique key based on subject, class, and date
+                                                    $key = $subjectName . '_' . $className . '_' . $dateStr;
+                                                    
+                                                    if (!isset($pertemuanMap[$key])) {
+                                                        $pertemuanMap[$key] = true;
+                                                        $totalPertemuan++;
+                                                    }
+                                                }
+                                                
+                                                $startDate->addDay();
+                                            }
+                                            
+                                            // Hitung total record
+                                            $totalRecord = \App\Models\AttendanceSession::whereHas('timetable.classSubject.teacher', function($q) use ($teacher) {
+                                                $q->where('teacher_id', $teacher->user_id);
+                                            })
+                                            ->whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
+                                            ->where('is_active', false)
+                                            ->count();
+                                            
+                                            // Hitung status kehadiran dari teacher_presences
+                                            $presences = \App\Models\TeacherPresence::where('teacher_id', $teacher->user_id)
+                                                ->whereBetween('date', [$dateFromCarbon->toDateString(), $dateToCarbon->toDateString()])
+                                                ->get();
+                                            
+                                            $hadirCount = $presences->where('status', 'H')->count();
+                                            $alfaCount = $presences->where('status', 'A')->count();
+                                            $izinCount = $presences->where('status', 'I')->count();
+                                            $sakitCount = $presences->where('status', 'S')->count();
+                                            $totalPresence = $presences->count();
+                                            
+                                            // Tentukan status dominan berdasarkan prioritas: Alfa > Sakit > Izin > Hadir
+                                            $statusKehadiranText = '-';
+                                            $statusKehadiranBadge = 'secondary';
+                                            
+                                            if ($alfaCount > 0) {
+                                                $statusKehadiranText = 'Alfa';
+                                                $statusKehadiranBadge = 'danger';
+                                            } elseif ($sakitCount > 0) {
+                                                $statusKehadiranText = 'Sakit';
+                                                $statusKehadiranBadge = 'warning';
+                                            } elseif ($izinCount > 0) {
+                                                $statusKehadiranText = 'Izin';
+                                                $statusKehadiranBadge = 'info';
+                                            } elseif ($hadirCount > 0) {
+                                                $statusKehadiranText = 'Hadir';
+                                                $statusKehadiranBadge = 'success';
+                                            }
+                                            
+                                            return [
+                                                'id' => $teacher->user_id,
+                                                'nama' => $teacher->user->full_name ?? 'N/A',
+                                                'nip' => $teacher->nip ?? 'N/A',
+                                                'total_pertemuan' => $totalPertemuan,
+                                                'total_record' => $totalRecord,
+                                                'status_kehadiran' => $statusKehadiranText,
+                                                'status_kehadiran_badge' => $statusKehadiranBadge
+                                            ];
+                                        });
+                                    @endphp
+                                    <script>
+                                        // Store all teachers data for client-side processing
+                                        window.allTeachersData = @json($teachersWithStats);
+                                        window.currentPage = {{ $currentPage }};
+                                        window.perPage = {{ $perPage }};
+                                        window.filteredTeachers = window.allTeachersData;
+                                    </script>
+                                    
+                                    @foreach ($teachers as $index => $teacher)
+                                        @php
+                                            $teacherData = $teachersWithStats[$index] ?? null;
+                                            if (!$teacherData) continue;
+                                        @endphp
+                                        <tr data-teacher-id="{{ $teacherData['id'] }}">
+                                            <td>{{ $teacherData['nama'] }}</td>
+                                            <td>{{ $teacherData['nip'] }}</td>
+                                            <td>
+                                                @if(!empty($teacherData['status_kehadiran']) && $teacherData['status_kehadiran'] !== '-')
+                                                    <span class="badge bg-{{ $teacherData['status_kehadiran_badge'] ?? 'secondary' }}">{{ $teacherData['status_kehadiran'] }}</span>
+                                                @else
+                                                    <span class="badge bg-secondary">-</span>
+                                                @endif
+                                            </td>
+                                            <td><strong>{{ number_format($teacherData['total_pertemuan']) }}</strong></td>
+                                            <td class="text-primary"><strong>{{ number_format($teacherData['total_record']) }}</strong></td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-info btn-detail-teacher" 
+                                                        data-teacher-id="{{ $teacherData['id'] }}"
+                                                        data-teacher-name="{{ $teacherData['nama'] }}"
+                                                        data-date-from="{{ $dateFrom }}"
+                                                        data-date-to="{{ $dateTo }}">
+                                                    <i class="bx bx-detail me-1"></i>Detail
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
                             </table>
                         </div>
+                        
+                        <div id="teacherPaginationContainer" class="card-footer" style="display: none;">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center mb-0" id="teacherPagination">
+                                    <!-- Pagination will be generated by JavaScript -->
+                                </ul>
+                            </nav>
+                            <div class="text-center mt-2">
+                                <small class="text-muted" id="paginationInfo">
+                                    <!-- Info will be updated by JavaScript -->
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif($reportType == 'student')
+        <!-- Student Report -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4">Laporan Per Siswa</h4>
+                        @php
+                            $selectedClassId = request('class_id');
+                            $currentPage = (int) request('page', 1);
+                            $perPage = 10;
+                            
+                            $studentsQuery = \App\Models\Student::with(['user', 'classroom']);
+                            
+                            // Apply class filter if selected
+                            if ($selectedClassId) {
+                                $studentsQuery->where('class_id', $selectedClassId);
+                            }
+                            
+                            // Get total count for pagination
+                            $totalStudents = $studentsQuery->count();
+                            $totalPages = ceil($totalStudents / $perPage);
+                            
+                            // Apply pagination
+                            $students = $studentsQuery->skip(($currentPage - 1) * $perPage)->take($perPage)->get();
+                        @endphp
+                        @if($selectedClassId)
+                            @php
+                                $selectedClass = \App\Models\Classroom::find($selectedClassId);
+                            @endphp
+                            <div class="alert alert-info mb-3">
+                                <i class="bx bx-info-circle me-2"></i>
+                                Menampilkan data siswa dari kelas: <strong>{{ $selectedClass ? $selectedClass->grade . ' - ' . $selectedClass->name : 'Kelas tidak ditemukan' }}</strong>
+                            </div>
+                        @endif
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Siswa</th>
+                                        <th>NIS</th>
+                                        <th>Kelas</th>
+                                        <th>Status Kehadiran</th>
+                                        <th>Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($students as $student)
+                                        @php
+                                            $studentAttendance = \App\Models\Attendance::where(
+                                                'student_id',
+                                                $student->user_id,
+                                            )
+                                                ->whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
+                                                ->get();
+
+                                            $studentPresent = $studentAttendance->where('status', 'H')->count();
+                                            $studentLate = $studentAttendance->where('status', 'T')->count();
+                                            $studentAbsent = $studentAttendance->where('status', 'A')->count();
+                                            $studentTotal = $studentAttendance->count();
+                                            $studentPercentage =
+                                                $studentTotal > 0
+                                                    ? round(($studentPresent / $studentTotal) * 100, 2)
+                                                    : 0;
+                                            
+                                            // Hitung status kehadiran dari student_presences
+                                            $presences = \App\Services\StudentPresenceService::getPresenceStatusForRange(
+                                                $student->user_id,
+                                                $dateFromCarbon->toDateString(),
+                                                $dateToCarbon->toDateString()
+                                            );
+                                            
+                                            // Cek apakah ada presences dengan approval_count dan rejection_count (mixed approval)
+                                            // Mixed approval terjadi jika:
+                                            // 1. Ada presence dengan approval_count > 0 DAN rejection_count > 0 (satu hari dengan mixed)
+                                            // 2. Atau ada beberapa presences dengan approval_count > 0 dan beberapa dengan rejection_count > 0
+                                            $hasApproval = $presences->filter(function($p) {
+                                                return $p->approval_count > 0;
+                                            })->count() > 0;
+                                            $hasRejection = $presences->filter(function($p) {
+                                                return $p->rejection_count > 0;
+                                            })->count() > 0;
+                                            $hasMixedInSingleDay = $presences->filter(function($p) {
+                                                return $p->approval_count > 0 && $p->rejection_count > 0;
+                                            })->count() > 0;
+                                            
+                                            $hasMixedApproval = ($hasApproval && $hasRejection) || $hasMixedInSingleDay;
+                                            
+                                            // Jika ada mixed approval, tampilkan format "4 | 2"
+                                            if ($hasMixedApproval) {
+                                                $totalApproval = $presences->sum('approval_count');
+                                                $totalRejection = $presences->sum('rejection_count');
+                                                $statusKehadiranHtml = '<span class="text-success fw-bold">' . $totalApproval . '</span> | <span class="text-danger fw-bold">' . $totalRejection . '</span>';
+                                            } else {
+                                                $hadirCount = $presences->where('status', 'H')->count();
+                                                $alfaCount = $presences->where('status', 'A')->count();
+                                                $izinCount = $presences->where('status', 'I')->count();
+                                                $sakitCount = $presences->where('status', 'S')->count();
+                                                
+                                                // Tentukan status dominan berdasarkan prioritas: Alfa > Sakit > Izin > Hadir
+                                                // Note: Jika semua approve, status sudah menjadi 'H' (Hadir) di observer/service
+                                                $statusKehadiranText = '-';
+                                                $statusKehadiranBadge = 'secondary';
+                                                
+                                                if ($alfaCount > 0) {
+                                                    $statusKehadiranText = 'Alfa';
+                                                    $statusKehadiranBadge = 'danger';
+                                                } elseif ($sakitCount > 0) {
+                                                    $statusKehadiranText = 'Sakit';
+                                                    $statusKehadiranBadge = 'warning';
+                                                } elseif ($izinCount > 0) {
+                                                    $statusKehadiranText = 'Izin';
+                                                    $statusKehadiranBadge = 'info';
+                                                } elseif ($hadirCount > 0) {
+                                                    $statusKehadiranText = 'Hadir';
+                                                    $statusKehadiranBadge = 'success';
+                                                }
+                                                
+                                                $statusKehadiranHtml = '<span class="badge bg-' . $statusKehadiranBadge . '">' . $statusKehadiranText . '</span>';
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td>{{ $student->user->full_name }}</td>
+                                            <td>{{ $student->nis }}</td>
+                                            <td>{{ $student->classroom->grade }} - {{ $student->classroom->name }}</td>
+                                            <td>
+                                                {!! $statusKehadiranHtml ?? '<span class="badge bg-secondary">-</span>' !!}
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-primary" onclick="showStudentDetail({{ $student->user_id }}, '{{ $dateFromCarbon->format('Y-m-d') }}', '{{ $dateToCarbon->format('Y-m-d') }}')">
+                                                    <i class="bx bx-detail"></i> Detail
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    @if($selectedClassId)
+                                                        Tidak ada siswa ditemukan untuk kelas yang dipilih dalam periode tanggal ini.
+                                                    @else
+                                                        Tidak ada data siswa ditemukan.
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        @if($totalPages > 1)
+                            <div class="card-footer">
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-center mb-0">
+                                        @if($currentPage > 1)
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ route('admin.laporan', array_merge(request()->all(), ['page' => $currentPage - 1])) }}">
+                                                    <i class="bx bx-chevron-left"></i> Sebelumnya
+                                                </a>
+                                            </li>
+                                        @else
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><i class="bx bx-chevron-left"></i> Sebelumnya</span>
+                                            </li>
+                                        @endif
+                                        
+                                        @php
+                                            $startPage = max(1, $currentPage - 2);
+                                            $endPage = min($totalPages, $currentPage + 2);
+                                        @endphp
+                                        
+                                        @if($startPage > 1)
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ route('admin.laporan', array_merge(request()->all(), ['page' => 1])) }}">1</a>
+                                            </li>
+                                            @if($startPage > 2)
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            @endif
+                                        @endif
+                                        
+                                        @for($i = $startPage; $i <= $endPage; $i++)
+                                            <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
+                                                <a class="page-link" href="{{ route('admin.laporan', array_merge(request()->all(), ['page' => $i])) }}">{{ $i }}</a>
+                                            </li>
+                                        @endfor
+                                        
+                                        @if($endPage < $totalPages)
+                                            @if($endPage < $totalPages - 1)
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            @endif
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ route('admin.laporan', array_merge(request()->all(), ['page' => $totalPages])) }}">{{ $totalPages }}</a>
+                                            </li>
+                                        @endif
+                                        
+                                        @if($currentPage < $totalPages)
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ route('admin.laporan', array_merge(request()->all(), ['page' => $currentPage + 1])) }}">
+                                                    Selanjutnya <i class="bx bx-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        @else
+                                            <li class="page-item disabled">
+                                                <span class="page-link">Selanjutnya <i class="bx bx-chevron-right"></i></span>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </nav>
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">
+                                        Menampilkan {{ (($currentPage - 1) * $perPage) + 1 }} - {{ min($currentPage * $perPage, $totalStudents) }} dari {{ number_format($totalStudents) }} siswa
+                                    </small>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -243,257 +621,6 @@
                 </div>
             </div>
         </div>
-    @elseif($reportType == 'student')
-        <!-- Student Report -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="card-title mb-4">Laporan Per Siswa</h4>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Siswa</th>
-                                        <th>NIS</th>
-                                        <th>Kelas</th>
-                                        <th>Total Record</th>
-                                        <th>Hadir</th>
-                                        <th>Terlambat</th>
-                                        <th>Absen</th>
-                                        <th>Persentase Hadir</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (\App\Models\Student::with(['user', 'classroom'])->get() as $student)
-                                        @php
-                                            $studentAttendance = \App\Models\Attendance::where(
-                                                'student_id',
-                                                $student->user_id,
-                                            )
-                                                ->whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
-                                                ->get();
-
-                                            $studentPresent = $studentAttendance->where('status', 'H')->count();
-                                            $studentLate = $studentAttendance->where('status', 'T')->count();
-                                            $studentAbsent = $studentAttendance->where('status', 'A')->count();
-                                            $studentTotal = $studentAttendance->count();
-                                            $studentPercentage =
-                                                $studentTotal > 0
-                                                    ? round(($studentPresent / $studentTotal) * 100, 2)
-                                                    : 0;
-                                        @endphp
-                                        <tr>
-                                            <td>{{ $student->user->full_name }}</td>
-                                            <td>{{ $student->nis }}</td>
-                                            <td>{{ $student->classroom->grade }} - {{ $student->classroom->name }}</td>
-                                            <td>{{ number_format($studentTotal) }}</td>
-                                            <td class="text-success">{{ number_format($studentPresent) }}</td>
-                                            <td class="text-warning">{{ number_format($studentLate) }}</td>
-                                            <td class="text-danger">{{ number_format($studentAbsent) }}</td>
-                                            <td>
-                                                <span
-                                                    class="badge {{ $studentPercentage >= 80 ? 'bg-success' : ($studentPercentage >= 60 ? 'bg-warning' : 'bg-danger') }}">
-                                                    {{ $studentPercentage }}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @elseif($reportType == 'subject')
-        <!-- Subject Report -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="card-title mb-4">Laporan Per Mata Pelajaran</h4>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Mata Pelajaran</th>
-                                        <th>Kode</th>
-                                        <th>Total Record</th>
-                                        <th>Hadir</th>
-                                        <th>Terlambat</th>
-                                        <th>Absen</th>
-                                        <th>Persentase Hadir</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (\App\Models\Subject::all() as $subject)
-                                        @php
-                                            $subjectAttendance = \App\Models\Attendance::whereHas(
-                                                'classSession.timetable.classSubject',
-                                                function ($q) use ($subject) {
-                                                    $q->where('subject_id', $subject->id);
-                                                },
-                                            )
-                                                ->whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
-                                                ->get();
-
-                                            $subjectPresent = $subjectAttendance->where('status', 'H')->count();
-                                            $subjectLate = $subjectAttendance->where('status', 'T')->count();
-                                            $subjectAbsent = $subjectAttendance->where('status', 'A')->count();
-                                            $subjectTotal = $subjectAttendance->count();
-                                            $subjectPercentage =
-                                                $subjectTotal > 0
-                                                    ? round(($subjectPresent / $subjectTotal) * 100, 2)
-                                                    : 0;
-                                        @endphp
-                                        <tr>
-                                            <td>{{ $subject->name }}</td>
-                                            <td>{{ $subject->code }}</td>
-                                            <td>{{ number_format($subjectTotal) }}</td>
-                                            <td class="text-success">{{ number_format($subjectPresent) }}</td>
-                                            <td class="text-warning">{{ number_format($subjectLate) }}</td>
-                                            <td class="text-danger">{{ number_format($subjectAbsent) }}</td>
-                                            <td>
-                                                <span
-                                                    class="badge {{ $subjectPercentage >= 80 ? 'bg-success' : ($subjectPercentage >= 60 ? 'bg-warning' : 'bg-danger') }}">
-                                                    {{ $subjectPercentage }}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @elseif($reportType == 'teacher')
-        <!-- Teacher Report -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="card-title mb-0">Laporan Per Guru</h4>
-                            <div class="search-box">
-                                <div class="position-relative">
-                                    <input type="text" class="form-control" id="teacherSearchInput" placeholder="Cari nama guru atau NIP...">
-                                    <i class="bx bx-search search-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table id="teacherReportTable" class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Guru</th>
-                                        <th>NIP</th>
-                                        <th>Total Pertemuan</th>
-                                        <th>Total Record</th>
-                                        <th>Persentase Absensi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="teacherTableBody">
-                                    @php
-                                        // Load all teachers data to JSON for client-side pagination
-                                        $allTeachers = \App\Models\Teacher::with('user')->get();
-                                        $perPage = 10;
-                                        $currentPage = request()->get('page', 1);
-                                        $totalPages = ceil($allTeachers->count() / $perPage);
-                                        $teachers = $allTeachers->forPage($currentPage, $perPage);
-                                        
-                                        // Prepare teacher data with calculated stats
-                                        $teachersWithStats = $allTeachers->map(function($teacher) use ($dateFromCarbon, $dateToCarbon, $dateFrom, $dateTo) {
-                                            // Hitung total pertemuan
-                                            $totalPertemuan = 0;
-                                            $timetables = \App\Models\Timetable::whereHas('classSubject.teacher', function($q) use ($teacher) {
-                                                $q->where('teacher_id', $teacher->user_id);
-                                            })->get();
-                                            
-                                            $startDate = \Carbon\Carbon::parse($dateFrom);
-                                            $endDate = \Carbon\Carbon::parse($dateTo);
-                                            
-                                            while ($startDate->lte($endDate)) {
-                                                $dayOfWeek = $startDate->dayOfWeek;
-                                                $pertemuanHariIni = $timetables->filter(function($t) use ($dayOfWeek) {
-                                                    return $t->day_of_week == $dayOfWeek;
-                                                })->count();
-                                                $totalPertemuan += $pertemuanHariIni;
-                                                $startDate->addDay();
-                                            }
-                                            
-                                            // Hitung total record
-                                            $totalRecord = \App\Models\AttendanceSession::whereHas('timetable.classSubject.teacher', function($q) use ($teacher) {
-                                                $q->where('teacher_id', $teacher->user_id);
-                                            })
-                                            ->whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
-                                            ->where('is_active', false)
-                                            ->count();
-                                            
-                                            // Hitung persentase
-                                            $percentage = $totalPertemuan > 0 ? round(($totalRecord / $totalPertemuan) * 100, 2) : 0;
-                                            
-                                            return [
-                                                'id' => $teacher->user_id,
-                                                'nama' => $teacher->user->full_name ?? 'N/A',
-                                                'nip' => $teacher->nip ?? 'N/A',
-                                                'total_pertemuan' => $totalPertemuan,
-                                                'total_record' => $totalRecord,
-                                                'persentase' => $percentage,
-                                                'status_badge' => $percentage >= 90 ? 'bg-success' : ($percentage >= 70 ? 'bg-warning' : 'bg-danger')
-                                            ];
-                                        });
-                                    @endphp
-                                    <script>
-                                        // Store all teachers data for client-side processing
-                                        window.allTeachersData = @json($teachersWithStats);
-                                        window.currentPage = {{ $currentPage }};
-                                        window.perPage = {{ $perPage }};
-                                        window.filteredTeachers = window.allTeachersData;
-                                    </script>
-                                    
-                                    @foreach ($teachers as $index => $teacher)
-                                        @php
-                                            $teacherData = $teachersWithStats[$index] ?? null;
-                                            if (!$teacherData) continue;
-                                        @endphp
-                                        <tr data-teacher-id="{{ $teacherData['id'] }}">
-                                            <td>{{ $teacherData['nama'] }}</td>
-                                            <td>{{ $teacherData['nip'] }}</td>
-                                            <td><strong>{{ number_format($teacherData['total_pertemuan']) }}</strong></td>
-                                            <td class="text-primary"><strong>{{ number_format($teacherData['total_record']) }}</strong></td>
-                                            <td>
-                                                <span class="badge {{ $teacherData['status_badge'] }}">
-                                                    {{ $teacherData['persentase'] }}%
-                                                </span>
-                                                <small class="text-muted d-block mt-1">
-                                                    {{ number_format($teacherData['total_record']) }} dari {{ number_format($teacherData['total_pertemuan']) }} pertemuan
-                                                </small>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div id="teacherPaginationContainer" class="card-footer" style="display: none;">
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center mb-0" id="teacherPagination">
-                                    <!-- Pagination will be generated by JavaScript -->
-                                </ul>
-                            </nav>
-                            <div class="text-center mt-2">
-                                <small class="text-muted" id="paginationInfo">
-                                    <!-- Info will be updated by JavaScript -->
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     @endif
 
 @endsection
@@ -501,7 +628,7 @@
 @section('scripts')
     <script>
         // Export function with simplified approach
-        function exportReport(format = 'xlsx') {
+        function exportReport(format = 'pdf') {
             try {
                 // Get current report type from checked radio button
                 var checkedRadio = document.querySelector('input[name="report_type"]:checked');
@@ -514,10 +641,14 @@
                 var dateFrom = document.getElementById('date_from').value;
                 var dateTo = document.getElementById('date_to').value;
                 
+                // Get class filter value if exists
+                var classId = document.getElementById('class_id') ? document.getElementById('class_id').value : '';
+                
                 // Build clean export URL with all necessary parameters
                 var exportUrl = '{{ route('admin.laporan.export') }}?export=1&format=' + format + '&report_type=' + checkedRadio.value;
                 if (dateFrom) exportUrl += '&date_from=' + dateFrom;
                 if (dateTo) exportUrl += '&date_to=' + dateTo;
+                if (classId && checkedRadio.value === 'student') exportUrl += '&class_id=' + classId;
 
                 // Show loading indicator
                 showExportLoading(format);
@@ -553,7 +684,7 @@
         window.exportReport = exportReport;
 
         // Fallback export method using direct link
-        function tryFallbackExport(format = 'xlsx') {
+        function tryFallbackExport(format = 'pdf') {
             try {
                 // Get current report type from checked radio button
                 var checkedRadio = document.querySelector('input[name="report_type"]:checked');
@@ -566,10 +697,14 @@
                 var dateFrom = document.getElementById('date_from').value;
                 var dateTo = document.getElementById('date_to').value;
 
+                // Get class filter value if exists
+                var classId = document.getElementById('class_id') ? document.getElementById('class_id').value : '';
+                
                 // Build clean export URL with all necessary parameters
                 var exportUrl = '{{ route('admin.laporan.export') }}?export=1&format=' + format + '&report_type=' + checkedRadio.value;
                 if (dateFrom) exportUrl += '&date_from=' + dateFrom;
                 if (dateTo) exportUrl += '&date_to=' + dateTo;
+                if (classId && checkedRadio.value === 'student') exportUrl += '&class_id=' + classId;
                 
                 // Show loading again
                 showExportLoading(format);
@@ -593,7 +728,7 @@
 
         // Show loading indicator
         function showExportLoading(format) {
-            var formatText = format === 'xlsx' ? 'Excel' : 'CSV';
+            var formatText = format === 'pdf' ? 'PDF' : 'File';
             var loadingHtml = `
             <div id="exportLoading" class="alert alert-info alert-dismissible fade show" role="alert" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
                 <div class="d-flex align-items-center">
@@ -655,23 +790,51 @@
         }
 
 
+        // Show/hide class filter based on report type
+        function toggleClassFilter() {
+            var reportType = document.querySelector('input[name="report_type"]:checked');
+            var classFilterSection = document.getElementById('classFilterSection');
+            
+            if (reportType && reportType.value === 'student') {
+                if (classFilterSection) {
+                    classFilterSection.style.display = 'block';
+                }
+            } else {
+                if (classFilterSection) {
+                    classFilterSection.style.display = 'none';
+                }
+            }
+        }
+
         // Auto-submit form when report type changes (radio buttons)
         document.querySelectorAll('input[name="report_type"]').forEach(function(radio) {
             radio.addEventListener('change', function() {
                 if (this.checked) {
+                    // Toggle class filter visibility
+                    toggleClassFilter();
+                    
                     // Get current date filters
                     var dateFrom = document.getElementById('date_from').value;
                     var dateTo = document.getElementById('date_to').value;
+                    
+                    // Get class filter value if exists
+                    var classId = document.getElementById('class_id') ? document.getElementById('class_id').value : '';
                     
                     // Build URL with report type and date filters
                     var targetUrl = '{{ route('admin.laporan') }}?report_type=' + this.value;
                     if (dateFrom) targetUrl += '&date_from=' + dateFrom;
                     if (dateTo) targetUrl += '&date_to=' + dateTo;
+                    if (classId && this.value === 'student') targetUrl += '&class_id=' + classId;
 
                     // Navigate to the correct URL
                     window.location.href = targetUrl;
                 }
             });
+        });
+        
+        // Initialize class filter visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleClassFilter();
         });
 
         // Date range preset functions
@@ -703,9 +866,8 @@
         // Reset date filter
         function resetDateFilter() {
             var today = new Date();
-            var startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             
-            document.getElementById('date_from').value = startOfMonth.toISOString().split('T')[0];
+            document.getElementById('date_from').value = today.toISOString().split('T')[0];
             document.getElementById('date_to').value = today.toISOString().split('T')[0];
         }
 
@@ -751,24 +913,37 @@
                     var pageData = data.slice(start, end);
                     
                     if (pageData.length === 0 && data.length > 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="text-muted">Halaman tidak ditemukan.</div></td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="text-muted">Halaman tidak ditemukan.</div></td></tr>';
                     } else if (pageData.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="text-muted d-flex flex-column align-items-center"><iconify-icon icon="solar:file-search-outline" class="fs-48 mb-2"></iconify-icon>Tidak ada hasil ditemukan.</div></td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="text-muted d-flex flex-column align-items-center"><iconify-icon icon="solar:file-search-outline" class="fs-48 mb-2"></iconify-icon>Tidak ada hasil ditemukan.</div></td></tr>';
                     } else {
                         pageData.forEach(function(teacher) {
                             var row = document.createElement('tr');
+                            row.setAttribute('data-teacher-id', teacher.id);
+                            
+                            // Build status badge (single status based on priority)
+                            var statusHtml = '';
+                            if (teacher.status_kehadiran && teacher.status_kehadiran !== '-') {
+                                var badgeClass = teacher.status_kehadiran_badge || 'secondary';
+                                statusHtml = `<span class="badge bg-${badgeClass}">${teacher.status_kehadiran}</span>`;
+                            } else {
+                                statusHtml = '<span class="badge bg-secondary">-</span>';
+                            }
+                            
                             row.innerHTML = `
                                 <td>${teacher.nama}</td>
                                 <td>${teacher.nip}</td>
+                                <td>${statusHtml}</td>
                                 <td><strong>${teacher.total_pertemuan.toLocaleString()}</strong></td>
                                 <td class="text-primary"><strong>${teacher.total_record.toLocaleString()}</strong></td>
                                 <td>
-                                    <span class="badge ${teacher.status_badge}">
-                                        ${teacher.persentase}%
-                                    </span>
-                                    <small class="text-muted d-block mt-1">
-                                        ${teacher.total_record.toLocaleString()} dari ${teacher.total_pertemuan.toLocaleString()} pertemuan
-                                    </small>
+                                    <button type="button" class="btn btn-sm btn-info btn-detail-teacher" 
+                                            data-teacher-id="${teacher.id}"
+                                            data-teacher-name="${teacher.nama}"
+                                            data-date-from="{{ $dateFrom }}"
+                                            data-date-to="{{ $dateTo }}">
+                                        <i class="bx bx-detail me-1"></i>Detail
+                                    </button>
                                 </td>
                             `;
                             tbody.appendChild(row);
@@ -879,7 +1054,522 @@
                 renderTeachers(window.allTeachersData, window.currentPage, window.perPage);
                 renderPagination(window.allTeachersData, window.currentPage, window.perPage);
             }
+
+            // Handle detail button click (delegated event listener)
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-detail-teacher')) {
+                    var button = e.target.closest('.btn-detail-teacher');
+                    var teacherId = button.getAttribute('data-teacher-id');
+                    var teacherName = button.getAttribute('data-teacher-name');
+                    var dateFrom = button.getAttribute('data-date-from');
+                    var dateTo = button.getAttribute('data-date-to');
+                    
+                    showTeacherDetail(teacherId, teacherName, dateFrom, dateTo);
+                }
+            });
         });
+
+        // Function to show teacher detail
+        function showTeacherDetail(teacherId, teacherName, dateFrom, dateTo) {
+            var modal = new bootstrap.Modal(document.getElementById('teacherDetailModal'));
+            modal.show();
+            
+            // Show loading, hide content
+            document.getElementById('teacherDetailLoading').style.display = 'block';
+            document.getElementById('teacherDetailContent').style.display = 'none';
+            
+            // Set teacher name in modal title
+            document.getElementById('teacherDetailModalLabel').innerHTML = 
+                '<i class="bx bx-detail me-2"></i>Detail Laporan: ' + teacherName;
+            
+            // Fetch detail data
+            fetch('{{ route("admin.laporan.teacher-detail") }}?teacher_id=' + teacherId + '&date_from=' + dateFrom + '&date_to=' + dateTo, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Set basic info
+                    document.getElementById('detailTeacherName').textContent = data.teacher.name || 'N/A';
+                    document.getElementById('detailTeacherNip').textContent = data.teacher.nip || 'N/A';
+                    document.getElementById('detailPeriod').textContent = 
+                        new Date(dateFrom).toLocaleDateString('id-ID') + ' - ' + 
+                        new Date(dateTo).toLocaleDateString('id-ID');
+                    document.getElementById('detailTotalPertemuan').textContent = 
+                        data.summary.total_pertemuan.toLocaleString();
+                    document.getElementById('detailTotalRecord').textContent = 
+                        data.summary.total_record.toLocaleString();
+                    
+                    // Render classes attended
+                    var attendedTbody = document.getElementById('detailClassesAttended');
+                    attendedTbody.innerHTML = '';
+                    if (data.classes_attended && data.classes_attended.length > 0) {
+                        data.classes_attended.forEach(function(item, index) {
+                            var row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${item.subject_name || '-'}</td>
+                                <td>${item.class_name || '-'}</td>
+                                <td><span class="badge bg-info">${item.class_grade || '-'}</span></td>
+                                <td>${item.date || '-'}</td>
+                                <td>${item.time_range || (item.start_time + ' - ' + item.end_time) || '-'}</td>
+                                <td><span class="badge bg-success">${item.total_record || 0}</span></td>
+                            `;
+                            attendedTbody.appendChild(row);
+                        });
+                        document.getElementById('detailTotalAttended').textContent = 
+                            data.classes_attended.length.toLocaleString();
+                    } else {
+                        attendedTbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Tidak ada data</td></tr>';
+                        document.getElementById('detailTotalAttended').textContent = '0';
+                    }
+                    
+                    // Render classes not attended
+                    var notAttendedTbody = document.getElementById('detailClassesNotAttended');
+                    notAttendedTbody.innerHTML = '';
+                    if (data.classes_not_attended && data.classes_not_attended.length > 0) {
+                        data.classes_not_attended.forEach(function(item, index) {
+                            var row = document.createElement('tr');
+                            var dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${item.subject_name || '-'}</td>
+                                <td>${item.class_name || '-'}</td>
+                                <td><span class="badge bg-info">${item.class_grade || '-'}</span></td>
+                                <td>${item.date || '-'}</td>
+                                <td>${item.time_range || (item.start_time + ' - ' + item.end_time) || '-'}</td>
+                            `;
+                            notAttendedTbody.appendChild(row);
+                        });
+                        document.getElementById('detailTotalNotAttended').textContent = 
+                            data.classes_not_attended.length.toLocaleString();
+                    } else {
+                        notAttendedTbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>';
+                        document.getElementById('detailTotalNotAttended').textContent = '0';
+                    }
+                    
+                    // Hide loading, show content
+                    document.getElementById('teacherDetailLoading').style.display = 'none';
+                    document.getElementById('teacherDetailContent').style.display = 'block';
+                } else {
+                    alert('Gagal memuat data detail: ' + (data.message || 'Terjadi kesalahan'));
+                    modal.hide();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching teacher detail:', error);
+                alert('Terjadi kesalahan saat memuat data detail');
+                modal.hide();
+            });
+        }
+
+        // Function to show student detail
+        function showStudentDetail(studentId, dateFrom, dateTo) {
+            var modal = new bootstrap.Modal(document.getElementById('studentDetailModal'));
+            modal.show();
+            
+            // Show loading
+            document.getElementById('studentDetailContent').innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Memuat data detail...</p>
+                </div>
+            `;
+            
+            // Fetch detail data
+            fetch('{{ route("admin.laporan.student-detail") }}?student_id=' + studentId + '&date_from=' + dateFrom + '&date_to=' + dateTo, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var html = `
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary mb-3">
+                                            <i class="bx bx-info-circle me-2"></i>Informasi Siswa
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <p class="mb-2"><strong>Nama:</strong> ${data.student.name || 'N/A'}</p>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <p class="mb-2"><strong>NIS:</strong> ${data.student.nis || 'N/A'}</p>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <p class="mb-2"><strong>Kelas:</strong> ${data.student.class || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-md-12">
+                                                <p class="mb-0"><strong>Periode:</strong> ${new Date(data.date_from).toLocaleDateString('id-ID')} - ${new Date(data.date_to).toLocaleDateString('id-ID')}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bx bx-calendar me-2"></i>Detail Absensi per Hari
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Search and Filter Controls -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                                    <input type="text" id="studentDetailSearch" class="form-control" placeholder="Cari mata pelajaran...">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <select id="studentDetailSubjectFilter" class="form-select">
+                                                    <option value="">Semua Mata Pelajaran</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="date" id="studentDetailDateFilter" class="form-control" placeholder="Filter tanggal...">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-secondary w-100" onclick="resetStudentDetailFilters()">
+                                                    <i class="bx bx-refresh"></i> Reset
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>Tanggal</th>
+                                                        <th>Total Record</th>
+                                                        <th>Mata Pelajaran</th>
+                                                        <th>Status Absensi</th>
+                                                        <th>Waktu Masuk</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="studentDetailTableBody">
+                    `;
+                    
+                    // Data will be rendered by renderStudentDetailTable function
+                    
+                    html += `
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <!-- Pagination -->
+                                        <nav aria-label="Page navigation" class="mt-3">
+                                            <ul class="pagination justify-content-center" id="studentDetailPagination">
+                                                <!-- Pagination will be generated by JavaScript -->
+                                            </ul>
+                                        </nav>
+                                        
+                                        <div class="text-center mt-2">
+                                            <small class="text-muted">
+                                                Menampilkan <span id="studentDetailShowing">0</span> dari <span id="studentDetailTotal">0</span> data
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('studentDetailContent').innerHTML = html;
+                    
+                    // Store original data for filtering
+                    window.studentDetailAllData = data.daily_data;
+                    window.studentDetailCurrentPage = 1;
+                    window.studentDetailItemsPerPage = 10;
+                    
+                    // Initialize filters and pagination
+                    initializeStudentDetailFilters();
+                    renderStudentDetailTable();
+                } else {
+                    document.getElementById('studentDetailContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bx bx-error-circle me-2"></i>${data.message || 'Terjadi kesalahan saat mengambil data'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('studentDetailContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bx bx-error-circle me-2"></i>Terjadi kesalahan saat mengambil data detail
+                    </div>
+                `;
+            });
+        }
+
+        // Initialize filters for student detail
+        function initializeStudentDetailFilters() {
+            if (!window.studentDetailAllData) return;
+            
+            // Get unique subjects
+            var subjects = new Set();
+            window.studentDetailAllData.forEach(function(day) {
+                day.subjects.forEach(function(subject) {
+                    subjects.add(subject.subject_name);
+                });
+            });
+            
+            // Populate subject filter
+            var subjectFilter = document.getElementById('studentDetailSubjectFilter');
+            if (subjectFilter) {
+                var currentValue = subjectFilter.value;
+                subjectFilter.innerHTML = '<option value="">Semua Mata Pelajaran</option>';
+                Array.from(subjects).sort().forEach(function(subject) {
+                    var option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    if (subject === currentValue) {
+                        option.selected = true;
+                    }
+                    subjectFilter.appendChild(option);
+                });
+            }
+            
+            // Add event listeners
+            var searchInput = document.getElementById('studentDetailSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    window.studentDetailCurrentPage = 1;
+                    renderStudentDetailTable();
+                });
+            }
+            
+            if (subjectFilter) {
+                subjectFilter.addEventListener('change', function() {
+                    window.studentDetailCurrentPage = 1;
+                    renderStudentDetailTable();
+                });
+            }
+            
+            var dateFilter = document.getElementById('studentDetailDateFilter');
+            if (dateFilter) {
+                dateFilter.addEventListener('change', function() {
+                    window.studentDetailCurrentPage = 1;
+                    renderStudentDetailTable();
+                });
+            }
+        }
+
+        // Render student detail table with filters and pagination
+        function renderStudentDetailTable() {
+            if (!window.studentDetailAllData) return;
+            
+            var searchTerm = document.getElementById('studentDetailSearch')?.value.toLowerCase() || '';
+            var subjectFilter = document.getElementById('studentDetailSubjectFilter')?.value || '';
+            var dateFilter = document.getElementById('studentDetailDateFilter')?.value || '';
+            
+            // Flatten and filter data
+            var allRows = [];
+            window.studentDetailAllData.forEach(function(day) {
+                day.subjects.forEach(function(subject, index) {
+                    // Apply filters
+                    var matchesSearch = !searchTerm || subject.subject_name.toLowerCase().includes(searchTerm);
+                    var matchesSubject = !subjectFilter || subject.subject_name === subjectFilter;
+                    var matchesDate = !dateFilter || day.date === dateFilter;
+                    
+                    if (matchesSearch && matchesSubject && matchesDate) {
+                        allRows.push({
+                            day: day,
+                            subject: subject
+                        });
+                    }
+                });
+            });
+            
+            // Calculate pagination
+            var totalItems = allRows.length;
+            var totalPages = Math.ceil(totalItems / window.studentDetailItemsPerPage);
+            var startIndex = (window.studentDetailCurrentPage - 1) * window.studentDetailItemsPerPage;
+            var endIndex = Math.min(startIndex + window.studentDetailItemsPerPage, totalItems);
+            var currentRows = allRows.slice(startIndex, endIndex);
+            
+            // Render table
+            var tbody = document.getElementById('studentDetailTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (currentRows.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="bx bx-info-circle me-2"></i>Tidak ada data yang sesuai dengan filter
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Calculate rowspan for each day in current page
+                var dayRowspanMap = {};
+                currentRows.forEach(function(row) {
+                    if (!dayRowspanMap[row.day.date]) {
+                        dayRowspanMap[row.day.date] = {
+                            count: 0,
+                            date_display: row.day.date_display,
+                            total_record: row.day.total_record
+                        };
+                    }
+                    dayRowspanMap[row.day.date].count++;
+                });
+                
+                var currentDay = null;
+                
+                currentRows.forEach(function(row) {
+                    var html = '<tr>';
+                    var dayRowspan = dayRowspanMap[row.day.date].count;
+                    
+                    // Handle rowspan for date and total record
+                    if (row.day.date !== currentDay) {
+                        currentDay = row.day.date;
+                        
+                        html += `<td rowspan="${dayRowspan}" class="align-middle">${dayRowspanMap[row.day.date].date_display}</td>`;
+                        html += `<td rowspan="${dayRowspan}" class="align-middle text-center">${dayRowspanMap[row.day.date].total_record}</td>`;
+                    }
+                    
+                    html += `<td>${row.subject.subject_name}</td>`;
+                    html += `<td><span class="badge bg-${row.subject.status_badge}">${row.subject.status_text}</span></td>`;
+                    html += `<td>${row.subject.check_in_time || '-'}</td>`;
+                    html += '</tr>';
+                    
+                    tbody.innerHTML += html;
+                });
+            }
+            
+            // Update pagination info
+            var showingSpan = document.getElementById('studentDetailShowing');
+            var totalSpan = document.getElementById('studentDetailTotal');
+            if (showingSpan) {
+                showingSpan.textContent = currentRows.length > 0 ? (startIndex + 1) + '-' + endIndex : '0';
+            }
+            if (totalSpan) {
+                totalSpan.textContent = totalItems;
+            }
+            
+            // Render pagination
+            renderStudentDetailPagination(totalPages);
+        }
+
+        // Render pagination controls
+        function renderStudentDetailPagination(totalPages) {
+            var pagination = document.getElementById('studentDetailPagination');
+            if (!pagination) return;
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            var html = '';
+            var currentPage = window.studentDetailCurrentPage;
+            
+            // Previous button
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changeStudentDetailPage(${currentPage - 1}); return false;">Previous</a>
+            </li>`;
+            
+            // Page numbers
+            var startPage = Math.max(1, currentPage - 2);
+            var endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changeStudentDetailPage(1); return false;">1</a></li>`;
+                if (startPage > 2) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            
+            for (var i = startPage; i <= endPage; i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changeStudentDetailPage(${i}); return false;">${i}</a>
+                </li>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changeStudentDetailPage(${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+            
+            // Next button
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changeStudentDetailPage(${currentPage + 1}); return false;">Next</a>
+            </li>`;
+            
+            pagination.innerHTML = html;
+        }
+
+        // Change page
+        function changeStudentDetailPage(page) {
+            if (!window.studentDetailAllData) return;
+            
+            var searchTerm = document.getElementById('studentDetailSearch')?.value.toLowerCase() || '';
+            var subjectFilter = document.getElementById('studentDetailSubjectFilter')?.value || '';
+            var dateFilter = document.getElementById('studentDetailDateFilter')?.value || '';
+            
+            // Calculate total pages
+            var allRows = [];
+            window.studentDetailAllData.forEach(function(day) {
+                day.subjects.forEach(function(subject) {
+                    var matchesSearch = !searchTerm || subject.subject_name.toLowerCase().includes(searchTerm);
+                    var matchesSubject = !subjectFilter || subject.subject_name === subjectFilter;
+                    var matchesDate = !dateFilter || day.date === dateFilter;
+                    
+                    if (matchesSearch && matchesSubject && matchesDate) {
+                        allRows.push({ day: day, subject: subject });
+                    }
+                });
+            });
+            
+            var totalPages = Math.ceil(allRows.length / window.studentDetailItemsPerPage);
+            
+            if (page >= 1 && page <= totalPages) {
+                window.studentDetailCurrentPage = page;
+                renderStudentDetailTable();
+                
+                // Scroll to top of table
+                var tableContainer = document.querySelector('#studentDetailContent .table-responsive');
+                if (tableContainer) {
+                    tableContainer.scrollTop = 0;
+                }
+            }
+        }
+
+        // Reset filters
+        function resetStudentDetailFilters() {
+            var searchInput = document.getElementById('studentDetailSearch');
+            var subjectFilter = document.getElementById('studentDetailSubjectFilter');
+            var dateFilter = document.getElementById('studentDetailDateFilter');
+            
+            if (searchInput) searchInput.value = '';
+            if (subjectFilter) subjectFilter.value = '';
+            if (dateFilter) dateFilter.value = '';
+            
+            window.studentDetailCurrentPage = 1;
+            renderStudentDetailTable();
+        }
     </script>
 
     <style>
@@ -898,5 +1588,219 @@
         #teacherSearchInput {
             padding-right: 40px;
         }
+        
+        /* Horizontal scroll for report tabs */
+        .report-tabs-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #dee2e6 #f8f9fa;
+            width: 100%;
+        }
+        
+        .report-tabs-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .report-tabs-wrapper::-webkit-scrollbar-track {
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+        
+        .report-tabs-wrapper::-webkit-scrollbar-thumb {
+            background: #dee2e6;
+            border-radius: 3px;
+        }
+        
+        .report-tabs-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+        
+        .report-tabs-wrapper .btn-group {
+            display: flex;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        
+        .report-tabs-wrapper .btn-group .btn {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 575.98px) {
+            .report-header-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            
+            .report-label {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 0.5rem;
+            }
+            
+            .report-header-controls .btn-group {
+                width: 100%;
+            }
+            
+            .report-header-controls .btn {
+                width: 100%;
+            }
+            
+            .report-tabs-wrapper .btn-group .btn {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+            }
+        }
+        
+        /* Tablet responsive */
+        @media (min-width: 576px) and (max-width: 767.98px) {
+            .report-tabs-wrapper .btn-group .btn {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.875rem;
+            }
+        }
     </style>
+
+    <!-- Modal Detail Guru -->
+    <div class="modal fade" id="teacherDetailModal" tabindex="-1" aria-labelledby="teacherDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="teacherDetailModalLabel">
+                        <i class="bx bx-detail me-2"></i>Detail Laporan Guru
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="teacherDetailLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Memuat data detail...</p>
+                    </div>
+                    <div id="teacherDetailContent" style="display: none;">
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary mb-3">
+                                            <i class="bx bx-info-circle me-2"></i>Informasi Guru
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-2"><strong>Nama:</strong> <span id="detailTeacherName"></span></p>
+                                                <p class="mb-2"><strong>NIP:</strong> <span id="detailTeacherNip"></span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-2"><strong>Periode:</strong> <span id="detailPeriod"></span></p>
+                                                <p class="mb-2"><strong>Total Pertemuan:</strong> <span id="detailTotalPertemuan" class="text-primary fw-bold"></span></p>
+                                                <p class="mb-2"><strong>Total Record:</strong> <span id="detailTotalRecord" class="text-success fw-bold"></span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success-subtle">
+                                        <h6 class="card-title mb-0 text-success">
+                                            <i class="bx bx-check-circle me-2"></i>Kelas yang Dimasuki
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>No</th>
+                                                        <th>Mata Pelajaran</th>
+                                                        <th>Kelas</th>
+                                                        <th>Grade</th>
+                                                        <th>Tanggal</th>
+                                                        <th>Jam</th>
+                                                        <th>Total Record</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="detailClassesAttended">
+                                                    <!-- Data akan diisi via JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="mt-3">
+                                            <p class="mb-0"><strong>Total:</strong> <span id="detailTotalAttended" class="text-success fw-bold">0</span> kelas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-danger">
+                                    <div class="card-header bg-danger-subtle">
+                                        <h6 class="card-title mb-0 text-danger">
+                                            <i class="bx bx-x-circle me-2"></i>Kelas yang Tidak Dimasuki
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>No</th>
+                                                        <th>Mata Pelajaran</th>
+                                                        <th>Kelas</th>
+                                                        <th>Grade</th>
+                                                        <th>Tanggal</th>
+                                                        <th>Jam</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="detailClassesNotAttended">
+                                                    <!-- Data akan diisi via JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="mt-3">
+                                            <p class="mb-0"><strong>Total:</strong> <span id="detailTotalNotAttended" class="text-danger fw-bold">0</span> kelas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Siswa -->
+    <div class="modal fade" id="studentDetailModal" tabindex="-1" aria-labelledby="studentDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentDetailModalLabel">Detail Absensi Siswa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="studentDetailContent">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection

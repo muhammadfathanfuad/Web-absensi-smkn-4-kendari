@@ -29,64 +29,100 @@
         <div class="card">
             <div class="col-lg-0">
                 <div class="card-body">
-                    <ul class="nav nav-tabs">
-                        <li class="nav-item">
-                            <a href="#kelasx" data-bs-toggle="tab" aria-expanded="false" class="nav-link active">
-                                <span class="d-block d-sm-none"><i class="bx bx-home"></i></span>
-                                <span class="d-none d-sm-block">Kelas X</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#kelasxi" data-bs-toggle="tab" aria-expanded="true" class="nav-link">
-                                <span class="d-block d-sm-none"><i class="bx bx-user"></i></span>
-                                <span class="d-none d-sm-block">Kelas XI</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#kelasxii" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
-                                <span class="d-block d-sm-none"><i class="bx bx-envelope"></i></span>
-                                <span class="d-none d-sm-block">Kelas XII</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#mapel" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
-                                <span class="d-block d-sm-none"><i class="bx bx-envelope"></i></span>
-                                <span class="d-none d-sm-block">Info Akademik</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#manual" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
-                                <span class="d-block d-sm-none"><i class="bx bx-plus"></i></span>
-                                <span class="d-none d-sm-block">Tambah Mata Pelajaran Manual</span>
-                            </a>
-                        </li>
-                    </ul>
+                    <div class="nav-tabs-wrapper">
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item">
+                                <a href="#kelasx" data-bs-toggle="tab" aria-expanded="false" class="nav-link active">
+                                    <span class="d-block d-sm-none">Kelas X</span>
+                                    <span class="d-none d-sm-block">Kelas X</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#kelasxi" data-bs-toggle="tab" aria-expanded="true" class="nav-link">
+                                    <span class="d-block d-sm-none">Kelas XI</span>
+                                    <span class="d-none d-sm-block">Kelas XI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#kelasxii" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
+                                    <span class="d-block d-sm-none">Kelas XII</span>
+                                    <span class="d-none d-sm-block">Kelas XII</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#mapel" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
+                                    <span class="d-block d-sm-none">Info Akademik</span>
+                                    <span class="d-none d-sm-block">Info Akademik</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#manual" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
+                                    <span class="d-block d-sm-none">Tambah Mata Pelajaran Manual</span>
+                                    <span class="d-none d-sm-block">Tambah Mata Pelajaran Manual</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="tab-content text-muted">
                         <div class="tab-pane show active" id="kelasx">
                             <div class="card-header">
                                 <h5 class="card-title">Jadwal Pelajaran Kelas X</h5>
-                                    <div class="d-flex justify-content-between align-items-center mb-0">
-                                    <p class="text-muted mb-0">
-                                        Data Semua jadwal pelajaran
-                                    </p>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="mb-0">
-                                            <label for="kelasXSemesterFilter" class="form-label mb-0 me-2">Semester:</label>
-                                            <select class="form-select form-select-sm" id="kelasXSemesterFilter" style="width: auto;">
-                                                <option value="">Memuat semester...</option>
-                                            </select>
+                                    <div class="jadwal-header-controls">
+                                        <p class="text-muted mb-0 jadwal-description">
+                                            Data Semua jadwal pelajaran
+                                        </p>
+                                        <div class="jadwal-actions-wrapper">
+                                            <div class="semester-filter-wrapper d-flex gap-2 align-items-center flex-wrap">
+                                                <div class="semester-filter-item">
+                                                    <label for="kelasXSemesterFilter" class="form-label mb-0 me-2">Semester:</label>
+                                                    <select class="form-select form-select-sm" id="kelasXSemesterFilter" style="width: auto;">
+                                                        <option value="">Memuat semester...</option>
+                                                    </select>
+                                                </div>
+                                                <div class="kelas-hari-filter-wrapper d-flex gap-2 align-items-center">
+                                                    <div class="kelas-filter-item">
+                                                        <label for="kelasXClassFilter" class="form-label mb-0 me-2">Kelas:</label>
+                                                        <select class="form-select form-select-sm" id="kelasXClassFilter" style="width: auto;">
+                                                            <option value="">Semua Kelas</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="hari-filter-item">
+                                                        <label for="kelasXDayFilter" class="form-label mb-0 me-2">Hari:</label>
+                                                        <select class="form-select form-select-sm" id="kelasXDayFilter" style="width: auto;">
+                                                            <option value="">Semua Hari</option>
+                                                            <option value="1">Senin</option>
+                                                            <option value="2">Selasa</option>
+                                                            <option value="3">Rabu</option>
+                                                            <option value="4">Kamis</option>
+                                                            <option value="5">Jumat</option>
+                                                            <option value="6">Sabtu</option>
+                                                            <option value="7">Minggu</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="single-actions-jadwal" class="ms-auto">
+                                                <div class="btn-group me-2" role="group">
+                                                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
+                                                        aria-expanded="false" id="exportJadwalXDropdownBtn">
+                                                        <i class="bx bx-download"></i> <span>Export</span>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#" onclick="exportJadwalX('pdf'); return false;">
+                                                                <i class="bx bx-file"></i> Export PDF (.pdf)
+                                                            </a></li>
+                                                    </ul>
+                                                </div>
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                                    data-bs-target="#addUserModal">
+                                                    Import Jadwal
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div id="single-actions-jadwal">
-                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#addUserModal">
-                                                Import Jadwal
-                                            </button>
+                                        <div id="bulk-actions-jadwal" style="display: none;">
+                                            <button type="button" class="btn btn-danger" id="bulk-delete-jadwal">Hapus Terpilih</button>
                                         </div>
                                     </div>
-                                    <div id="bulk-actions-jadwal" style="display: none;">
-                                        <button type="button" class="btn btn-danger" id="bulk-delete-jadwal">Hapus Terpilih</button>
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="card-body">
@@ -103,18 +139,29 @@
                         <div class="tab-pane" id="kelasxi">
                             <div class="card-header">
                                 <h5 class="card-title">Jadwal Pelajaran Kelas XI</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0">
-                                    <p class="text-muted mb-0">
+                                <div class="jadwal-header-controls">
+                                    <p class="text-muted mb-0 jadwal-description">
                                         Jadwal Pelajaran Semester ini
                                     </p>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="d-flex align-items-center gap-2">
+                                    <div class="jadwal-actions-wrapper">
+                                        <div class="semester-filter-wrapper">
                                             <label for="kelasXISemesterFilter" class="form-label mb-0 fw-medium">Semester:</label>
                                             <select class="form-select form-select-sm" id="kelasXISemesterFilter" style="width: 200px;">
                                                 <option value="">Memuat semester...</option>
                                             </select>
                                         </div>
-                                        <div id="single-actions-jadwal-xi">
+                                        <div id="single-actions-jadwal-xi" class="ms-auto">
+                                            <div class="btn-group me-2" role="group">
+                                                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
+                                                    aria-expanded="false" id="exportJadwalXIDropdownBtn">
+                                                    <i class="bx bx-download"></i> <span>Export</span>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="#" onclick="exportJadwalXI('pdf'); return false;">
+                                                            <i class="bx bx-file"></i> Export PDF (.pdf)
+                                                        </a></li>
+                                                </ul>
+                                            </div>
                                             <button type="button" class="btn btn-info me-2" id="filter-jadwal-xi">
                                                 <i class="bx bx-filter me-1"></i> Filter
                                             </button>
@@ -142,14 +189,18 @@
                         <div class="tab-pane" id="kelasxii">
                             <div class="card-header">
                                 <h5 class="card-title">Jadwal Pelajaran kelas XII</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0">
-                                    <p class="text-muted mb-0">
+                                <div class="jadwal-header-controls">
+                                    <p class="text-muted mb-0 jadwal-description">
                                         Jadwal Pelajaran Semester 1
                                     </p>
-                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                        data-bs-target="#addMuridModal">
-                                        Tambah Jadwal
-                                    </button>
+                                    <div class="jadwal-actions-wrapper">
+                                        <div id="single-actions-jadwal-xii">
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                                data-bs-target="#addMuridModal">
+                                                Tambah Jadwal
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -163,14 +214,16 @@
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <h5 class="card-title">Daftar Semester</h5>
-                                    <div class="d-flex justify-content-between align-items-center mb-0">
-                                        <p class="text-muted mb-0">
+                                    <div class="jadwal-header-controls">
+                                        <p class="text-muted mb-0 jadwal-description">
                                             Kelola semester akademik untuk sistem jadwal pelajaran
                                         </p>
-                                        <div id="single-actions-terms">
-                                            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addTermModal">
-                                                <i class="bx bx-plus me-1"></i> Tambah Semester
-                                            </button>
+                                        <div class="jadwal-actions-wrapper">
+                                            <div id="single-actions-terms">
+                                                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addTermModal">
+                                                    <i class="bx bx-plus me-1"></i> Tambah Semester
+                                                </button>
+                                            </div>
                                         </div>
                                         <div id="bulk-actions-terms" style="display: none;">
                                             <button type="button" class="btn btn-danger" id="bulk-delete-terms">
@@ -196,17 +249,19 @@
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <h5 class="card-title">Daftar Kelas</h5>
-                                    <div class="d-flex justify-content-between align-items-center mb-0">
-                                        <p class="text-muted mb-0">
+                                    <div class="jadwal-header-controls">
+                                        <p class="text-muted mb-0 jadwal-description">
                                             Semua kelas yang terdaftar di sistem
                                         </p>
-                                        <div id="single-actions-classes">
-                                            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addClassModal">
-                                                <i class="bx bx-plus me-1"></i> Tambah Kelas
-                                            </button>
-                                            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#importClassModal">
-                                                <i class="bx bx-upload me-1"></i> Impor Kelas
-                                            </button>
+                                        <div class="jadwal-actions-wrapper">
+                                            <div id="single-actions-classes">
+                                                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addClassModal">
+                                                    <i class="bx bx-plus me-1"></i> Tambah Kelas
+                                                </button>
+                                                <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#importClassModal">
+                                                    <i class="bx bx-upload me-1"></i> Impor Kelas
+                                                </button>
+                                            </div>
                                         </div>
                                         <div id="bulk-actions-classes" style="display: none;">
                                             <button type="button" class="btn btn-danger" id="bulk-delete-classes">
@@ -231,17 +286,19 @@
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title">Daftar Mata Pelajaran</h5>
-                                    <div class="d-flex justify-content-between align-items-center mb-0">
-                                        <p class="text-muted mb-0">
+                                    <div class="jadwal-header-controls">
+                                        <p class="text-muted mb-0 jadwal-description">
                                             Semua mata pelajaran yang tersedia di sistem
                                         </p>
-                                        <div id="single-actions-subjects">
-                                            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                                                <i class="bx bx-plus me-1"></i> Tambah Mata Pelajaran
-                                            </button>
-                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadSubjectModal">
-                                                <i class="bx bx-upload me-1"></i> Import Mata Pelajaran
-                                            </button>
+                                        <div class="jadwal-actions-wrapper">
+                                            <div id="single-actions-subjects">
+                                                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                                                    <i class="bx bx-plus me-1"></i> Tambah Mata Pelajaran
+                                                </button>
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadSubjectModal">
+                                                    <i class="bx bx-upload me-1"></i> Import Mata Pelajaran
+                                                </button>
+                                            </div>
                                         </div>
                                         <div id="bulk-actions-subjects" style="display: none;">
                                             <button type="button" class="btn btn-danger" id="bulk-delete-subjects">
@@ -268,14 +325,16 @@
                         <div class="tab-pane" id="manual">
                             <div class="card-header">
                                 <h5 class="card-title">Tambah Mata Pelajaran Manual</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0">
-                                    <p class="text-muted mb-0">
+                                <div class="jadwal-header-controls">
+                                    <p class="text-muted mb-0 jadwal-description">
                                         Tambahkan mata pelajaran untuk kelas 10 dan 11 secara manual
                                     </p>
-                                    <div>
-                                        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addManualClassSubjectModal">
-                                            <i class="bx bx-plus me-1"></i> Tambah Mata Pelajaran
-                                        </button>
+                                    <div class="jadwal-actions-wrapper">
+                                        <div id="single-actions-manual">
+                                            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addManualClassSubjectModal">
+                                                <i class="bx bx-plus me-1"></i> Tambah Mata Pelajaran
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -909,13 +968,8 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="xiGrade" class="form-label">Pilih Grade</label>
-                            <select class="form-select" id="xiGrade" name="grade" required>
-                                <option value="">Pilih Grade</option>
-                                <option value="X">Kelas X</option>
-                                <option value="XI">Kelas XI</option>
-                                <option value="XII">Kelas XII</option>
-                            </select>
+                            <label for="xiGrade" class="form-label">Kelas</label>
+                            <input type="text" class="form-control" id="xiGrade" name="grade" value="XI" readonly style="background-color: #e9ecef; cursor: not-allowed;">
                         </div>
                         <div class="mb-3">
                             <label for="xiFile" class="form-label">Pilih File</label>
@@ -1809,9 +1863,6 @@
     <script>
         // Load terms data for all modals
         function loadTermsData() {
-            console.log('Loading terms data...');
-            console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'));
-            
             fetch('/admin/terms/data', {
                 method: 'GET',
                 headers: {
@@ -1822,87 +1873,88 @@
                 credentials: 'same-origin'
             })
                 .then(response => {
-                    console.log('Terms response status:', response.status);
-                    console.log('Terms response headers:', response.headers);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Terms data received:', data);
                     if (data && data.length > 0) {
                         // Use all terms (not just active ones) for Kelas X filter
-                        console.log('All terms:', data);
                         
                             // Load for Kelas X semester filter (show all terms)
                             const kelasXSemesterFilter = document.getElementById('kelasXSemesterFilter');
                             if (kelasXSemesterFilter) {
-                                console.log('Loading Kelas X semester filter with', data.length, 'terms');
                                 kelasXSemesterFilter.innerHTML = '<option value="">Pilih Semester</option>';
                                 data.forEach(term => {
                                     const option = document.createElement('option');
                                     option.value = term.id;
                                     option.textContent = term.name + (term.is_active ? ' (Aktif)' : '');
                                     kelasXSemesterFilter.appendChild(option);
-                                    console.log('Added term:', term.name, 'Active:', term.is_active);
                                 });
                                 
                                 // Set default to first active term, or first term if no active
                                 const activeTerm = data.find(term => term.is_active === true);
                                 if (activeTerm) {
                                     kelasXSemesterFilter.value = activeTerm.id;
-                                    console.log('Set default to active term:', activeTerm.name);
                                     // Initialize table with active term
                                     reloadKelasXTable(activeTerm.id);
                                 } else if (data.length > 0) {
                                     kelasXSemesterFilter.value = data[0].id;
-                                    console.log('Set default to first term:', data[0].name);
                                     // Initialize table with first term
                                     reloadKelasXTable(data[0].id);
                                 }
-                                
-                                // Don't trigger change event here since we're calling reloadKelasXTable directly
-                                console.log('Kelas X semester filter loaded successfully');
-                            } else {
-                                console.error('kelasXSemesterFilter element not found');
+
+                                // Add event listener for semester filter change
+                                kelasXSemesterFilter.addEventListener('change', function() {
+                                    const selectedTermId = this.value;
+                                    reloadKelasXTable(selectedTermId);
+                                });
                             }
+
+                            // Load classes for Kelas X filter
+                            loadClassesForKelasX();
 
                             // Load for Kelas XI semester filter (show all terms)
                             const kelasXISemesterFilter = document.getElementById('kelasXISemesterFilter');
                             if (kelasXISemesterFilter) {
-                                console.log('Loading Kelas XI semester filter with', data.length, 'terms');
                                 kelasXISemesterFilter.innerHTML = '<option value="">Pilih Semester</option>';
                                 data.forEach(term => {
                                     const option = document.createElement('option');
                                     option.value = term.id;
                                     option.textContent = term.name + (term.is_active ? ' (Aktif)' : '');
                                     kelasXISemesterFilter.appendChild(option);
-                                    console.log('Added term to XI:', term.name, 'Active:', term.is_active);
                                 });
+                                
+                                // Check if term_id is already in URL (from filter or previous selection)
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const urlTermId = urlParams.get("term_id");
                                 
                                 // Set default to first active term, or first term if no active
                                 const activeTermXI = data.find(term => term.is_active === true);
-                                if (activeTermXI) {
+                                
+                                // Use term from URL if exists and valid, otherwise use active or first
+                                let selectedTermId = null;
+                                if (urlTermId && data.find(t => t.id == urlTermId)) {
+                                    // Term from URL exists in data, use it
+                                    selectedTermId = urlTermId;
+                                    kelasXISemesterFilter.value = urlTermId;
+                                } else if (activeTermXI) {
+                                    selectedTermId = activeTermXI.id;
                                     kelasXISemesterFilter.value = activeTermXI.id;
-                                    console.log('Set default XI to active term:', activeTermXI.name);
-                                    // Initialize table with active term
-                                    reloadKelasXITable(activeTermXI.id);
                                 } else if (data.length > 0) {
+                                    selectedTermId = data[0].id;
                                     kelasXISemesterFilter.value = data[0].id;
-                                    console.log('Set default XI to first term:', data[0].name);
-                                    // Initialize table with first term
-                                    reloadKelasXITable(data[0].id);
                                 }
                                 
-                                console.log('Kelas XI semester filter loaded successfully');
-                            } else {
-                                console.error('kelasXISemesterFilter element not found');
+                                // Initialize table with selected term (will preserve filters from URL)
+                                if (selectedTermId) {
+                                    reloadKelasXITable(selectedTermId);
+                                }
                             }
                         
                         // Filter only active terms for other modals
                         const activeTerms = data.filter(term => term.is_active === true);
-                        console.log('Active terms for modals:', activeTerms);
                         
                         if (activeTerms.length > 0) {
                             // Load for import XI modal
@@ -1953,7 +2005,6 @@
                                 });
                             }
                         } else {
-                            console.log('No active terms available');
                             // Show no active terms message in dropdowns (except Kelas X filter)
                             const dropdowns = ['xiTerm', 'termXI', 'manual_term_id', 'jadwalTerm'];
                             dropdowns.forEach(id => {
@@ -1991,14 +2042,28 @@
                                     kelasXISemesterFilter.appendChild(option);
                                 });
                                 
-                                // Set default to first term
-                                kelasXISemesterFilter.value = data[0].id;
-                                // Initialize table with first term
-                                reloadKelasXITable(data[0].id);
+                                // Check if term_id is already in URL (from filter or previous selection)
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const urlTermId = urlParams.get("term_id");
+                                
+                                // Use term from URL if exists and valid, otherwise use first
+                                let selectedTermId = null;
+                                if (urlTermId && data.find(t => t.id == urlTermId)) {
+                                    // Term from URL exists in data, use it
+                                    selectedTermId = urlTermId;
+                                    kelasXISemesterFilter.value = urlTermId;
+                                } else if (data.length > 0) {
+                                    selectedTermId = data[0].id;
+                                    kelasXISemesterFilter.value = data[0].id;
+                                }
+                                
+                                // Initialize table with selected term (will preserve filters from URL)
+                                if (selectedTermId) {
+                                    reloadKelasXITable(selectedTermId);
+                                }
                             }
                         }
                     } else {
-                        console.log('No terms data available');
                         // Show no data message in dropdowns
                         const dropdowns = ['xiTerm', 'termXI', 'manual_term_id', 'jadwalTerm', 'kelasXSemesterFilter', 'kelasXISemesterFilter'];
                         dropdowns.forEach(id => {
@@ -2010,13 +2075,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading terms:', error);
-                    console.error('Error details:', {
-                        message: error.message,
-                        stack: error.stack,
-                        name: error.name
-                    });
-                    
                     // Show error message in dropdowns
                     const dropdowns = ['xiTerm', 'termXI', 'manual_term_id', 'jadwalTerm', 'kelasXSemesterFilter', 'kelasXISemesterFilter'];
                     dropdowns.forEach(id => {
@@ -2029,125 +2087,169 @@
         }
 
         // Function to reload Kelas X table with selected semester
-        function reloadKelasXTable(termId) {
-            console.log('=== RELOAD KELAS X TABLE ===');
-            console.log('Term ID:', termId);
-            console.log('GridJS instance exists:', !!window.gridInstanceJadwal);
+        function reloadKelasXTable(termId = null, classId = null, day = null) {
+            // Get current filter values if not provided
+            if (termId === null) {
+                const termFilter = document.getElementById('kelasXSemesterFilter');
+                termId = termFilter ? termFilter.value : null;
+            }
+            if (classId === null) {
+                const classFilter = document.getElementById('kelasXClassFilter');
+                classId = classFilter && classFilter.value ? classFilter.value : null;
+            }
+            if (day === null) {
+                const dayFilter = document.getElementById('kelasXDayFilter');
+                day = dayFilter && dayFilter.value ? dayFilter.value : null;
+            }
+
+            // Build URL with filter parameters
+            const params = new URLSearchParams();
+            if (termId) {
+                params.append('term_id', termId);
+            }
+            if (classId) {
+                params.append('class_id', classId);
+            }
+            if (day) {
+                params.append('day', day);
+            }
             
+            const baseUrl = "/admin/jadwal";
+            const urlWithParams = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+
             // Check if GridJS instance exists
             if (window.gridInstanceJadwal) {
-                console.log('Current URL:', window.gridInstanceJadwal.config.server.url);
-                
-                // Update the data source URL with term parameter
-                const baseUrl = "/admin/jadwal";
-                const urlWithTerm = termId ? `${baseUrl}?term_id=${termId}` : baseUrl;
-                
-                console.log('New URL:', urlWithTerm);
-                
-                // Update the server URL and reload
-                window.gridInstanceJadwal.config.server.url = urlWithTerm;
-                console.log('Updated URL in config:', window.gridInstanceJadwal.config.server.url);
-                
-                console.log('Calling forceRender...');
+                // Update the data source URL with filter parameters
+                window.gridInstanceJadwal.config.server.url = urlWithParams;
                 window.gridInstanceJadwal.forceRender();
-                console.log('forceRender called');
             } else {
-                console.log('GridJS instance not found, trying to initialize...');
                 // If no GridJS instance, try to initialize the table
                 if (window.tabelJadwalInstance && window.tabelJadwalInstance.initJadwalTable) {
-                    console.log('Initializing new table with term:', termId);
-                    // Pass term_id to the initialization
-                    window.tabelJadwalInstance.initJadwalTable(termId);
-                } else {
-                    console.error('GridJS instance not found for Kelas X table');
+                    // Pass filter parameters to the initialization
+                    window.tabelJadwalInstance.initJadwalTable(termId, classId, day);
                 }
             }
-            console.log('=== END RELOAD KELAS X TABLE ===');
         }
 
         // Function to reload Kelas XI table with selected semester
         function reloadKelasXITable(termId) {
-            console.log('=== RELOAD KELAS XI TABLE ===');
-            console.log('Term ID:', termId);
-            console.log('GridJS instance exists:', !!window.gridInstanceJadwalXI);
+            // Get current filter parameters from URL to preserve them
+            const urlParams = new URLSearchParams(window.location.search);
+            const filterParams = {
+                class: urlParams.get("class") || "",
+                group_type: urlParams.get("group_type") || "",
+                week_type: urlParams.get("week_type") || "",
+                location_type: urlParams.get("location_type") || "",
+                day: urlParams.get("day") || "",
+            };
+            
+            // Add term_id parameter if provided
+            if (termId) {
+                filterParams.term_id = termId;
+            }
+            
+            // Build query string preserving all filters
+            const queryString = new URLSearchParams(filterParams).toString();
+            const baseUrl = "/admin/jadwal-xi";
+            const urlWithParams = queryString ? `${baseUrl}?${queryString}` : baseUrl;
             
             // Check if GridJS instance exists
             if (window.gridInstanceJadwalXI) {
-                console.log('Current URL:', window.gridInstanceJadwalXI.config.server.url);
-                
-                // Update the data source URL with term parameter
-                const baseUrl = "/admin/jadwal-xi";
-                const urlWithTerm = termId ? `${baseUrl}?term_id=${termId}` : baseUrl;
-                
-                console.log('New URL:', urlWithTerm);
-                
-                // Update the server URL and reload
-                window.gridInstanceJadwalXI.config.server.url = urlWithTerm;
-                console.log('Updated URL in config:', window.gridInstanceJadwalXI.config.server.url);
-                
-                console.log('Calling forceRender...');
+                // Update the server URL with all parameters
+                window.gridInstanceJadwalXI.config.server.url = urlWithParams;
                 window.gridInstanceJadwalXI.forceRender();
-                console.log('forceRender called');
             } else {
-                console.log('GridJS instance not found, trying to initialize...');
                 // If no GridJS instance, try to initialize the table
                 if (window.tabelJadwalInstance && window.tabelJadwalInstance.initJadwalXiTable) {
-                    console.log('Initializing new XI table with term:', termId);
-                    // Pass term_id to the initialization
+                    // Pass term_id to the initialization (initJadwalXiTable will read filters from URL)
                     window.tabelJadwalInstance.initJadwalXiTable(termId);
-                } else {
-                    console.error('GridJS instance not found for Kelas XI table');
                 }
             }
-            console.log('=== END RELOAD KELAS XI TABLE ===');
+        }
+
+        // Function to load classes for Kelas X filter
+        function loadClassesForKelasX() {
+            fetch('/admin/classes', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.length > 0) {
+                        // Filter only grade 10 classes
+                        const kelasXClasses = data.filter(cls => cls.grade === '10' || cls.grade === 10);
+                        
+                        const kelasXClassFilter = document.getElementById('kelasXClassFilter');
+                        if (kelasXClassFilter) {
+                            kelasXClassFilter.innerHTML = '<option value="">Semua Kelas</option>';
+                            kelasXClasses.forEach(cls => {
+                                const option = document.createElement('option');
+                                option.value = cls.id;
+                                option.textContent = cls.display_grade || cls.name;
+                                kelasXClassFilter.appendChild(option);
+                            });
+
+                            // Add event listener for class filter change
+                            kelasXClassFilter.addEventListener('change', function() {
+                                reloadKelasXTable();
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    // Silent error handling
+                });
         }
 
         // Initialize notification modal
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Starting initialization');
-            
             // Wait a bit to ensure all elements are ready
             setTimeout(function() {
-                console.log('Loading terms data after timeout');
                 loadTermsData();
-                
-                // Add event listener for Kelas X semester filter
-                const kelasXSemesterFilter = document.getElementById('kelasXSemesterFilter');
-                console.log('kelasXSemesterFilter element:', kelasXSemesterFilter);
-                
-                if (kelasXSemesterFilter) {
-                    console.log('Adding event listener to kelasXSemesterFilter');
-                    kelasXSemesterFilter.addEventListener('change', function() {
-                        const selectedTermId = this.value;
-                        console.log('Kelas X semester changed to:', selectedTermId);
-                        
-                        if (selectedTermId) {
-                            // Reload Kelas X table with selected semester
-                            reloadKelasXTable(selectedTermId);
-                        } else {
-                            // Clear table if no semester selected
-                            const tableContainer = document.getElementById('table-search');
-                            if (tableContainer) {
-                                tableContainer.innerHTML = '<div class="text-center text-muted">Pilih semester untuk melihat jadwal</div>';
-                            }
-                        }
+
+                // Add event listener for Kelas X day filter
+                const kelasXDayFilter = document.getElementById('kelasXDayFilter');
+                if (kelasXDayFilter) {
+                    kelasXDayFilter.addEventListener('change', function() {
+                        reloadKelasXTable();
                     });
-                } else {
-                    console.error('kelasXSemesterFilter element not found during event listener setup');
                 }
 
                 // Add event listener for Kelas XI semester filter
                 const kelasXISemesterFilter = document.getElementById('kelasXISemesterFilter');
-                console.log('kelasXISemesterFilter element:', kelasXISemesterFilter);
                 
                 if (kelasXISemesterFilter) {
-                    console.log('Adding event listener to kelasXISemesterFilter');
                     kelasXISemesterFilter.addEventListener('change', function() {
                         const selectedTermId = this.value;
-                        console.log('Kelas XI semester changed to:', selectedTermId);
                         
                         if (selectedTermId) {
-                            // Reload Kelas XI table with selected semester
+                            // Get current filter parameters from URL to preserve them
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const filterParams = {
+                                class: urlParams.get("class") || "",
+                                group_type: urlParams.get("group_type") || "",
+                                week_type: urlParams.get("week_type") || "",
+                                location_type: urlParams.get("location_type") || "",
+                                day: urlParams.get("day") || "",
+                                term_id: selectedTermId
+                            };
+                            
+                            // Update URL with new term_id but preserve other filters
+                            const queryString = new URLSearchParams(filterParams).toString();
+                            const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+                            window.history.pushState({}, "", newUrl);
+                            
+                            // Reload Kelas XI table with selected semester (will preserve filters)
                             reloadKelasXITable(selectedTermId);
                         } else {
                             // Clear table if no semester selected
@@ -2155,10 +2257,15 @@
                             if (tableContainer) {
                                 tableContainer.innerHTML = '<div class="text-center text-muted">Pilih semester untuk melihat jadwal</div>';
                             }
+                            
+                            // Remove term_id from URL but preserve other filters
+                            const urlParams = new URLSearchParams(window.location.search);
+                            urlParams.delete("term_id");
+                            const queryString = urlParams.toString();
+                            const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+                            window.history.pushState({}, "", newUrl);
                         }
                     });
-                } else {
-                    console.error('kelasXISemesterFilter element not found during event listener setup');
                 }
             }, 100);
             
@@ -2183,6 +2290,254 @@
             window.showNotification = showNotification;
         });
 
+        // Export functions for Jadwal X and XI
+        function exportJadwalX(format = 'pdf') {
+            try {
+                // Check if export is already in progress
+                if (window.exportNavigating) {
+                    return;
+                }
+
+                // Get current filter values
+                const termId = document.getElementById('kelasXSemesterFilter')?.value || '';
+                const classId = document.getElementById('kelasXClassFilter')?.value || '';
+                const day = document.getElementById('kelasXDayFilter')?.value || '';
+                
+                // Build export URL
+                let exportUrl = '<?php echo e(route("admin.jadwal.export")); ?>?format=' + format;
+                if (termId) {
+                    exportUrl += '&term_id=' + termId;
+                }
+                if (classId) {
+                    exportUrl += '&class_id=' + classId;
+                }
+                if (day) {
+                    exportUrl += '&day=' + day;
+                }
+                
+                // Show loading indicator
+                showExportLoading(format, 'Jadwal Kelas X');
+                
+                // Mark as navigating to prevent duplicate
+                window.exportNavigating = true;
+                
+                // Use window.location.href for direct download (more reliable)
+                window.location.href = exportUrl;
+                
+                // Show success message after a delay
+                setTimeout(function() {
+                    showExportSuccess('Export berhasil! File sedang diunduh.');
+                    window.exportNavigating = false;
+                }, 2000);
+                
+            } catch (error) {
+                showExportError('Terjadi kesalahan saat export: ' + error.message);
+                window.exportNavigating = false;
+            }
+        }
+        
+        function exportJadwalXI(format = 'pdf') {
+            try {
+                // Get current term_id and filters from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const termId = urlParams.get('term_id') || document.getElementById('kelasXISemesterFilter')?.value || '';
+                const classFilter = urlParams.get('class') || '';
+                const groupType = urlParams.get('group_type') || '';
+                const weekType = urlParams.get('week_type') || '';
+                const locationType = urlParams.get('location_type') || '';
+                const day = urlParams.get('day') || '';
+                
+                // Build export URL
+                let exportUrl = '<?php echo e(route("admin.jadwal-xi.export")); ?>?format=' + format;
+                if (termId) exportUrl += '&term_id=' + termId;
+                if (classFilter) exportUrl += '&class=' + classFilter;
+                if (groupType) exportUrl += '&group_type=' + groupType;
+                if (weekType) exportUrl += '&week_type=' + weekType;
+                if (locationType) exportUrl += '&location_type=' + locationType;
+                if (day) exportUrl += '&day=' + day;
+                
+                // Show loading indicator
+                showExportLoading(format, 'Jadwal Kelas XI');
+                
+                // Flag to track if export is in progress
+                let exportInProgress = true;
+                let fallbackTimeout = null;
+                
+                // Create a hidden iframe to handle the download
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = exportUrl;
+                document.body.appendChild(iframe);
+                
+                // Clean up after download starts
+                setTimeout(function() {
+                    if (iframe.parentNode) {
+                        document.body.removeChild(iframe);
+                    }
+                    exportInProgress = false;
+                    showExportSuccess('Export berhasil! File sedang diunduh.');
+                    
+                    // Clear fallback timeout if it exists
+                    if (fallbackTimeout) {
+                        clearTimeout(fallbackTimeout);
+                        fallbackTimeout = null;
+                    }
+                }, 1000);
+                
+                // Fallback if iframe doesn't work (only if export hasn't succeeded)
+                fallbackTimeout = setTimeout(function() {
+                    if (exportInProgress) {
+                        exportInProgress = false; // Prevent multiple fallback calls
+                        tryFallbackExportJadwalXI(format);
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                showExportError('Terjadi kesalahan saat export: ' + error.message);
+            }
+        }
+        
+        
+        // Fallback export method using direct link
+        function tryFallbackExportJadwalXI(format = 'pdf') {
+            try {
+                // Check if export already succeeded (prevent duplicate downloads)
+                const existingIframe = document.querySelector('iframe[src*="jadwal-xi.export"]');
+                if (existingIframe) {
+                    return;
+                }
+                
+                // Check if we're already navigating (prevent duplicate)
+                if (window.exportNavigating) {
+                    return;
+                }
+                
+                // Get current term_id and filters from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const termId = urlParams.get('term_id') || document.getElementById('kelasXISemesterFilter')?.value || '';
+                const classFilter = urlParams.get('class') || '';
+                const groupType = urlParams.get('group_type') || '';
+                const weekType = urlParams.get('week_type') || '';
+                const locationType = urlParams.get('location_type') || '';
+                const day = urlParams.get('day') || '';
+                
+                // Build export URL
+                let exportUrl = '<?php echo e(route("admin.jadwal-xi.export")); ?>?format=' + format;
+                if (termId) exportUrl += '&term_id=' + termId;
+                if (classFilter) exportUrl += '&class=' + classFilter;
+                if (groupType) exportUrl += '&group_type=' + groupType;
+                if (weekType) exportUrl += '&week_type=' + weekType;
+                if (locationType) exportUrl += '&location_type=' + locationType;
+                if (day) exportUrl += '&day=' + day;
+                
+                // Mark as navigating to prevent duplicate
+                window.exportNavigating = true;
+                
+                // Show loading again
+                showExportLoading(format, 'Jadwal Kelas XI');
+                
+                // Use window.location as ultimate fallback
+                window.location.href = exportUrl;
+                
+                // Hide loading after a short delay
+                setTimeout(function() {
+                    showExportSuccess('Export berhasil! File sedang diunduh.');
+                    window.exportNavigating = false;
+                }, 2000);
+                
+            } catch (error) {
+                showExportError('Gagal mengexport data. Silakan coba lagi atau hubungi administrator.');
+                window.exportNavigating = false;
+            }
+        }
+        
+        // Show loading indicator for export
+        function showExportLoading(format, reportType = '', message = '', type = 'info') {
+            const formatText = format === 'pdf' ? 'PDF' : 'File';
+            const alertClass = type === 'success' ? 'alert-success' : (type === 'danger' ? 'alert-danger' : 'alert-info');
+            const iconClass = type === 'success' ? 'bx-check-circle' : (type === 'danger' ? 'bx-x-circle' : '');
+            const spinnerHtml = type === 'success' || type === 'danger' ? '' : '<div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>';
+            const iconHtml = iconClass ? `<i class="bx ${iconClass} me-2" style="font-size: 1.2em;"></i>` : '';
+            
+            const loadingHtml = `
+                <div id="exportLoading" class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+                    <div class="d-flex align-items-center">
+                        ${spinnerHtml}
+                        ${iconHtml}
+                        <div>
+                            <strong>${message || `Sedang memproses export ${formatText}${reportType ? ' - ' + reportType : ''}...`}</strong>
+                            ${message ? '' : '<br><small>File akan segera diunduh</small>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing loading if any
+            const existingLoading = document.getElementById('exportLoading');
+            if (existingLoading) {
+                existingLoading.remove();
+            }
+            
+            // Add new loading indicator
+            document.body.insertAdjacentHTML('beforeend', loadingHtml);
+        }
+        
+        // Hide loading indicator
+        function hideExportLoading() {
+            const loadingElement = document.getElementById('exportLoading');
+            if (loadingElement) {
+                loadingElement.classList.remove('show');
+                setTimeout(function() {
+                    loadingElement.remove();
+                }, 150);
+            }
+        }
+        
+        // Show success message in loading indicator
+        function showExportSuccess(message = 'Export berhasil! File sedang diunduh.') {
+            showExportLoading('pdf', '', message, 'success');
+            setTimeout(function() {
+                hideExportLoading();
+            }, 3000);
+        }
+        
+        // Show error message in loading indicator
+        function showExportError(message = 'Gagal mengexport data. Silakan coba lagi.') {
+            showExportLoading('pdf', '', message, 'danger');
+            setTimeout(function() {
+                hideExportLoading();
+            }, 5000);
+        }
+        
+        // Show alert message (same as menu laporan)
+        function showAlert(message, type = 'info') {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    if (alert.classList.contains('show')) {
+                        alert.classList.remove('show');
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 150);
+                    }
+                });
+            }, 5000);
+        }
+        
+        // Make functions globally available
+        window.exportJadwalX = exportJadwalX;
+        window.exportJadwalXI = exportJadwalXI;
+        window.showAlert = showAlert;
+        
         // Persist active tab across reloads (hash + localStorage fallback)
         (function() {
             const STORAGE_KEY = 'admin-jadwal-active-tab';
@@ -2214,9 +2569,11 @@
                     if (target === '#kelasxi' && window.tabelJadwalInstance) {
                         // Check if table is already initialized
                         if (!window.gridInstanceJadwalXI) {
-                            console.log('Kelas XI tab shown, initializing table...');
                             if (window.tabelJadwalInstance.initJadwalXiTable) {
-                                window.tabelJadwalInstance.initJadwalXiTable();
+                                // Get term_id from URL to preserve it
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const termId = urlParams.get("term_id");
+                                window.tabelJadwalInstance.initJadwalXiTable(termId);
                             }
                         }
                     }
@@ -2415,7 +2772,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading classes:', error);
                     showAlert('error', 'Gagal memuat kelas yang tersedia');
                 });
         }
@@ -2514,7 +2870,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading subjects:', error);
                     showAlert('error', 'Gagal memuat mata pelajaran yang tersedia');
                 });
         }
@@ -2553,7 +2908,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading teachers:', error);
                     showAlert('error', 'Gagal memuat guru yang tersedia');
                 });
         }
@@ -2596,7 +2950,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error submitting form:', error);
                 showManualNotification('error', 'Gagal menambahkan jadwal mata pelajaran');
             });
         }
@@ -2846,7 +3199,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error fetching jadwal:', error);
                 showAlert('error', 'Gagal memuat data jadwal');
             });
         }
@@ -2873,8 +3225,6 @@
                 credentials: 'same-origin'
             })
                 .then(response => {
-                    console.log('Response status:', response.status);
-                    
                     if (!response.ok) {
                         if (response.status === 401) {
                             throw new Error('Unauthorized - Silakan login ulang');
@@ -2887,7 +3237,6 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Teachers data received:', data);
                     teacherSelect.innerHTML = '<option value="">Pilih Guru</option>';
                     
                     if (data.teachers && data.teachers.length > 0) {
@@ -2909,8 +3258,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading teachers:', error);
-                    
                     // Check if it's an authentication error
                     if (error.message.includes('401') || error.message.includes('Unauthorized')) {
                         teacherSelect.innerHTML = '<option value="">Silakan login ulang</option>';
@@ -2998,7 +3345,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking conflicts:', error);
                     hideEditJadwalConflictAlert();
                 });
         }
@@ -3109,7 +3455,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error updating jadwal:', error);
                         showAlert('error', 'Gagal memperbarui jadwal');
                     })
                     .finally(() => {
@@ -3147,7 +3492,7 @@
                             try {
                                 instance.dispose();
                             } catch (e) {
-                                console.log('Error disposing delete modal:', e);
+                                // Error disposing delete modal
                             }
                         }
                     }
@@ -3188,21 +3533,10 @@
                     
                     form.reset();
                     // Reload terms table
-                    console.log('Attempting to reload terms table after add...');
-                    console.log('window.tabelJadwalInstance:', window.tabelJadwalInstance);
-                    console.log('renderTermsTable function:', window.tabelJadwalInstance?.renderTermsTable);
-                    
-                    // Reload terms table using same pattern as Kelas X and XI
-                    console.log('Attempting to reload terms table...');
-                    console.log('window.gridInstanceTerms:', window.gridInstanceTerms);
-                    
                     // Try immediate reload first
                     if (window.gridInstanceTerms) {
-                        console.log('Using gridInstanceTerms.forceRender()');
                         window.gridInstanceTerms.forceRender();
                     } else {
-                        console.log('gridInstanceTerms not available, trying to activate tab first...');
-                        
                         // Ensure Info Akademik tab is active first
                         const infoAkademikTab = document.querySelector('a[href="#mapel"]');
                         if (infoAkademikTab) {
@@ -3211,19 +3545,13 @@
                             
                             // Wait for tab to be active, then try again
                             setTimeout(() => {
-                                console.log('Retrying after tab activation...');
-                                console.log('window.gridInstanceTerms after tab activation:', window.gridInstanceTerms);
-                                
                                 if (window.gridInstanceTerms) {
-                                    console.log('Using gridInstanceTerms.forceRender() after tab activation');
                                     window.gridInstanceTerms.forceRender();
                                 } else {
-                                    console.log('Still no gridInstanceTerms, reloading page');
                                     location.reload();
                                 }
                             }, 300);
                         } else {
-                            console.log('Info Akademik tab not found, reloading page');
                             location.reload();
                         }
                     }
@@ -3232,7 +3560,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error adding term:', error);
                 showNotification('Gagal menambahkan semester', false);
             });
         }
@@ -3302,7 +3629,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading term:', error);
                     showAlert('error', 'Gagal memuat data semester: ' + error.message);
                 });
         }
@@ -3339,21 +3665,10 @@
                     showNotification(data.message, true);
                     
                     // Reload terms table
-                    console.log('Attempting to reload terms table after update...');
-                    console.log('window.tabelJadwalInstance:', window.tabelJadwalInstance);
-                    console.log('renderTermsTable function:', window.tabelJadwalInstance?.renderTermsTable);
-                    
-                    // Reload terms table using same pattern as Kelas X and XI
-                    console.log('Attempting to reload terms table...');
-                    console.log('window.gridInstanceTerms:', window.gridInstanceTerms);
-                    
                     // Try immediate reload first
                     if (window.gridInstanceTerms) {
-                        console.log('Using gridInstanceTerms.forceRender()');
                         window.gridInstanceTerms.forceRender();
                     } else {
-                        console.log('gridInstanceTerms not available, trying to activate tab first...');
-                        
                         // Ensure Info Akademik tab is active first
                         const infoAkademikTab = document.querySelector('a[href="#mapel"]');
                         if (infoAkademikTab) {
@@ -3362,19 +3677,13 @@
                             
                             // Wait for tab to be active, then try again
                             setTimeout(() => {
-                                console.log('Retrying after tab activation...');
-                                console.log('window.gridInstanceTerms after tab activation:', window.gridInstanceTerms);
-                                
                                 if (window.gridInstanceTerms) {
-                                    console.log('Using gridInstanceTerms.forceRender() after tab activation');
                                     window.gridInstanceTerms.forceRender();
                                 } else {
-                                    console.log('Still no gridInstanceTerms, reloading page');
                                     location.reload();
                                 }
                             }, 300);
                         } else {
-                            console.log('Info Akademik tab not found, reloading page');
                             location.reload();
                         }
                     }
@@ -3383,20 +3692,17 @@
                 }
             })
             .catch(error => {
-                console.error('Error updating term:', error);
                 showNotification('Gagal memperbarui semester', false);
             });
         }
 
         // Delete Term - Safe Bootstrap approach
         function deleteTerm(id) {
-            console.log('deleteTerm called with ID:', id);
             document.getElementById('deleteTermId').value = id;
             
             try {
                 const modalElement = document.getElementById('deleteTermModal');
                 if (!modalElement) {
-                    console.error('Delete modal element not found');
                     return;
                 }
                 
@@ -3406,7 +3712,7 @@
                     try {
                         existingInstance.dispose();
                     } catch (e) {
-                        console.log('Error disposing existing modal:', e);
+                        // Error disposing existing modal
                     }
                 }
                 
@@ -3419,7 +3725,6 @@
                 
                 modal.show();
             } catch (error) {
-                console.error('Error showing delete modal:', error);
                 // Fallback: try to show modal using data-bs-toggle
                 const modalElement = document.getElementById('deleteTermModal');
                 if (modalElement) {
@@ -3433,7 +3738,6 @@
         // Confirm Delete Term
         function confirmDeleteTerm() {
             const id = document.getElementById('deleteTermId').value;
-            console.log('Deleting term with ID:', id);
             
             fetch(`/admin/terms/${id}`, {
                 method: 'DELETE',
@@ -3443,14 +3747,12 @@
                 }
             })
             .then(response => {
-                console.log('Delete response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Delete response data:', data);
                 if (data.success) {
                     // Hide delete modal first
                     bootstrap.Modal.getInstance(document.getElementById('deleteTermModal')).hide();
@@ -3459,21 +3761,10 @@
                     showNotification(data.message, true);
                     
                     // Reload terms table
-                    console.log('Attempting to reload terms table after delete...');
-                    console.log('window.tabelJadwalInstance:', window.tabelJadwalInstance);
-                    console.log('renderTermsTable function:', window.tabelJadwalInstance?.renderTermsTable);
-                    
-                    // Reload terms table using same pattern as Kelas X and XI
-                    console.log('Attempting to reload terms table...');
-                    console.log('window.gridInstanceTerms:', window.gridInstanceTerms);
-                    
                     // Try immediate reload first
                     if (window.gridInstanceTerms) {
-                        console.log('Using gridInstanceTerms.forceRender()');
                         window.gridInstanceTerms.forceRender();
                     } else {
-                        console.log('gridInstanceTerms not available, trying to activate tab first...');
-                        
                         // Ensure Info Akademik tab is active first
                         const infoAkademikTab = document.querySelector('a[href="#mapel"]');
                         if (infoAkademikTab) {
@@ -3482,19 +3773,13 @@
                             
                             // Wait for tab to be active, then try again
                             setTimeout(() => {
-                                console.log('Retrying after tab activation...');
-                                console.log('window.gridInstanceTerms after tab activation:', window.gridInstanceTerms);
-                                
                                 if (window.gridInstanceTerms) {
-                                    console.log('Using gridInstanceTerms.forceRender() after tab activation');
                                     window.gridInstanceTerms.forceRender();
                                 } else {
-                                    console.log('Still no gridInstanceTerms, reloading page');
                                     location.reload();
                                 }
                             }, 300);
                         } else {
-                            console.log('Info Akademik tab not found, reloading page');
                             location.reload();
                         }
                     }
@@ -3503,7 +3788,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error deleting term:', error);
                 showNotification('Gagal menghapus semester', false);
             });
         }
@@ -3531,7 +3815,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error deleting all terms:', error);
                 showAlert('error', 'Gagal menghapus semua semester');
             });
         }
@@ -3556,6 +3839,364 @@
         .auto-set-indicator::before {
             content: "✓ ";
             font-weight: bold;
+        }
+        
+        /* Horizontal scroll for tabs */
+        .nav-tabs-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #dee2e6 #f8f9fa;
+        }
+        
+        .nav-tabs-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .nav-tabs-wrapper::-webkit-scrollbar-track {
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+        
+        .nav-tabs-wrapper::-webkit-scrollbar-thumb {
+            background: #dee2e6;
+            border-radius: 3px;
+        }
+        
+        .nav-tabs-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+        
+        .nav-tabs-wrapper .nav-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            margin-bottom: 0;
+        }
+        
+        .nav-tabs-wrapper .nav-item {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        
+        .nav-tabs-wrapper .nav-link {
+            white-space: nowrap;
+        }
+        
+        /* Active tab border color - blue to match text color */
+        .nav-tabs-wrapper .nav-tabs .nav-item .nav-link.active {
+            border-bottom: 3px solid #1a80f8 !important;
+            border-bottom-color: #1a80f8 !important;
+            border-bottom-width: 3px !important;
+            border-bottom-style: solid !important;
+        }
+        
+        /* Responsive layout for jadwal header controls */
+        .jadwal-header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .jadwal-actions-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        
+        .semester-filter-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        #single-actions-jadwal {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 575.98px) {
+            .jadwal-header-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .jadwal-description {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .jadwal-actions-wrapper {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            
+            .semester-filter-wrapper {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            
+            .semester-filter-wrapper label {
+                margin-bottom: 0.25rem;
+                display: block;
+            }
+            
+            .semester-filter-wrapper select {
+                width: 100% !important;
+            }
+            
+            .semester-filter-item {
+                width: 100%;
+            }
+            
+            .semester-filter-item label {
+                margin-bottom: 0.25rem;
+                display: block;
+            }
+            
+            .semester-filter-item select {
+                width: 100% !important;
+            }
+            
+            .kelas-hari-filter-wrapper {
+                width: 100%;
+                display: flex;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+            
+            .kelas-filter-item,
+            .hari-filter-item {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .kelas-filter-item label,
+            .hari-filter-item label {
+                margin-bottom: 0.25rem;
+                display: block;
+            }
+            
+            .kelas-filter-item select,
+            .hari-filter-item select {
+                width: 100% !important;
+            }
+            
+            #single-actions-jadwal {
+                width: 100%;
+                margin-left: 0 !important;
+            }
+            
+            #single-actions-jadwal .btn {
+                width: 100%;
+            }
+            
+            #bulk-actions-jadwal {
+                width: 100%;
+            }
+            
+            #bulk-actions-jadwal .btn {
+                width: 100%;
+            }
+            
+            /* Kelas XI specific mobile styles */
+            #single-actions-jadwal-xi {
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-left: 0 !important;
+            }
+            
+            #single-actions-jadwal-xi .btn {
+                flex: 1;
+                min-width: calc(50% - 0.25rem);
+                margin: 0 !important;
+            }
+            
+            #single-actions-jadwal-xi .btn-group {
+                flex: 1;
+                min-width: calc(50% - 0.25rem);
+            }
+            
+            #single-actions-jadwal-xi .btn-group .btn {
+                width: 100%;
+            }
+            
+            #bulk-actions-jadwal-xi {
+                width: 100%;
+            }
+            
+            #bulk-actions-jadwal-xi .btn {
+                width: 100%;
+            }
+            
+            /* Kelas XII specific mobile styles */
+            #single-actions-jadwal-xii {
+                width: 100%;
+            }
+            
+            #single-actions-jadwal-xii .btn {
+                width: 100%;
+            }
+            
+            /* Info Akademik cards mobile styles */
+            #single-actions-terms {
+                width: 100%;
+            }
+            
+            #single-actions-terms .btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+            
+            #bulk-actions-terms {
+                width: 100%;
+            }
+            
+            #bulk-actions-terms .btn {
+                width: 100%;
+            }
+            
+            #single-actions-classes {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            #single-actions-classes .btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+            
+            #bulk-actions-classes {
+                width: 100%;
+            }
+            
+            #bulk-actions-classes .btn {
+                width: 100%;
+            }
+            
+            #single-actions-subjects {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            #single-actions-subjects .btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+            
+            #bulk-actions-subjects {
+                width: 100%;
+            }
+            
+            #bulk-actions-subjects .btn {
+                width: 100%;
+            }
+            
+            /* Tab Manual mobile styles */
+            #single-actions-manual {
+                width: 100%;
+            }
+            
+            #single-actions-manual .btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+        }
+        
+        /* Tablet responsive */
+        @media (min-width: 576px) and (max-width: 767.98px) {
+            .jadwal-header-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .jadwal-actions-wrapper {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .semester-filter-wrapper select {
+                min-width: 200px;
+            }
+            
+            /* Kelas XI tablet styles */
+            #single-actions-jadwal-xi {
+                display: flex;
+                gap: 0.5rem;
+            }
+            
+            #single-actions-jadwal-xi .btn {
+                flex: 1;
+            }
+            
+            /* Kelas XII tablet styles */
+            #single-actions-jadwal-xii {
+                width: 100%;
+            }
+            
+            #single-actions-jadwal-xii .btn {
+                width: auto;
+                min-width: 150px;
+            }
+            
+            /* Info Akademik cards tablet styles */
+            #single-actions-terms .btn {
+                width: auto;
+                min-width: 150px;
+            }
+            
+            #single-actions-classes {
+                display: flex;
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+            
+            #single-actions-classes .btn {
+                flex: 1;
+            }
+            
+            #single-actions-subjects {
+                display: flex;
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+            
+            #single-actions-subjects .btn {
+                flex: 1;
+            }
+            
+            /* Tab Manual tablet styles */
+            #single-actions-manual {
+                width: 100%;
+            }
+            
+            #single-actions-manual .btn {
+                width: auto;
+                min-width: 150px;
+            }
         }
     </style>
 <?php $__env->stopSection(); ?>

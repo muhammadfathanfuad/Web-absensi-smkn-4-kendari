@@ -14,6 +14,7 @@ export default defineConfig({
                 "node_modules/gridjs/dist/theme/mermaid.css",
                 "node_modules/flatpickr/dist/themes/dark.css",
                 "node_modules/gridjs/dist/theme/mermaid.min.css",
+                "node_modules/select2/dist/css/select2.min.css",
 
                 //js
                 "resources/js/app.js",
@@ -23,6 +24,9 @@ export default defineConfig({
                 "resources/js/pages/form-quilljs.js",
                 "resources/js/pages/form-fileupload.js",
                 "resources/js/pages/form-flatepicker.js",
+                "resources/js/admin/tabel.js",
+                "resources/js/admin/tabel-jadwal.js",
+                "resources/js/admin/select2-init.js",
             ],
             refresh: true,
         }),

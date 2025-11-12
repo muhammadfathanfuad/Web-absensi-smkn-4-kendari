@@ -1,5 +1,212 @@
 @extends('layouts.vertical-murid', ['subtitle' => 'Dashboard'])
 
+@section('css')
+<style>
+    /* Mobile Layout - Fix card size for consistent display */
+    @media (max-width: 991.98px) {
+        /* Statistik Cards - Mobile Layout */
+        .d-xl-none .row {
+            margin-left: -8px;
+            margin-right: -8px;
+        }
+        
+        .d-xl-none .col-6 {
+            padding-left: 8px;
+            padding-right: 8px;
+            flex: 0 0 50%;
+            max-width: 50%;
+            width: 50%;
+        }
+        
+        .d-xl-none .card {
+            margin-bottom: 12px;
+            height: 100%;
+            min-height: 90px;
+            max-height: 110px;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .d-xl-none .card-body {
+            padding: 8px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .d-xl-none .card-body .d-flex {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .d-xl-none .card-body .flex-shrink-0 {
+            flex-shrink: 0;
+            margin-bottom: 4px;
+        }
+        
+        .d-xl-none .card-body .avatar-md {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            max-width: 36px;
+            max-height: 36px;
+        }
+        
+        .d-xl-none .card-body .avatar-md i {
+            font-size: 20px !important;
+        }
+        
+        .d-xl-none .card-body .flex-grow-1 {
+            flex-grow: 1;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .d-xl-none .card-body h5 {
+            font-size: 11px;
+            margin-bottom: 2px;
+            text-align: center;
+        }
+        
+        .d-xl-none .card-body h3 {
+            font-size: 18px;
+            margin-bottom: 2px;
+            line-height: 1.2;
+            text-align: center;
+        }
+        
+        .d-xl-none .card-body p {
+            font-size: 9px;
+            margin-bottom: 0;
+            text-align: center;
+        }
+        
+        .d-xl-none .ms-3 {
+            margin-left: 0 !important;
+        }
+    }
+    
+    /* Extra small devices (phones, less than 576px) */
+    @media (max-width: 575.98px) {
+        .d-xl-none .card {
+            min-height: 85px;
+            max-height: 105px;
+        }
+        
+        .d-xl-none .card-body {
+            padding: 6px;
+        }
+        
+        .d-xl-none .card-body .avatar-md {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+            max-width: 32px;
+            max-height: 32px;
+        }
+        
+        .d-xl-none .card-body .avatar-md i {
+            font-size: 18px !important;
+        }
+        
+        .d-xl-none .card-body h5 {
+            font-size: 10px;
+        }
+        
+        .d-xl-none .card-body h3 {
+            font-size: 16px;
+        }
+        
+        .d-xl-none .card-body p {
+            font-size: 8px;
+        }
+    }
+    
+    /* Small devices (landscape phones, 576px and up) */
+    @media (min-width: 576px) and (max-width: 767.98px) {
+        .d-xl-none .card {
+            min-height: 95px;
+            max-height: 115px;
+        }
+        
+        .d-xl-none .card-body {
+            padding: 10px;
+        }
+        
+        .d-xl-none .card-body .avatar-md {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            max-width: 40px;
+            max-height: 40px;
+        }
+        
+        .d-xl-none .card-body .avatar-md i {
+            font-size: 22px !important;
+        }
+        
+        .d-xl-none .card-body h5 {
+            font-size: 12px;
+        }
+        
+        .d-xl-none .card-body h3 {
+            font-size: 20px;
+        }
+        
+        .d-xl-none .card-body p {
+            font-size: 10px;
+        }
+    }
+    
+    /* Medium devices (tablets, 768px and up) */
+    @media (min-width: 768px) and (max-width: 991.98px) {
+        .d-xl-none .card {
+            min-height: 100px;
+            max-height: 120px;
+        }
+        
+        .d-xl-none .card-body {
+            padding: 12px;
+        }
+        
+        .d-xl-none .card-body .avatar-md {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            max-width: 44px;
+            max-height: 44px;
+        }
+        
+        .d-xl-none .card-body .avatar-md i {
+            font-size: 24px !important;
+        }
+        
+        .d-xl-none .card-body h5 {
+            font-size: 13px;
+        }
+        
+        .d-xl-none .card-body h3 {
+            font-size: 22px;
+        }
+        
+        .d-xl-none .card-body p {
+            font-size: 11px;
+        }
+    }
+</style>
+@endsection
+
 @section('content')
     @include('layouts.partials.page-title', ['title' => 'Siswa', 'subtitle' => 'Dashboard'])
 

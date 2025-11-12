@@ -50,7 +50,19 @@
                             <input type="hidden" name="from" id="date-from" value="<?php echo e($from ?? ''); ?>">
                             <input type="hidden" name="to" id="date-to" value="<?php echo e($to ?? ''); ?>">
                         </div>
-                        <div class="col-md-3 align-self-end">
+                        <div class="col-md-4">
+                            <label for="subject_id" class="form-label">Filter berdasarkan mata pelajaran (opsional):</label>
+                            <select name="subject_id" id="subject_id" class="form-select">
+                                <option value="">Semua Mata Pelajaran</option>
+                                <?php $__currentLoopData = $subjects ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($subject->id); ?>" <?php echo e((isset($subjectId) && $subjectId == $subject->id) ? 'selected' : ''); ?>>
+                                        <?php echo e($subject->name); ?>
+
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4 align-self-end">
                             <button type="submit" class="btn btn-primary me-2">Filter</button>
                             <a href="<?php echo e(route('murid.absensi')); ?>" class="btn btn-outline-secondary">Reset</a>
                         </div>
@@ -59,10 +71,17 @@
                     
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">Riwayat Absensi Saya</h5>
-                        <button type="button" class="btn btn-outline-primary" onclick="printRiwayatAbsensi()">
-                            <iconify-icon icon="solar:printer-outline" class="fs-16 me-2"></iconify-icon>
-                            Print
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
+                                aria-expanded="false" id="exportAbsensiMuridDropdownBtn">
+                                <i class="bx bx-download"></i> <span>Export</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportAbsensiMurid('pdf'); return false;">
+                                        <i class="bx bx-file"></i> Export PDF (.pdf)
+                                    </a></li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="table-responsive" id="printableRiwayatAbsensi">
@@ -217,118 +236,115 @@
             }
         });
 
-        function printRiwayatAbsensi() {
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank');
+        // Show loading indicator
+        function showExportLoading(format = 'pdf', reportType = '', message = '', type = 'info') {
+            const formatText = format.toUpperCase();
+            const iconClass = type === 'success' ? 'bx-check-circle' : type === 'danger' ? 'bx-x-circle' : 'bx-loader-alt';
+            const iconColor = type === 'success' ? '#28a745' : type === 'danger' ? '#dc3545' : '#007bff';
+            const bgColor = type === 'success' ? '#d4edda' : type === 'danger' ? '#f8d7da' : '#d1ecf1';
+            const borderColor = type === 'success' ? '#c3e6cb' : type === 'danger' ? '#f5c6cb' : '#bee5eb';
+            const spinClass = type === 'info' ? 'bx-spin' : '';
             
-            // Get the table HTML and remove badge classes
-            const tableContainer = document.getElementById('printableRiwayatAbsensi');
-            const tableClone = tableContainer.cloneNode(true);
+            const iconHtml = type === 'info' 
+                ? `<i class="bx bx-loader-alt ${spinClass}" style="font-size: 24px; color: ${iconColor};"></i>`
+                : `<i class="bx ${iconClass}" style="font-size: 24px; color: ${iconColor};"></i>`;
             
-            // Remove badge classes from all elements
-            const badges = tableClone.querySelectorAll('.badge');
-            badges.forEach(badge => {
-                badge.className = badge.className.replace(/badge[^"]*/g, '').trim();
-                badge.style.border = 'none';
-                badge.style.padding = '0';
-                badge.style.backgroundColor = 'transparent';
-                badge.style.color = '#000';
-            });
-            
-            const tableHTML = tableClone.innerHTML;
-            
-            // Get filter information
-            const fromDate = document.getElementById('date-from').value;
-            const toDate = document.getElementById('date-to').value;
-            let filterInfo = '';
-            
-            if (fromDate && toDate) {
-                const from = new Date(fromDate).toLocaleDateString('id-ID');
-                const to = new Date(toDate).toLocaleDateString('id-ID');
-                filterInfo = `Filter: ${from} - ${to}`;
-            } else {
-                filterInfo = 'Menampilkan: Semua data absensi';
-            }
-            
-            // Create complete print document
-            const printContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Riwayat Absensi Saya</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 0;
-                            padding: 20px;
-                            background: white;
-                        }
-                        .print-header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                            border-bottom: 2px solid #000;
-                            padding-bottom: 15px;
-                        }
-                        .print-header h3 {
-                            margin: 0 0 10px 0;
-                            font-size: 18px;
-                            font-weight: bold;
-                        }
-                        .print-header p {
-                            margin: 5px 0;
-                            font-size: 14px;
-                        }
-                        .table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 20px;
-                        }
-                        .table th,
-                        .table td {
-                            border: 1px solid #000;
-                            padding: 8px;
-                            text-align: left;
-                        }
-                        .table thead th {
-                            background-color: #f5f5f5;
-                            font-weight: bold;
-                        }
-                        .badge {
-                            border: none !important;
-                            padding: 0 !important;
-                            font-size: 14px !important;
-                            background-color: transparent !important;
-                            color: #000 !important;
-                            font-weight: normal !important;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-header">
-                        <h3>RIWAYAT ABSENSI SAYA</h3>
-                        <p>SMK Negeri 4 Kendari</p>
-                        <p>Tanggal Print: ${new Date().toLocaleDateString('id-ID', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                        })}</p>
-                        <p>${filterInfo}</p>
+            const loadingHtml = `
+                <div id="exportLoading" class="alert alert-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'info'} show" 
+                     style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background-color: ${bgColor}; border-color: ${borderColor};">
+                    <div class="d-flex align-items-center gap-2">
+                        ${iconHtml}
+                        <div>
+                            <strong>${message || `Sedang memproses export ${formatText}${reportType ? ' - ' + reportType : ''}...`}</strong>
+                            ${message ? '' : '<br><small>File akan segera diunduh</small>'}
+                        </div>
                     </div>
-                    ${tableHTML}
-                </body>
-                </html>
+                </div>
             `;
             
-            // Write content to new window
-            printWindow.document.write(printContent);
-            printWindow.document.close();
+            // Remove existing loading if any
+            const existingLoading = document.getElementById('exportLoading');
+            if (existingLoading) {
+                existingLoading.remove();
+            }
             
-            // Wait for content to load then print
-            printWindow.onload = function() {
-                printWindow.print();
-                printWindow.close();
-            };
+            // Add new loading indicator
+            document.body.insertAdjacentHTML('beforeend', loadingHtml);
+        }
+        
+        // Show success message in loading indicator
+        function showExportSuccess(message = 'Export berhasil! File sedang diunduh.') {
+            showExportLoading('pdf', '', message, 'success');
+            setTimeout(function() {
+                const loadingElement = document.getElementById('exportLoading');
+                if (loadingElement) {
+                    loadingElement.classList.remove('show');
+                    setTimeout(function() {
+                        loadingElement.remove();
+                    }, 150);
+                }
+            }, 3000);
+        }
+        
+        // Show error message in loading indicator
+        function showExportError(message = 'Gagal mengexport data. Silakan coba lagi atau hubungi administrator.') {
+            showExportLoading('pdf', '', message, 'danger');
+            setTimeout(function() {
+                const loadingElement = document.getElementById('exportLoading');
+                if (loadingElement) {
+                    loadingElement.classList.remove('show');
+                    setTimeout(function() {
+                        loadingElement.remove();
+                    }, 3000);
+                }
+            }, 5000);
+        }
+        
+        // Export function for student attendance history
+        function exportAbsensiMurid(format = 'pdf') {
+            try {
+                // Prevent duplicate calls
+                if (window.exportNavigating) {
+                    return;
+                }
+                
+                // Get filter values
+                const fromDate = document.getElementById('date-from')?.value || '';
+                const toDate = document.getElementById('date-to')?.value || '';
+                const subjectId = document.getElementById('subject_id')?.value || '';
+                
+                // Build export URL
+                let exportUrl = '<?php echo e(route("murid.absensi.export")); ?>?format=' + format;
+                if (fromDate) {
+                    exportUrl += '&from=' + encodeURIComponent(fromDate);
+                }
+                if (toDate) {
+                    exportUrl += '&to=' + encodeURIComponent(toDate);
+                }
+                if (subjectId) {
+                    exportUrl += '&subject_id=' + encodeURIComponent(subjectId);
+                }
+                
+                // Show loading indicator
+                showExportLoading(format, 'Riwayat Absensi');
+                
+                // Set flag to prevent duplicate calls
+                window.exportNavigating = true;
+                
+                // Trigger download
+                window.location.href = exportUrl;
+                
+                // Show success message after a delay
+                setTimeout(function() {
+                    showExportSuccess('Export berhasil! File sedang diunduh.');
+                    window.exportNavigating = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error exporting attendance history:', error);
+                showExportError('Terjadi kesalahan saat mengexport data. Silakan coba lagi.');
+                window.exportNavigating = false;
+            }
         }
     </script>
 <?php $__env->stopSection(); ?>

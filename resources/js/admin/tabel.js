@@ -45,6 +45,7 @@ class GridDatatable {
         this.gridInstanceGuru = new gridjs.Grid({
             columns: [
                 {
+                    id: "checkbox",
                     name: gridjs.html(
                         '<input type="checkbox" id="select-all-guru-checkbox">'
                     ),
@@ -55,12 +56,13 @@ class GridDatatable {
                         );
                     },
                 },
-                "Name",
-                "NIP",
-                "Department",
-                "Kode Guru",
-                { name: "Data", hidden: true },
+                { id: "name", name: "Name" },
+                { id: "nip", name: "NIP" },
+                { id: "department", name: "Department" },
+                { id: "kode_guru", name: "Kode Guru" },
+                { id: "data", name: "Data", hidden: true },
                 {
+                    id: "aksi",
                     name: "Aksi",
                     formatter: (cell, row) => {
                         const guru = row.cells[5].data; // objek guru
@@ -149,6 +151,7 @@ class GridDatatable {
         this.gridInstanceMurid = new gridjs.Grid({
             columns: [
                 {
+                    id: "checkbox",
                     name: gridjs.html(
                         '<input type="checkbox" id="select-all-murid-checkbox">'
                     ),
@@ -159,14 +162,15 @@ class GridDatatable {
                         );
                     },
                 },
-                "Name",
-                "NIS",
-                "Kelas",
-                "Tingkatan",
-                "Nama Wali",
-                "Telepon Wali",
-                { name: "Data", hidden: true },
+                { id: "name", name: "Name" },
+                { id: "nis", name: "NIS" },
+                { id: "kelas", name: "Kelas" },
+                { id: "tingkatan", name: "Tingkatan" },
+                { id: "nama_wali", name: "Nama Wali" },
+                { id: "telepon_wali", name: "Telepon Wali" },
+                { id: "data", name: "Data", hidden: true },
                 {
+                    id: "aksi",
                     name: "Aksi",
                     formatter: (cell, row) => {
                         const murid = row.cells[7].data;
@@ -256,6 +260,7 @@ class GridDatatable {
         this.gridInstanceUser = new gridjs.Grid({
             columns: [
                 {
+                    id: "checkbox",
                     name: gridjs.html(
                         '<input type="checkbox" id="select-all-checkbox">'
                     ),
@@ -266,10 +271,11 @@ class GridDatatable {
                         );
                     },
                 },
-                "Name",
-                "Email",
-                "Nomor Hp",
+                { id: "name", name: "Name" },
+                { id: "email", name: "Email" },
+                { id: "phone", name: "Nomor Hp" },
                 {
+                    id: "status",
                     name: gridjs.html(
                         '<span>Status <i class="bx bx-sort-up text-primary" title="Diurutkan: Aktif di atas"></i></span>'
                     ),
@@ -287,8 +293,9 @@ class GridDatatable {
             `);
                     },
                 },
-                { name: "ID", hidden: true },
+                { id: "id", name: "ID", hidden: true },
                 {
+                    id: "aksi",
                     name: "Aksi",
                     formatter: (cell, row) => {
                         const user = {
@@ -547,7 +554,6 @@ class GridDatatable {
                         }
                     })
                     .catch((error) => {
-                        console.error(error);
                         showNotification("Gagal mengupdate status", false);
                     });
 
@@ -762,7 +768,6 @@ class GridDatatable {
                             return data;
                         })
                         .catch((error) => {
-                            console.error(error);
                             return {
                                 success: false,
                                 message: "Gagal menghapus data",
@@ -899,7 +904,6 @@ class GridDatatable {
                     }
                 })
                 .catch((err) => {
-                    console.error(err);
                     showNotification(
                         "Terjadi kesalahan saat menyimpan data",
                         false
@@ -937,7 +941,6 @@ class GridDatatable {
                         callback();
                 })
                 .catch((err) => {
-                    console.error(err);
                     showNotification("Gagal menghapus data", false);
                 });
         });

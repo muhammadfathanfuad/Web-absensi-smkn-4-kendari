@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Murid;
 
 use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
+use App\Models\Student;
+use App\Models\Timetable;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Carbon\Carbon;
 
 class LeaveRequestController extends Controller
 {
@@ -145,6 +150,9 @@ class LeaveRequestController extends Controller
             
             Log::info('Leave request created with ID: ' . $leaveRequest->id);
 
+            // Send notifications to teachers who teach in the student's class during the leave period
+            $this->sendLeaveRequestNotifications($leaveRequest);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Permohonan izin berhasil diajukan dan akan diproses dalam 1-2 hari kerja.',
@@ -207,5 +215,160 @@ class LeaveRequestController extends Controller
         }
 
         return view('murid.detail-permohonan-izin', compact('leaveRequest'));
+    }
+
+    /**
+     * Send notifications to teachers who teach in the student's class during the leave period
+     */
+    private function sendLeaveRequestNotifications(LeaveRequest $leaveRequest)
+    {
+        try {
+            // Get student data
+            $student = Student::where('user_id', $leaveRequest->student_id)->first();
+            
+            if (!$student || !$student->class_id) {
+                Log::warning('Student or class not found for leave request', [
+                    'leave_request_id' => $leaveRequest->id,
+                    'student_id' => $leaveRequest->student_id
+                ]);
+                return;
+            }
+
+            $classId = $student->class_id;
+            $studentName = $leaveRequest->student->full_name ?? 'Siswa';
+            $startDate = Carbon::parse($leaveRequest->start_date);
+            $endDate = Carbon::parse($leaveRequest->end_date);
+            
+            // Get all days between start and end date
+            // Database format: 1=Senin, 2=Selasa, ..., 7=Minggu
+            // Carbon format: 0=Sunday, 1=Monday, ..., 6=Saturday
+            // Convert: Carbon 0 (Sunday) -> DB 7, Carbon 1 (Monday) -> DB 1, etc.
+            $days = [];
+            $currentDate = $startDate->copy();
+            while ($currentDate->lte($endDate)) {
+                $dayOfWeek = $currentDate->dayOfWeek; // 0=Sunday, 1=Monday, ..., 6=Saturday
+                // Convert to database format: 1=Monday, 2=Tuesday, ..., 7=Sunday
+                $dbDayOfWeek = $dayOfWeek == 0 ? 7 : $dayOfWeek;
+                $days[] = $dbDayOfWeek;
+                $currentDate->addDay();
+            }
+            
+            // Remove duplicates
+            $days = array_unique($days);
+            
+            if (empty($days)) {
+                Log::warning('No days found for leave request', [
+                    'leave_request_id' => $leaveRequest->id,
+                    'start_date' => $leaveRequest->start_date,
+                    'end_date' => $leaveRequest->end_date
+                ]);
+                return;
+            }
+
+            // Get all teachers who teach in this class on these days
+            $teacherIds = Timetable::whereHas('classSubject', function($query) use ($classId) {
+                    $query->where('class_id', $classId);
+                })
+                ->whereIn('day_of_week', $days)
+                ->where('is_active', true)
+                ->with('classSubject.teacher')
+                ->get()
+                ->pluck('classSubject.teacher.user_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            if (empty($teacherIds)) {
+                Log::info('No teachers found for leave request', [
+                    'leave_request_id' => $leaveRequest->id,
+                    'class_id' => $classId,
+                    'days' => $days
+                ]);
+                return;
+            }
+
+            // Format date range
+            $dateRange = $startDate->format('d/m/Y');
+            if (!$startDate->isSameDay($endDate)) {
+                $dateRange .= ' - ' . $endDate->format('d/m/Y');
+            }
+
+            // Prepare notification data
+            $title = 'Permohonan Izin Siswa';
+            $message = "{$studentName} mengajukan izin ({$leaveRequest->leave_type_display}) pada {$dateRange}. Silakan tinjau permohonan izin.";
+            
+            // Truncate message if too long
+            if (strlen($message) > 255) {
+                $message = substr($message, 0, 252) . '...';
+            }
+
+            // Get active teacher users
+            $teachers = User::whereIn('id', $teacherIds)
+                ->where('status', 'active')
+                ->whereHas('roles', function($query) {
+                    $query->where('name', 'teacher');
+                })
+                ->get();
+
+            if ($teachers->isEmpty()) {
+                Log::warning('No active teacher users found', [
+                    'teacher_ids' => $teacherIds
+                ]);
+                return;
+            }
+
+            // Prepare notifications for bulk insert
+            $notifications = [];
+            $now = now();
+            
+            foreach ($teachers as $teacher) {
+                // Check for existing notification to prevent duplicates
+                $existingNotification = Notification::where('user_id', $teacher->id)
+                    ->where('type', 'leave_request')
+                    ->where('related_id', $leaveRequest->id)
+                    ->where('related_type', LeaveRequest::class)
+                    ->first();
+                
+                if ($existingNotification) {
+                    continue; // Skip if notification already exists
+                }
+
+                $notifications[] = [
+                    'user_id' => $teacher->id,
+                    'type' => 'leave_request',
+                    'title' => $title,
+                    'message' => $message,
+                    'related_id' => $leaveRequest->id,
+                    'related_type' => LeaveRequest::class,
+                    'is_read' => false,
+                    'read_at' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($notifications)) {
+                // Bulk insert notifications
+                Notification::insert($notifications);
+                
+                Log::info('Leave request notifications sent', [
+                    'leave_request_id' => $leaveRequest->id,
+                    'notifications_count' => count($notifications),
+                    'teacher_count' => count($teacherIds)
+                ]);
+            } else {
+                Log::info('No new notifications to send (all already exist)', [
+                    'leave_request_id' => $leaveRequest->id
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error sending leave request notifications', [
+                'leave_request_id' => $leaveRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 }

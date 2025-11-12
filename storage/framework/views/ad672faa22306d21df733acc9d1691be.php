@@ -13,20 +13,17 @@
                     <ul class="nav nav-tabs">
                         <li class="nav-item">
                             <a href="#semua" data-bs-toggle="tab" aria-expanded="false" class="nav-link active">
-                                <span class="d-block d-sm-none"><i class="bx bx-home"></i></span>
-                                <span class="d-none d-sm-block">Semua</span>
+                                <span>Data User</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="#guru" data-bs-toggle="tab" aria-expanded="true" class="nav-link">
-                                <span class="d-block d-sm-none"><i class="bx bx-user"></i></span>
-                                <span class="d-none d-sm-block">Guru</span>
+                                <span>Data Guru</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="#murid" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
-                                <span class="d-block d-sm-none"><i class="bx bx-envelope"></i></span>
-                                <span class="d-none d-sm-block">Murid</span>
+                                <span>Data Murid</span>
                             </a>
                         </li>
                     </ul>
@@ -34,11 +31,11 @@
                         <div class="tab-pane show active" id="semua">
                             <div class="card-header">
                                 <h5 class="card-title">Data User</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-0 flex-wrap">
                                     <p class="text-muted mb-0">
                                         Data Semua Warga Sekolah
                                     </p>
-                                    <div id="single-actions">
+                                    <div id="single-actions" class="ms-auto">
                                         <button type="button" class="btn btn-primary" id="addUserBtn" data-bs-toggle="modal"
                                             data-bs-target="#addUserModal">
                                             Tambah User
@@ -62,11 +59,11 @@
                         <div class="tab-pane" id="guru">
                             <div class="card-header">
                                 <h5 class="card-title">Data Guru</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-0 flex-wrap">
                                     <p class="text-muted mb-0">
                                         Data Semua Guru Sekolah
                                     </p>
-                                    <div id="single-actions-guru">
+                                    <div id="single-actions-guru" class="ms-auto">
                                         <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal"
                                             data-bs-target="#addGuruModal">
                                             Tambah Guru
@@ -90,11 +87,11 @@
                         <div class="tab-pane" id="murid">
                             <div class="card-header">
                                 <h5 class="card-title">Data Murid</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-0 flex-wrap">
                                     <p class="text-muted mb-0">
                                         Data Semua Murid Sekolah
                                     </p>
-                                    <div id="single-actions-murid">
+                                    <div id="single-actions-murid" class="ms-auto">
                                         <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal"
                                             data-bs-target="#addMuridModal">
                                             Tambah Murid
@@ -177,29 +174,6 @@
                             <label for="uploadGuruFile" class="form-label">Pilih File Excel atau CSV</label>
                             <input type="file" class="form-control" id="uploadGuruFile" name="file" accept=".xlsx,.xls,.csv" required>
                             <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: Kode Guru, Nama Guru, NIP, Email, No Hp, Department.</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Upload Murid -->
-    <div class="modal fade" id="uploadMuridModal" tabindex="-1" aria-labelledby="uploadMuridModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="uploadMuridModalLabel">Upload Data Murid</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="uploadMuridForm" action="<?php echo e(route('murid.import')); ?>" method="POST" enctype="multipart/form-data">
-                        <?php echo csrf_field(); ?>
-                        <div class="mb-3">
-                            <label for="uploadMuridFile" class="form-label">Pilih File Excel atau CSV</label>
-                            <input type="file" class="form-control" id="uploadMuridFile" name="file" accept=".xlsx,.xls,.csv" required>
-                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: Nama, NIS, Kelas, Nama Wali, Telepon Wali. Format Kelas: "10 TKJA" (10=tingkatan, TKJA=nama kelas).</small>
                         </div>
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
@@ -554,7 +528,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0" id="notificationMessage"></p>
+                    <p class="mb-0" id="notificationMessage" style="white-space: pre-wrap;"></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -569,7 +543,7 @@
         window.baseUrl = "<?php echo e(request()->getSchemeAndHttpHost() . request()->getBasePath()); ?>";
     </script>
     <?php echo app('Illuminate\Foundation\Vite')(['resources/js/admin/tabel.js']); ?>
-    <?php echo app('Illuminate\Foundation\Vite')(['node_modules/select2/dist/js/select2.min.js']); ?>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/js/admin/select2-init.js']); ?>
 
     <script>
         // Functions to show edit modals
@@ -608,13 +582,57 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Helper function to remove focus before modal is hidden to prevent accessibility warning
+            function setupModalAccessibility(modalId) {
+                const modalEl = document.getElementById(modalId);
+                if (!modalEl) return;
+
+                // Remove focus from close buttons before hiding
+                const closeButtons = modalEl.querySelectorAll('.btn-close, [data-bs-dismiss="modal"]');
+                closeButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.target.blur(); // Remove focus before hiding
+                    });
+                });
+
+                // Handle when modal is hidden via Bootstrap events
+                modalEl.addEventListener('hidden.bs.modal', function() {
+                    // Remove focus from any focused element inside modal
+                    const focusedElement = this.querySelector(':focus');
+                    if (focusedElement) {
+                        focusedElement.blur();
+                    }
+                }, { once: false });
+            }
+
+            // Setup accessibility for all modals
+            const modalIds = [
+                'addGuruModal',
+                'uploadGuruModal',
+                'addMuridModal',
+                'uploadMuridModal',
+                'editGuruModal',
+                'editMuridModal',
+                'deleteGuruModal',
+                'deleteMuridModal',
+                'addUserModal',
+                'editUserModal',
+                'deleteUserModal',
+                'bulkEditStatusModal',
+                'notificationModal'
+            ];
+
+            modalIds.forEach(modalId => setupModalAccessibility(modalId));
+
             const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
 
-            // Ensure close buttons work
-            document.querySelector('#notificationModal .btn-close').addEventListener('click', () => {
+            // Ensure close buttons work - remove focus before hiding to prevent accessibility warning
+            document.querySelector('#notificationModal .btn-close')?.addEventListener('click', (e) => {
+                e.target.blur(); // Remove focus before hiding
                 notificationModal.hide();
             });
-            document.querySelector('#notificationModal .btn-light').addEventListener('click', () => {
+            document.querySelector('#notificationModal .btn-light')?.addEventListener('click', (e) => {
+                e.target.blur(); // Remove focus before hiding
                 notificationModal.hide();
             });
 
@@ -630,38 +648,11 @@
                 }
             }
 
-            // const addUserFormHTML = `
-            //     <form id="addUserForm" action="<?php echo e(route('users.store')); ?>" method="POST">
-            //         <?php echo csrf_field(); ?>
-            //         <div class="mb-3">
-            //             <label for="addUserName" class="form-label">Nama</label>
-            //             <input type="text" class="form-control" id="addUserName" name="name" required>
-            //         </div>
-            //         <div class="mb-3">
-            //             <label for="addUserEmail" class="form-label">Email</label>
-            //             <input type="email" class="form-control" id="addUserEmail" name="email" required>
-            //         </div>
-            //         <div class="mb-3">
-            //             <label for="addUserPhone" class="form-label">Nomor Hp</label>
-            //             <input type="text" class="form-control" id="addUserPhone" name="phone">
-            //         </div>
-            //             <div class="mb-3">
-            //                 <label for="addUserUsername" class="form-label">Username</label>
-            //                 <input type="text" class="form-control" id="addUserUsername" name="username">
-            //             </div>
-            //         <div class="mb-3">
-            //             <label for="addUserPassword" class="form-label">Password</label>
-            //             <input type="password" class="form-control" id="addUserPassword" name="password">
-            //         </div>
-            //         <button type="submit" class="btn btn-primary">Tambah User</button>
-            //     </form>
-            // `;
 
-            function setAddUserModal() {
-                document.getElementById('addUserModalLabel').innerText = 'Tambah User';
-                document.querySelector('#addUserModal .modal-body').innerHTML = addUserFormHTML;
-                // Add submit handler
-                document.getElementById('addUserForm').addEventListener('submit', async function(event) {
+            // Add User form submission handler
+            const addUserForm = document.getElementById('addUserForm');
+            if (addUserForm) {
+                addUserForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     const formData = new FormData(this);
                     try {
@@ -683,6 +674,7 @@
                         bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
                         showNotification(data.message, data.success);
                         if (data.success) {
+                            this.reset();
                             refreshTable();
                         }
                     } catch (error) {
@@ -691,8 +683,6 @@
                     }
                 });
             }
-
-            document.getElementById('addUserBtn').addEventListener('click', setAddUserModal);
 
             // Upload Guru form submission
             document.getElementById('uploadGuruForm').addEventListener('submit', function(e) {
@@ -732,25 +722,35 @@
                 const formData = new FormData(this);
                 const submitButton = this.querySelector('button[type="submit"]');
                 const originalText = submitButton.textContent;
+                const uploadModal = bootstrap.Modal.getInstance(document.getElementById('uploadMuridModal'));
+                const form = this;
                 submitButton.disabled = true;
                 submitButton.textContent = 'Mengupload...';
                 fetch(this.action, {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().catch(() => {
+                            throw new Error('Server error: ' + response.status);
+                        });
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    showNotification(data.message, data.success);
+                    uploadModal.hide();
+                    showNotification(data.message || 'Upload selesai', data.success !== false);
                     if (data.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('uploadMuridModal')).hide();
-                        this.reset();
+                        form.reset();
                         // Refresh table
                         if (window.gridInstanceMurid) window.gridInstanceMurid.forceRender();
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showNotification('Gagal mengupload data.', false);
+                    uploadModal.hide();
+                    showNotification('Gagal mengupload data. ' + (error.message || ''), false);
                 })
                 .finally(() => {
                     submitButton.disabled = false;
@@ -798,37 +798,6 @@
                 });
             });
 
-            // Upload Murid form submission
-            document.getElementById('uploadMuridForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalText = submitButton.textContent;
-                submitButton.disabled = true;
-                submitButton.textContent = 'Mengupload...';
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    showNotification(data.message, data.success);
-                    if (data.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('uploadMuridModal')).hide();
-                        this.reset();
-                        // Refresh table
-                        if (window.gridInstance) window.gridInstance.forceRender();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Gagal mengupload data.', false);
-                })
-                .finally(() => {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
-                });
-            });
 
             // LOGIKA EDIT USER
             const editUserForm = document.getElementById('editUserForm');
@@ -910,6 +879,80 @@
 
         });
     </script>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('styles'); ?>
+<style>
+    /* Mobile optimization for tabs */
+    @media (max-width: 575.98px) {
+        .nav-tabs .nav-link {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .nav-tabs .nav-item {
+            flex: 1;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        
+        /* Mobile optimization for action buttons */
+        .card-header .d-flex {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 1rem;
+        }
+        
+        .card-header .text-muted {
+            width: 100%;
+            text-align: center;
+        }
+        
+        #single-actions,
+        #single-actions-murid {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-left: 0 !important;
+        }
+        
+        #single-actions-guru {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-left: 0 !important;
+        }
+        
+        #single-actions .btn,
+        #single-actions-murid .btn {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        #single-actions-guru .btn {
+            flex: 1;
+            min-width: 0;
+            max-width: 200px;
+        }
+        
+        #bulk-actions,
+        #bulk-actions-guru,
+        #bulk-actions-murid {
+            width: 100%;
+        }
+        
+        #bulk-actions .btn,
+        #bulk-actions-guru .btn,
+        #bulk-actions-murid .btn {
+            width: 100%;
+        }
+    }
+</style>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.vertical-admin', ['subtitle' => 'manajemen-pengguna'], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/admin/manage-user.blade.php ENDPATH**/ ?>

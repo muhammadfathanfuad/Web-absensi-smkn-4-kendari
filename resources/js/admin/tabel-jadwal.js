@@ -32,7 +32,6 @@ window.deleteJadwal = function (id) {
 
 // Fungsi global untuk reload tabel mata pelajaran (auto reload)
 window.reloadSubjectsTable = function () {
-    console.log("Reloading subjects table...");
     if (window.gridInstanceSubjects) {
         window.gridInstanceSubjects.forceRender();
     }
@@ -40,7 +39,6 @@ window.reloadSubjectsTable = function () {
 
 // Fungsi global untuk reload tabel kelas (auto reload)
 window.reloadClassesTable = function () {
-    console.log("Reloading classes table...");
     if (window.gridInstanceClasses) {
         window.gridInstanceClasses.forceRender();
     }
@@ -48,12 +46,10 @@ window.reloadClassesTable = function () {
 
 // Fungsi untuk menangani error dan retry dengan auto reload
 window.handleSubjectsError = function (error, action) {
-    console.error(`Error in ${action}:`, error);
     showNotification(`Gagal ${action} mata pelajaran`, false);
 
     // Retry dengan auto reload
     setTimeout(() => {
-        console.log(`Retrying ${action} by reloading table...`);
         window.reloadSubjectsTable();
     }, 1000);
 };
@@ -65,8 +61,6 @@ window.renderSubjectsTable = function () {
         window.tabelJadwalInstance.renderSubjectsTable
     ) {
         window.tabelJadwalInstance.renderSubjectsTable();
-    } else {
-        console.error("TabelJadwalInstance not available for rendering");
     }
 };
 
@@ -166,7 +160,6 @@ window.showSubjectDetail = function (id) {
             modal.show();
         })
         .catch((error) => {
-            console.error("Error fetching subject details:", error);
             showNotification("Gagal memuat detail mata pelajaran", false);
         });
 };
@@ -198,7 +191,6 @@ window.showClassDetail = function (id) {
             modal.show();
         })
         .catch((error) => {
-            console.error("Error fetching class details:", error);
             showNotification("Gagal memuat detail kelas", false);
         });
 };
@@ -225,7 +217,6 @@ window.editClass = function (id) {
             modal.show();
         })
         .catch((error) => {
-            console.error("Error fetching class for edit:", error);
             showNotification("Gagal memuat data kelas", false);
         });
 };
@@ -271,24 +262,17 @@ window.deleteClass = function () {
             }
         })
         .catch((error) => {
-            console.error("Error deleting class:", error);
             showNotification("Gagal menghapus kelas", false);
         });
 };
 
 // Fungsi global untuk menangani form tambah kelas
 window.handleClassAdd = function (event) {
-    console.log("handleClassAdd called");
     event.preventDefault();
 
     const formData = new FormData(event.target);
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
-
-    console.log("Form data:", {
-        name: formData.get("name"),
-        grade: formData.get("grade"),
-    });
 
     // Disable submit button and show loading
     submitBtn.disabled = true;
@@ -303,7 +287,6 @@ window.handleClassAdd = function (event) {
     })
         .then((response) => response.json())
         .then((data) => {
-            console.log("Add class response:", data);
             if (data.success) {
                 showNotification(data.message, true);
                 // Close modal
@@ -324,7 +307,6 @@ window.handleClassAdd = function (event) {
             }
         })
         .catch((error) => {
-            console.error("Error adding class:", error);
             showNotification("Gagal menambahkan kelas", false);
         })
         .finally(() => {
@@ -336,17 +318,10 @@ window.handleClassAdd = function (event) {
 
 // Fungsi global untuk menangani form edit kelas
 window.handleClassEdit = function (event) {
-    console.log("handleClassEdit called");
     event.preventDefault();
 
     const formData = new FormData(event.target);
     const id = formData.get("id");
-
-    console.log("Form data:", {
-        id: id,
-        name: formData.get("name"),
-        grade: formData.get("grade"),
-    });
 
     // Add _method field for Laravel to recognize PUT request
     formData.append("_method", "PUT");
@@ -366,14 +341,12 @@ window.handleClassEdit = function (event) {
         body: formData,
     })
         .then((response) => {
-            console.log("Response status:", response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then((data) => {
-            console.log("Response data:", data);
             showNotification(data.message, data.success);
             if (data.success) {
                 // Close modal
@@ -387,7 +360,6 @@ window.handleClassEdit = function (event) {
             }
         })
         .catch((error) => {
-            console.error("Error updating class:", error);
             showNotification("Gagal memperbarui kelas", false);
         })
         .finally(() => {
@@ -399,7 +371,6 @@ window.handleClassEdit = function (event) {
 
 // Fungsi global untuk menangani impor kelas
 window.handleClassImport = function (event) {
-    console.log("handleClassImport called");
     event.preventDefault();
 
     const formData = new FormData(event.target);
@@ -437,14 +408,12 @@ window.handleClassImport = function (event) {
         body: formData,
     })
         .then((response) => {
-            console.log("Import response status:", response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then((data) => {
-            console.log("Import response data:", data);
             showNotification(data.message, data.success);
 
             if (data.success) {
@@ -459,16 +428,9 @@ window.handleClassImport = function (event) {
 
                 // Reload tabel setelah impor
                 window.reloadClassesTable();
-
-                // Show errors if any
-                if (data.errors && data.errors.length > 0) {
-                    console.warn("Import errors:", data.errors);
-                    // You can show errors in a separate modal or alert if needed
-                }
             }
         })
         .catch((error) => {
-            console.error("Error importing classes:", error);
             showNotification("Gagal mengimpor kelas", false);
         })
         .finally(() => {
@@ -526,7 +488,6 @@ window.deleteSubject = function () {
 
 // Fungsi global untuk menangani penambahan mata pelajaran baru
 window.handleSubjectCreate = function (newSubjectData) {
-    console.log("Handling subject create:", newSubjectData);
     window.reloadSubjectsTable();
 };
 
@@ -552,7 +513,6 @@ window.editSubject = function (id) {
             modal.show();
         })
         .catch((error) => {
-            console.error("Error fetching subject for edit:", error);
             showNotification("Gagal memuat data mata pelajaran", false);
         });
 };
@@ -587,14 +547,12 @@ window.updateSubject = function () {
         }),
     })
         .then((response) => {
-            console.log("Response status:", response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then((data) => {
-            console.log("Response data:", data);
             showNotification(data.message, data.success);
             if (data.success) {
                 // Close modal
@@ -646,7 +604,6 @@ window.deleteJadwalXi = function (id) {
             }
         })
         .catch((error) => {
-            console.error("Error:", error);
             showNotification("Gagal menghapus jadwal XI.", false);
         });
 };
@@ -719,14 +676,12 @@ window.openDeleteJadwalXiModal = function (id) {
             body: JSON.stringify({ ids: ids }),
         })
             .then((response) => {
-                console.log("Response status:", response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then((data) => {
-                console.log("Response data:", data);
                 showNotification(data.message, data.success);
                 const modal = bootstrap.Modal.getInstance(
                     document.getElementById("bulkDeleteJadwalXiModal")
@@ -749,7 +704,6 @@ window.openDeleteJadwalXiModal = function (id) {
                 }
             })
             .catch((error) => {
-                console.error("Bulk delete error:", error);
                 showNotification(
                     "Gagal menghapus jadwal XI: " + error.message,
                     false
@@ -795,7 +749,10 @@ class GridJadwalDatatable {
     initTables() {
         // Initialize JadwalTable with default (no filter) - will be filtered when semester is selected
         this.initJadwalTable();
-        this.initJadwalXiTable();
+        // Get term_id from URL if exists for initial load
+        const urlParams = new URLSearchParams(window.location.search);
+        const termId = urlParams.get("term_id");
+        this.initJadwalXiTable(termId);
         this.initSubjectsTable();
         this.initClassesTable();
         // initTermsTable() - hanya dipanggil ketika tab semester dibuka
@@ -829,31 +786,22 @@ class GridJadwalDatatable {
         // Add class form
         const addClassForm = document.getElementById("addClassForm");
         if (addClassForm) {
-            console.log("Add class form found, adding event listener");
             addClassForm.addEventListener("submit", window.handleClassAdd);
-        } else {
-            console.error("Add class form not found!");
         }
 
         // Edit class form
         const editClassForm = document.getElementById("editClassForm");
         if (editClassForm) {
-            console.log("Edit class form found, adding event listener");
             editClassForm.addEventListener("submit", window.handleClassEdit);
-        } else {
-            console.error("Edit class form not found!");
         }
 
         // Import class form
         const importClassForm = document.getElementById("importClassForm");
         if (importClassForm) {
-            console.log("Import class form found, adding event listener");
             importClassForm.addEventListener(
                 "submit",
                 window.handleClassImport
             );
-        } else {
-            console.error("Import class form not found!");
         }
     }
 
@@ -882,25 +830,15 @@ class GridJadwalDatatable {
         // Create new event handler
         this.subjectsBulkActionHandler = (event) => {
             if (event.target.id === "select-all-subjects-checkbox") {
-                console.log(
-                    "Select all subjects checkbox changed:",
-                    event.target.checked
-                );
                 const isChecked = event.target.checked;
                 const allCheckboxes = document.querySelectorAll(
                     ".row-checkbox-subjects"
-                );
-                console.log(
-                    "Found",
-                    allCheckboxes.length,
-                    "subject checkboxes"
                 );
                 allCheckboxes.forEach((cb) => (cb.checked = isChecked));
                 this.updateSubjectsBulkActions();
             }
 
             if (event.target.classList.contains("row-checkbox-subjects")) {
-                console.log("Individual subject checkbox changed");
                 this.updateSubjectsBulkActions();
             }
         };
@@ -915,42 +853,22 @@ class GridJadwalDatatable {
             "select-all-subjects-checkbox"
         );
         if (selectAllCheckbox) {
-            console.log(
-                "Attaching event listener to select all subjects checkbox"
-            );
             selectAllCheckbox.addEventListener("change", () => {
-                console.log(
-                    "Select all subjects checkbox changed:",
-                    selectAllCheckbox.checked
-                );
                 const isChecked = selectAllCheckbox.checked;
                 const allCheckboxes = document.querySelectorAll(
                     ".row-checkbox-subjects"
                 );
-                console.log(
-                    "Found",
-                    allCheckboxes.length,
-                    "subject checkboxes"
-                );
                 allCheckboxes.forEach((cb) => (cb.checked = isChecked));
                 this.updateSubjectsBulkActions();
             });
-        } else {
-            console.error("Select all subjects checkbox not found!");
         }
 
         // Attach event listeners to individual checkboxes
         const individualCheckboxes = document.querySelectorAll(
             ".row-checkbox-subjects"
         );
-        console.log(
-            "Found",
-            individualCheckboxes.length,
-            "individual subject checkboxes"
-        );
         individualCheckboxes.forEach((checkbox, index) => {
             checkbox.addEventListener("change", () => {
-                console.log(`Individual subject checkbox ${index + 1} changed`);
                 this.updateSubjectsBulkActions();
             });
         });
@@ -969,21 +887,15 @@ class GridJadwalDatatable {
         // Create new event handler
         this.classesBulkActionHandler = (event) => {
             if (event.target.id === "select-all-classes-checkbox") {
-                console.log(
-                    "Select all classes checkbox changed:",
-                    event.target.checked
-                );
                 const isChecked = event.target.checked;
                 const allCheckboxes = document.querySelectorAll(
                     ".row-checkbox-classes"
                 );
-                console.log("Found", allCheckboxes.length, "class checkboxes");
                 allCheckboxes.forEach((cb) => (cb.checked = isChecked));
                 this.updateClassesBulkActions();
             }
 
             if (event.target.classList.contains("row-checkbox-classes")) {
-                console.log("Individual class checkbox changed");
                 this.updateClassesBulkActions();
             }
         };
@@ -998,38 +910,22 @@ class GridJadwalDatatable {
             "select-all-classes-checkbox"
         );
         if (selectAllCheckbox) {
-            console.log(
-                "Attaching event listener to select all classes checkbox"
-            );
             selectAllCheckbox.addEventListener("change", () => {
-                console.log(
-                    "Select all classes checkbox changed:",
-                    selectAllCheckbox.checked
-                );
                 const isChecked = selectAllCheckbox.checked;
                 const allCheckboxes = document.querySelectorAll(
                     ".row-checkbox-classes"
                 );
-                console.log("Found", allCheckboxes.length, "class checkboxes");
                 allCheckboxes.forEach((cb) => (cb.checked = isChecked));
                 this.updateClassesBulkActions();
             });
-        } else {
-            console.error("Select all classes checkbox not found!");
         }
 
         // Attach event listeners to individual checkboxes
         const individualCheckboxes = document.querySelectorAll(
             ".row-checkbox-classes"
         );
-        console.log(
-            "Found",
-            individualCheckboxes.length,
-            "individual class checkboxes"
-        );
         individualCheckboxes.forEach((checkbox, index) => {
             checkbox.addEventListener("change", () => {
-                console.log(`Individual class checkbox ${index + 1} changed`);
                 this.updateClassesBulkActions();
             });
         });
@@ -1091,10 +987,6 @@ class GridJadwalDatatable {
             if (singleActions) singleActions.style.display = "block";
             if (bulkActions) bulkActions.style.display = "none";
         }
-
-        console.log(
-            `Subjects: ${checkedBoxes.length} of ${allCheckboxes.length} selected`
-        );
     }
 
     // Fungsi untuk update bulk actions kelas
@@ -1124,10 +1016,6 @@ class GridJadwalDatatable {
             if (singleActions) singleActions.style.display = "block";
             if (bulkActions) bulkActions.style.display = "none";
         }
-
-        console.log(
-            `Classes: ${checkedBoxes.length} of ${allCheckboxes.length} selected`
-        );
     }
 
     // Fungsi untuk update bulk actions semester
@@ -1314,7 +1202,6 @@ class GridJadwalDatatable {
                 }
             })
             .catch((error) => {
-                console.error("Bulk delete subjects error:", error);
                 this.showNotificationModal(
                     "Terjadi kesalahan saat menghapus mata pelajaran."
                 );
@@ -1362,7 +1249,6 @@ class GridJadwalDatatable {
                 }
             })
             .catch((error) => {
-                console.error("Bulk delete classes error:", error);
                 this.showNotificationModal(
                     "Terjadi kesalahan saat menghapus kelas."
                 );
@@ -1371,39 +1257,27 @@ class GridJadwalDatatable {
 
     // Render subjects table with auto reload
     renderSubjectsTable() {
-        console.log("renderSubjectsTable called with auto reload");
         const container = document.getElementById("subjects-table");
         if (!container) {
-            console.error("Container subjects-table not found");
             return;
         }
 
         // Clear container first
         container.innerHTML = "";
-        console.log("Container cleared");
 
         // Destroy existing instance if it exists
         if (this.gridInstanceSubjects) {
             try {
-                console.log("Destroying existing GridJS instance...");
                 // Cek apakah method destroy tersedia
                 if (typeof this.gridInstanceSubjects.destroy === "function") {
                     this.gridInstanceSubjects.destroy();
-                    console.log("GridJS instance destroyed successfully");
-                } else {
-                    console.log(
-                        "Destroy method not available, clearing container only"
-                    );
                 }
             } catch (e) {
-                console.log("Error destroying GridJS instance:", e);
+                // Error destroying instance, continue anyway
             }
-        } else {
-            console.log("No existing GridJS instance to destroy");
         }
 
         // Create new GridJS instance with auto reload
-        console.log("Creating new GridJS instance with auto reload");
         this.gridInstanceSubjects = new gridjs.Grid({
             columns: [
                 {
@@ -1457,55 +1331,37 @@ class GridJadwalDatatable {
             language: { search: { placeholder: "Ketik untuk mencari…" } },
         }).render(container);
 
-        console.log(
-            "GridJS instance created and rendered successfully with auto reload"
-        );
-
         // Ekspor instance untuk auto reload
         window.gridInstanceSubjects = this.gridInstanceSubjects;
-        console.log("GridJS instance exported to window.gridInstanceSubjects");
 
         // Re-initialize bulk actions after table is rendered
         setTimeout(() => {
-            console.log("Re-initializing subjects bulk actions...");
             this.attachSubjectsCheckboxEvents();
         }, 100);
     }
 
     // Render classes table with auto reload
     renderClassesTable() {
-        console.log("renderClassesTable called with auto reload");
         const container = document.getElementById("classes-table");
         if (!container) {
-            console.error("Container classes-table not found");
             return;
         }
 
         // Clear container first
         container.innerHTML = "";
-        console.log("Container cleared");
 
         // Destroy existing instance if it exists
         if (this.gridInstanceClasses) {
             try {
-                console.log("Destroying existing GridJS instance...");
                 if (typeof this.gridInstanceClasses.destroy === "function") {
                     this.gridInstanceClasses.destroy();
-                    console.log("GridJS instance destroyed successfully");
-                } else {
-                    console.log(
-                        "Destroy method not available, clearing container only"
-                    );
                 }
             } catch (e) {
-                console.log("Error destroying GridJS instance:", e);
+                // Error destroying instance, continue anyway
             }
-        } else {
-            console.log("No existing GridJS instance to destroy");
         }
 
         // Create new GridJS instance with auto reload
-        console.log("Creating new GridJS instance with auto reload");
         this.gridInstanceClasses = new gridjs.Grid({
             columns: [
                 {
@@ -1547,57 +1403,12 @@ class GridJadwalDatatable {
             server: {
                 url: "/admin/classes",
                 then: (data) => {
-                    console.log("=== CLASSES DATA DEBUG ===");
-                    console.log("Classes data received:", data);
-                    console.log("Data type:", typeof data);
-                    console.log(
-                        "Data length:",
-                        data ? data.length : "undefined"
-                    );
-                    console.log("Data is array:", Array.isArray(data));
-
-                    if (data && data.length > 0) {
-                        console.log("First item:", data[0]);
-                        console.log("First item keys:", Object.keys(data[0]));
-                        console.log("First item grade:", data[0].grade);
-                        console.log(
-                            "First item display_grade:",
-                            data[0].display_grade
-                        );
-                    }
-
                     if (!data || !Array.isArray(data)) {
-                        console.error("Invalid data received:", data);
                         return [];
                     }
 
-                    return data.map((classItem, index) => {
-                        console.log(`=== MAPPING ITEM ${index} ===`);
-                        console.log("Raw classItem:", classItem);
-                        console.log("classItem type:", typeof classItem);
-                        console.log("classItem keys:", Object.keys(classItem));
-                        console.log(
-                            `  - name: '${
-                                classItem.name
-                            }' (type: ${typeof classItem.name})`
-                        );
-                        console.log(
-                            `  - grade: '${
-                                classItem.grade
-                            }' (type: ${typeof classItem.grade})`
-                        );
-                        console.log(
-                            `  - display_grade: '${
-                                classItem.display_grade
-                            }' (type: ${typeof classItem.display_grade})`
-                        );
-                        console.log(
-                            `  - id: ${
-                                classItem.id
-                            } (type: ${typeof classItem.id})`
-                        );
-
-                        const mapped = [
+                    return data.map((classItem) => {
+                        return [
                             gridjs.html(
                                 `<input type="checkbox" class="row-checkbox-classes" data-id="${classItem.id}">`
                             ),
@@ -1607,31 +1418,20 @@ class GridJadwalDatatable {
                             classItem.id || "",
                             null, // Aksi
                         ];
-
-                        console.log("Mapped result:", mapped);
-                        console.log("=== END MAPPING ITEM ===");
-
-                        return mapped;
                     });
                 },
                 error: (error) => {
-                    console.error("Server error:", error);
+                    // Error handling
                 },
             },
             language: { search: { placeholder: "Ketik untuk mencari…" } },
         }).render(container);
 
-        console.log(
-            "GridJS instance created and rendered successfully with auto reload"
-        );
-
         // Ekspor instance untuk auto reload
         window.gridInstanceClasses = this.gridInstanceClasses;
-        console.log("GridJS instance exported to window.gridInstanceClasses");
 
         // Re-initialize bulk actions after table is rendered
         setTimeout(() => {
-            console.log("Re-initializing classes bulk actions...");
             this.attachClassesCheckboxEvents();
         }, 100);
     }
@@ -1640,7 +1440,6 @@ class GridJadwalDatatable {
     renderTermsTable() {
         const container = document.getElementById("terms-table");
         if (!container) {
-            console.error("Container terms-table not found");
             return;
         }
 
@@ -1654,7 +1453,7 @@ class GridJadwalDatatable {
                     this.gridInstanceTerms.destroy();
                 }
             } catch (e) {
-                console.log("Error destroying GridJS instance:", e);
+                // Error destroying instance, continue anyway
             }
         }
 
@@ -1725,9 +1524,21 @@ class GridJadwalDatatable {
             server: {
                 url: "/admin/terms/data",
                 then: (data) => {
-                    if (!data || !Array.isArray(data)) {
-                        console.error("Invalid data received:", data);
+                    // Handle case when data is not an array
+                    if (!data) {
                         return [];
+                    }
+                    if (!Array.isArray(data)) {
+                        // If data is an object, try to extract array from it
+                        if (
+                            typeof data === "object" &&
+                            data.data &&
+                            Array.isArray(data.data)
+                        ) {
+                            data = data.data;
+                        } else {
+                            return [];
+                        }
                     }
 
                     return data.map((term) => [
@@ -1739,7 +1550,25 @@ class GridJadwalDatatable {
                         term.id, // Hidden ID column
                     ]);
                 },
+                catch: (error) => {
+                    // Handle error gracefully
+                    return [];
+                },
                 total: (data) => {
+                    if (!data) {
+                        return 0;
+                    }
+                    if (!Array.isArray(data)) {
+                        // If data is an object, try to extract array from it
+                        if (
+                            typeof data === "object" &&
+                            data.data &&
+                            Array.isArray(data.data)
+                        ) {
+                            return data.data.length;
+                        }
+                        return 0;
+                    }
                     return data.length;
                 },
             },
@@ -1755,14 +1584,24 @@ class GridJadwalDatatable {
     }
 
     // Fungsi untuk menginisialisasi tabel Jadwal
-    initJadwalTable(termId = null) {
+    initJadwalTable(termId = null, classId = null, day = null) {
         const mount = document.getElementById("table-search");
         if (!mount) return;
 
-        // Build URL with optional term_id parameter
+        // Build URL with optional filter parameters
         let serverUrl = "/admin/jadwal";
+        const params = new URLSearchParams();
         if (termId) {
-            serverUrl += `?term_id=${termId}`;
+            params.append("term_id", termId);
+        }
+        if (classId) {
+            params.append("class_id", classId);
+        }
+        if (day) {
+            params.append("day", day);
+        }
+        if (params.toString()) {
+            serverUrl += `?${params.toString()}`;
         }
 
         this.gridInstanceJadwal = new gridjs.Grid({
@@ -1834,27 +1673,194 @@ class GridJadwalDatatable {
     // Inisialisasi form Import Jadwal XI (grade & kelompok)
     initImportJadwalXiForm() {
         const form = document.getElementById("importJadwalXiForm");
-        const gradeSelect = document.getElementById("xiGrade");
 
-        // Set default value to XI for XI import
-        if (gradeSelect) {
-            gradeSelect.value = "XI";
-        }
+        // Grade is now a readonly field with default value "XI"
+        // No need to set value programmatically
 
         if (form) {
             form.addEventListener(
                 "submit",
                 function (e) {
                     e.preventDefault();
+
+                    // Get submit button and modal elements
                     const submitBtn = form.querySelector(
                         'button[type="submit"], .modal-footer .btn-success'
                     );
+                    const modalEl = document.getElementById(
+                        "importJadwalXIModal"
+                    );
+                    const modalBody = modalEl?.querySelector(".modal-body");
+
+                    // Store original button content
+                    const originalBtnContent = submitBtn
+                        ? submitBtn.innerHTML
+                        : "";
+
+                    // Disable all form elements and show loading
                     if (submitBtn) {
                         submitBtn.disabled = true;
-                        submitBtn.textContent = "Mengimport...";
+                        submitBtn.innerHTML =
+                            '<i class="bx bx-loader-alt bx-spin me-1"></i> Mengimport...';
                     }
 
-                    const formData = new FormData(form);
+                    // Disable all form inputs
+                    const formInputs = form.querySelectorAll(
+                        "input, select, button"
+                    );
+                    formInputs.forEach((input) => {
+                        if (input !== submitBtn) {
+                            input.disabled = true;
+                        }
+                    });
+
+                    // Prevent modal from closing during import
+                    if (modalEl) {
+                        const modalInstance =
+                            bootstrap.Modal.getInstance(modalEl) ||
+                            new bootstrap.Modal(modalEl);
+                        modalEl.setAttribute("data-bs-backdrop", "static");
+                        modalEl.setAttribute("data-bs-keyboard", "false");
+
+                        // Disable close buttons
+                        const closeButtons = modalEl.querySelectorAll(
+                            '[data-bs-dismiss="modal"], .btn-close'
+                        );
+                        closeButtons.forEach((btn) => {
+                            btn.style.pointerEvents = "none";
+                            btn.style.opacity = "0.5";
+                        });
+                    }
+
+                    // Show loading overlay in modal body
+                    let loadingOverlay = modalBody?.querySelector(
+                        ".import-loading-overlay"
+                    );
+                    if (!loadingOverlay && modalBody) {
+                        loadingOverlay = document.createElement("div");
+                        loadingOverlay.className = "import-loading-overlay";
+                        loadingOverlay.style.cssText = `
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(255, 255, 255, 0.95);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 1050;
+                            border-radius: 0.375rem;
+                        `;
+                        loadingOverlay.innerHTML = `
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mb-1 fw-semibold fs-6">Sedang mengimport jadwal...</p>
+                                <small class="text-muted d-block">Mohon tunggu, jangan tutup halaman ini</small>
+                            </div>
+                        `;
+                        modalBody.style.position = "relative";
+                        modalBody.appendChild(loadingOverlay);
+                    }
+
+                    // Validate form fields before submitting
+                    const termSelect = form.querySelector("#xiTerm");
+                    const fileInput = form.querySelector("#xiFile");
+                    const groupTypeSelect = form.querySelector("#xiGroupType");
+                    const gradeInput = form.querySelector("#xiGrade");
+
+                    // Client-side validation
+                    if (!termSelect || !termSelect.value) {
+                        showNotification(
+                            "Pilih semester terlebih dahulu",
+                            false
+                        );
+                        // Reset UI state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnContent;
+                        }
+                        formInputs.forEach((input) => {
+                            input.disabled = false;
+                        });
+                        if (loadingOverlay && loadingOverlay.parentNode) {
+                            loadingOverlay.parentNode.removeChild(
+                                loadingOverlay
+                            );
+                        }
+                        return;
+                    }
+
+                    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                        showNotification(
+                            "Pilih file Excel terlebih dahulu",
+                            false
+                        );
+                        // Reset UI state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnContent;
+                        }
+                        formInputs.forEach((input) => {
+                            input.disabled = false;
+                        });
+                        if (loadingOverlay && loadingOverlay.parentNode) {
+                            loadingOverlay.parentNode.removeChild(
+                                loadingOverlay
+                            );
+                        }
+                        return;
+                    }
+
+                    if (!groupTypeSelect || !groupTypeSelect.value) {
+                        showNotification(
+                            "Pilih kelompok terlebih dahulu",
+                            false
+                        );
+                        // Reset UI state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnContent;
+                        }
+                        formInputs.forEach((input) => {
+                            input.disabled = false;
+                        });
+                        if (loadingOverlay && loadingOverlay.parentNode) {
+                            loadingOverlay.parentNode.removeChild(
+                                loadingOverlay
+                            );
+                        }
+                        return;
+                    }
+
+                    if (!gradeInput || !gradeInput.value) {
+                        showNotification("Kelas harus diisi", false);
+                        // Reset UI state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnContent;
+                        }
+                        formInputs.forEach((input) => {
+                            input.disabled = false;
+                        });
+                        if (loadingOverlay && loadingOverlay.parentNode) {
+                            loadingOverlay.parentNode.removeChild(
+                                loadingOverlay
+                            );
+                        }
+                        return;
+                    }
+
+                    // Create FormData and explicitly set all fields
+                    const formData = new FormData();
+                    formData.append("file", fileInput.files[0]);
+                    formData.append("term_id", termSelect.value);
+                    formData.append("grade", gradeInput.value);
+                    formData.append("group_type", groupTypeSelect.value);
+                    formData.append("_token", getCsrfToken());
+
                     fetch(form.action, {
                         method: "POST",
                         body: formData,
@@ -1863,16 +1869,31 @@ class GridJadwalDatatable {
                             Accept: "application/json",
                         },
                     })
-                        .then((res) => res.json())
+                        .then((res) => {
+                            // Check if response is ok
+                            if (!res.ok) {
+                                // Try to parse error response
+                                return res
+                                    .json()
+                                    .then((errorData) => {
+                                        throw new Error(
+                                            JSON.stringify(errorData)
+                                        );
+                                    })
+                                    .catch(() => {
+                                        throw new Error(
+                                            `HTTP error! status: ${res.status}`
+                                        );
+                                    });
+                            }
+                            return res.json();
+                        })
                         .then((data) => {
                             showNotification(
                                 data.message || "Import selesai",
                                 !!data.success
                             );
                             if (data.success) {
-                                const modalEl = document.getElementById(
-                                    "importJadwalXIModal"
-                                );
                                 const modal =
                                     bootstrap.Modal.getInstance(modalEl) ||
                                     new bootstrap.Modal(modalEl);
@@ -1884,25 +1905,81 @@ class GridJadwalDatatable {
                                 if (mount) {
                                     // Force reload grid by re-rendering
                                     mount.innerHTML = "";
+                                    // Get term_id from URL to preserve it
+                                    const urlParams = new URLSearchParams(
+                                        window.location.search
+                                    );
+                                    const termId = urlParams.get("term_id");
                                     setTimeout(
                                         () =>
                                             this.initJadwalXiTable &&
-                                            this.initJadwalXiTable(),
+                                            this.initJadwalXiTable(termId),
                                         50
                                     );
                                 }
                             }
                         })
-                        .catch(() =>
-                            showNotification(
-                                "Gagal mengimport jadwal XI",
-                                false
-                            )
-                        )
+                        .catch((error) => {
+                            // Handle error response
+                            let errorMessage = "Gagal mengimport jadwal XI";
+                            try {
+                                const errorData = JSON.parse(error.message);
+                                if (errorData.message) {
+                                    errorMessage = errorData.message;
+                                } else if (errorData.errors) {
+                                    // Handle Laravel validation errors
+                                    const errorMessages = [];
+                                    for (const field in errorData.errors) {
+                                        errorMessages.push(
+                                            ...errorData.errors[field]
+                                        );
+                                    }
+                                    errorMessage = errorMessages.join(", ");
+                                }
+                            } catch (e) {
+                                // If parsing fails, use default message
+                                if (
+                                    error.message &&
+                                    error.message !== errorMessage
+                                ) {
+                                    errorMessage = error.message;
+                                }
+                            }
+                            showNotification(errorMessage, false);
+                        })
                         .finally(() => {
+                            // Remove loading overlay
+                            if (loadingOverlay && loadingOverlay.parentNode) {
+                                loadingOverlay.parentNode.removeChild(
+                                    loadingOverlay
+                                );
+                            }
+
+                            // Re-enable modal closing
+                            if (modalEl) {
+                                modalEl.removeAttribute("data-bs-backdrop");
+                                modalEl.removeAttribute("data-bs-keyboard");
+
+                                // Re-enable close buttons
+                                const closeButtons = modalEl.querySelectorAll(
+                                    '[data-bs-dismiss="modal"], .btn-close'
+                                );
+                                closeButtons.forEach((btn) => {
+                                    btn.style.pointerEvents = "";
+                                    btn.style.opacity = "";
+                                });
+                            }
+
+                            // Re-enable all form elements
+                            const formInputs = form.querySelectorAll(
+                                "input, select, button"
+                            );
+                            formInputs.forEach((input) => {
+                                input.disabled = false;
+                            });
+
                             if (submitBtn) {
-                                submitBtn.disabled = false;
-                                submitBtn.textContent = "Import";
+                                submitBtn.innerHTML = originalBtnContent;
                             }
                         });
                 }.bind(this)
@@ -1914,9 +1991,6 @@ class GridJadwalDatatable {
     initJadwalXiTable(termId = null) {
         const mount = document.getElementById("table-search-xi");
         if (!mount) {
-            console.warn(
-                "Table mount element not found, skipping XI table initialization"
-            );
             return;
         }
 
@@ -1930,8 +2004,13 @@ class GridJadwalDatatable {
             day: urlParams.get("day") || "",
         };
 
-        // Add term_id parameter if provided
-        if (termId) {
+        // Add term_id parameter - prioritize URL, then parameter, then nothing
+        const urlTermId = urlParams.get("term_id");
+        if (urlTermId) {
+            // Use term_id from URL (preserves filter state)
+            filterParams.term_id = urlTermId;
+        } else if (termId) {
+            // Use term_id from parameter if URL doesn't have it
             filterParams.term_id = termId;
         }
 
@@ -1940,10 +2019,6 @@ class GridJadwalDatatable {
         const serverUrl = queryString
             ? `/admin/jadwal-xi?${queryString}`
             : "/admin/jadwal-xi";
-
-        // Debug: Log the server URL being used
-        console.log("Loading Jadwal XI with URL:", serverUrl);
-        console.log("Current URL params:", window.location.search);
 
         this.gridInstanceJadwalXI = new gridjs.Grid({
             columns: [
@@ -1989,8 +2064,6 @@ class GridJadwalDatatable {
             server: {
                 url: serverUrl,
                 then: (data) => {
-                    console.log("Data received:", data);
-
                     // Handle empty data case
                     if (!data || data.length === 0) {
                         return [
@@ -2022,7 +2095,6 @@ class GridJadwalDatatable {
                     ]);
                 },
                 catch: (error) => {
-                    console.error("Error loading data:", error);
                     // Show error message
                     mount.innerHTML = `
                         <div class="alert alert-danger" role="alert">
@@ -2045,8 +2117,11 @@ class GridJadwalDatatable {
         // expose reload helper for XI table
         window.gridXiReload = () => {
             mount.innerHTML = "";
+            // Get term_id from URL to preserve it
+            const urlParams = new URLSearchParams(window.location.search);
+            const termId = urlParams.get("term_id");
             setTimeout(
-                () => this.initJadwalXiTable && this.initJadwalXiTable(),
+                () => this.initJadwalXiTable && this.initJadwalXiTable(termId),
                 0
             );
         };
@@ -2055,6 +2130,8 @@ class GridJadwalDatatable {
         const filterBtn = document.getElementById("filter-jadwal-xi");
         if (filterBtn) {
             filterBtn.addEventListener("click", () => {
+                // Set current filter values from URL before showing modal
+                this.setCurrentFilterValues();
                 const modal = new bootstrap.Modal(
                     document.getElementById("filterJadwalXiModal")
                 );
@@ -2157,7 +2234,6 @@ class GridJadwalDatatable {
                         }
                     })
                     .catch((error) => {
-                        console.error("Error:", error);
                         showNotification(
                             "Terjadi kesalahan saat mengimport.",
                             false
@@ -2211,16 +2287,12 @@ class GridJadwalDatatable {
                             this.reset();
 
                             // Auto reload tabel mata pelajaran setelah tambah berhasil
-                            console.log(
-                                "Tambah mata pelajaran berhasil, melakukan auto reload tabel..."
-                            );
                             window.reloadSubjectsTable();
                         } else {
                             showNotification(data.message, false);
                         }
                     })
                     .catch((error) => {
-                        console.error("Error:", error);
                         showNotification(
                             "Terjadi kesalahan saat menambah mata pelajaran.",
                             false
@@ -2276,14 +2348,10 @@ class GridJadwalDatatable {
                             this.reset();
 
                             // Auto reload tabel mata pelajaran setelah import berhasil
-                            console.log(
-                                "Import berhasil, melakukan auto reload tabel mata pelajaran..."
-                            );
                             window.reloadSubjectsTable();
 
                             // Show errors if any
                             if (data.errors && data.errors.length > 0) {
-                                console.warn("Import errors:", data.errors);
                                 // Show errors in notification
                                 setTimeout(() => {
                                     showNotification(
@@ -2297,7 +2365,6 @@ class GridJadwalDatatable {
                         }
                     })
                     .catch((error) => {
-                        console.error("Error:", error);
                         showNotification(
                             "Terjadi kesalahan saat mengimport mata pelajaran.",
                             false
@@ -2415,7 +2482,6 @@ class GridJadwalDatatable {
                         }
                     })
                     .catch((error) => {
-                        console.error("Error:", error);
                         showNotification("Gagal menghapus jadwal.", false);
                     });
             });
@@ -2453,7 +2519,6 @@ class GridJadwalDatatable {
                         }
                     })
                     .catch((error) => {
-                        console.error("Error:", error);
                         showNotification("Gagal menghapus jadwal.", false);
                     });
             });
@@ -2467,6 +2532,8 @@ class GridJadwalDatatable {
         if (filterModal) {
             filterModal.addEventListener("show.bs.modal", () => {
                 this.loadFilterOptions();
+                // Set current filter values from URL when modal opens
+                this.setCurrentFilterValues();
             });
         }
 
@@ -2514,7 +2581,7 @@ class GridJadwalDatatable {
                 this.initSmartFilterDependencies();
             })
             .catch((error) => {
-                console.error("Error loading filter options:", error);
+                // Error loading filter options
             });
     }
 
@@ -2542,8 +2609,6 @@ class GridJadwalDatatable {
 
     // Apply filter
     applyFilter() {
-        console.log("Apply filter clicked");
-
         const form = document.getElementById("filterJadwalXiForm");
         const formData = new FormData(form);
 
@@ -2555,7 +2620,12 @@ class GridJadwalDatatable {
             }
         }
 
-        console.log("Filter parameters:", params.toString());
+        // Preserve term_id from current URL if exists
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentTermId = urlParams.get("term_id");
+        if (currentTermId) {
+            params.append("term_id", currentTermId);
+        }
 
         // Update URL first
         const newUrl = params.toString()
@@ -2563,33 +2633,56 @@ class GridJadwalDatatable {
             : window.location.pathname;
         window.history.pushState({}, "", newUrl);
 
-        console.log("URL updated to:", newUrl);
-
         // Close modal
         const modal = bootstrap.Modal.getInstance(
             document.getElementById("filterJadwalXiModal")
         );
         if (modal) modal.hide();
 
-        // Reload the page to ensure filter is applied correctly
-        console.log("Reloading page with new filters...");
-        window.location.reload();
+        // Instead of reloading page, update the table directly
+        if (window.gridInstanceJadwalXI) {
+            const queryString = params.toString();
+            const serverUrl = queryString
+                ? `/admin/jadwal-xi?${queryString}`
+                : "/admin/jadwal-xi";
+
+            // Update the server URL and reload
+            window.gridInstanceJadwalXI.config.server.url = serverUrl;
+            window.gridInstanceJadwalXI.forceRender();
+        } else {
+            // Fallback: reload page if table instance doesn't exist
+            window.location.reload();
+        }
     }
 
     // Reset filter
     resetFilter() {
-        console.log("Reset filter clicked");
-
         const form = document.getElementById("filterJadwalXiForm");
         form.reset();
 
-        // Clear URL parameters first
-        window.history.pushState({}, "", window.location.pathname);
+        // Preserve term_id from current URL if exists
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentTermId = urlParams.get("term_id");
 
-        console.log("URL cleared, reloading page...");
+        // Clear URL parameters but preserve term_id
+        const newUrl = currentTermId
+            ? `?term_id=${currentTermId}`
+            : window.location.pathname;
+        window.history.pushState({}, "", newUrl);
 
-        // Reload the page to ensure filter is reset correctly
-        window.location.reload();
+        // Instead of reloading page, update the table directly
+        if (window.gridInstanceJadwalXI) {
+            const serverUrl = currentTermId
+                ? `/admin/jadwal-xi?term_id=${currentTermId}`
+                : "/admin/jadwal-xi";
+
+            // Update the server URL and reload
+            window.gridInstanceJadwalXI.config.server.url = serverUrl;
+            window.gridInstanceJadwalXI.forceRender();
+        } else {
+            // Fallback: reload page if table instance doesn't exist
+            window.location.reload();
+        }
     }
 
     // Initialize smart filter dependencies
@@ -2771,7 +2864,6 @@ window.deleteAllSubjects = function () {
             }
         })
         .catch((error) => {
-            console.error("Error:", error);
             showNotification(
                 "Gagal menghapus semua data mata pelajaran",
                 false
@@ -2804,7 +2896,6 @@ window.deleteAllClasses = function () {
             }
         })
         .catch((error) => {
-            console.error("Error:", error);
             showNotification("Gagal menghapus semua data kelas", false);
         });
 };
@@ -2837,7 +2928,6 @@ window.deleteAllJadwal = function () {
             }
         })
         .catch((error) => {
-            console.error("Error:", error);
             showNotification("Gagal menghapus semua data jadwal", false);
         });
 };
@@ -2870,7 +2960,6 @@ window.deleteAllJadwalXi = function () {
             }
         })
         .catch((error) => {
-            console.error("Error:", error);
             showNotification("Gagal menghapus semua data jadwal XI", false);
         });
 };

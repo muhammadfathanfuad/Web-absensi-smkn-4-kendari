@@ -13,3 +13,9 @@ Schedule::command('activities:cleanup --days=30')
     ->monthly()
     ->description('Clean up old activities from dashboard')
     ->withoutOverlapping();
+
+// Schedule the notifications cleanup to run daily (delete read notifications older than 2 days)
+Schedule::command('notifications:cleanup --days=2')
+    ->daily()
+    ->description('Clean up read notifications older than 2 days')
+    ->withoutOverlapping();

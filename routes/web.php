@@ -79,6 +79,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Jadwal Pelajaran
     Route::get('/jadwal-pelajaran', [AdminJadwalController::class, 'jadwalPelajaran'])->name('admin.jadwal-pelajaran');
     Route::get('/admin/jadwal', [AdminJadwalController::class, 'index'])->name('jadwal.index');
+    Route::get('/admin/jadwal/export', [AdminJadwalController::class, 'export'])->name('admin.jadwal.export');
     Route::post('/admin/jadwal/import', [AdminJadwalController::class, 'import'])->name('jadwal.import');
     Route::delete('/admin/jadwal/bulk-delete', [AdminJadwalController::class, 'bulkDelete'])->name('jadwal.bulkDelete');
     Route::delete('/admin/jadwal/delete-all', [AdminJadwalController::class, 'deleteAllJadwal'])->name('jadwal.delete-all');
@@ -123,6 +124,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Jadwal Pelajaran Kelas XI
     Route::get('/jadwal-pelajaran-xi', [AdminJadwalController::class, 'jadwalPelajaranXi'])->name('admin.jadwal-pelajaran-xi');
     Route::get('/admin/jadwal-xi', [XiJadwalController::class, 'index'])->name('jadwal-xi.index');
+    Route::get('/admin/jadwal-xi/export', [XiJadwalController::class, 'export'])->name('admin.jadwal-xi.export');
     Route::post('/admin/jadwal-xi/import', [XiJadwalController::class, 'import'])->name('jadwal-xi.import');
     Route::get('/admin/jadwal-xi/filter-options', [XiJadwalController::class, 'getFilterOptions'])->name('jadwal-xi.filter-options');
     Route::get('/admin/jadwal-xi/statistics', [XiJadwalController::class, 'getStatistics'])->name('jadwal-xi.statistics');
@@ -166,8 +168,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     });
 
     // Admin Laporan
-    Route::get('/admin.laporan', [\App\Http\Controllers\Admin\AdminReportController::class, 'index'])->name('admin.laporan');
-    Route::get('/admin.laporan.export', [\App\Http\Controllers\Admin\AdminReportController::class, 'export'])->name('admin.laporan.export');
+    Route::get('/admin/laporan', [\App\Http\Controllers\Admin\AdminReportController::class, 'index'])->name('admin.laporan');
+    Route::get('/admin/laporan/export', [\App\Http\Controllers\Admin\AdminReportController::class, 'export'])->name('admin.laporan.export');
+    Route::get('/admin/laporan/teacher-detail', [\App\Http\Controllers\Admin\AdminReportController::class, 'getTeacherDetail'])->name('admin.laporan.teacher-detail');
+    Route::get('/admin/laporan/student-detail', [\App\Http\Controllers\Admin\AdminReportController::class, 'getStudentDetail'])->name('admin.laporan.student-detail');
 
     // Admin Pengumuman
     Route::get('/admin/pengumuman', function () {
@@ -305,7 +309,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
             return response()->json([
                 'success' => true,
                 'message' => 'Foto profil berhasil diperbarui.',
-                'photo_url' => \Illuminate\Support\Facades\Storage::url($path)
+                'photo_url' => user_photo_url($fileName)
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -355,6 +359,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/delegasi/check-email', [\App\Http\Controllers\Admin\DelegationController::class, 'checkEmail'])->name('admin.delegasi.check-email');
     Route::put('/admin/delegasi/{id}', [\App\Http\Controllers\Admin\DelegationController::class, 'update'])->name('admin.delegasi.update');
     Route::delete('/admin/delegasi/{id}', [\App\Http\Controllers\Admin\DelegationController::class, 'destroy'])->name('admin.delegasi.destroy');
+    Route::post('/admin/delegasi/teacher-leave-request/{id}/approve', [\App\Http\Controllers\Admin\DelegationController::class, 'approveTeacherLeaveRequest'])->name('admin.delegasi.teacher-leave-request.approve');
+    Route::post('/admin/delegasi/teacher-leave-request/{id}/reject', [\App\Http\Controllers\Admin\DelegationController::class, 'rejectTeacherLeaveRequest'])->name('admin.delegasi.teacher-leave-request.reject');
+    Route::get('/admin/delegasi/teacher-leave-request/{id}/detail', [\App\Http\Controllers\Admin\DelegationController::class, 'showTeacherLeaveRequestDetail'])->name('admin.delegasi.teacher-leave-request.detail');
 
 });
 
@@ -386,7 +393,9 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::post('/scan-qr/stop-session', [AbsensiController::class, 'stopSession'])->name('guru.absensi.stop-session');
     Route::get('/scan-qr/results/{timetable_id}', [AbsensiController::class, 'getScanResults'])->name('guru.absensi.results');
     Route::get('/status-absensi', [AbsensiController::class, 'showStatus'])->name('guru.status-absensi');
+    Route::get('/status-absensi/export', [AbsensiController::class, 'export'])->name('guru.status-absensi.export');
     Route::get('/jadwal-mengajar', [JadwalController::class, 'index'])->name('guru.jadwal-mengajar');
+    Route::get('/jadwal-mengajar/export', [JadwalController::class, 'export'])->name('guru.jadwal-mengajar.export');
     Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('guru.pengumuman');
     
     // Permohonan Izin Siswa (API endpoints untuk dashboard) - moved before catch-all routes
@@ -416,14 +425,26 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/guru/delegasi', [\App\Http\Controllers\Guru\DelegationController::class, 'index'])->name('guru.delegasi');
     Route::get('/guru/delegasi/today-count', [\App\Http\Controllers\Guru\DelegationController::class, 'getTodayCount'])->name('guru.delegasi.today-count');
     
+    // Permohonan Izin Guru
+    Route::get('/guru/permohonan-izin', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'index'])->name('guru.permohonan-izin');
+    Route::post('/guru/permohonan-izin', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'store'])->name('guru.permohonan-izin.store');
+    
+    // Teacher Presence
+    Route::post('/guru/presence', [\App\Http\Controllers\Guru\TeacherPresenceController::class, 'store'])->name('guru.presence.store');
+    Route::get('/guru/presence/today-status', [\App\Http\Controllers\Guru\TeacherPresenceController::class, 'getTodayStatus'])->name('guru.presence.today-status');
+    Route::get('/guru/permohonan-izin/{id}', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'show'])->name('guru.permohonan-izin.show');
+    Route::post('/guru/permohonan-izin/get-timetables', [\App\Http\Controllers\Guru\TeacherLeaveRequestController::class, 'getTimetablesForDateRange'])->name('guru.permohonan-izin.get-timetables');
+    
 });
 
 // Student routes
 Route::middleware(['auth', 'role:student'])->group(function () {
     Route::get('/student/dashboard', [DashboardMuridController::class, 'index'])->name('murid.dashboard');
     Route::get('/student/jadwal', [JadwalPelajaranController::class, 'index'])->name('murid.jadwal');
+    Route::get('/student/jadwal/export', [JadwalPelajaranController::class, 'export'])->name('murid.jadwal.export');
     Route::get('/student/qr', [DashboardMuridController::class, 'qr'])->name('murid.qr');
     Route::get('/student/absensi', [DashboardMuridController::class, 'absensi'])->name('murid.absensi');
+    Route::get('/student/absensi/export', [DashboardMuridController::class, 'export'])->name('murid.absensi.export');
     Route::post('/student/qr/submit', [ScanController::class, 'submit'])->name('murid.qr.submit');
     Route::post('/student/absensi/scan', [ScanController::class, 'submit'])->name('murid.absensi.scan');
     Route::get('/student/attendance/history', [ScanController::class, 'getAttendanceHistory'])->name('murid.attendance.history');
@@ -470,10 +491,12 @@ Route::middleware(['auth', 'role:student'])->group(function () {
 
 // Specific API routes that need to be before catch-all routes
 Route::middleware(['auth'])->group(function () {
-    // Permohonan Izin Siswa (API endpoints untuk dashboard)
-    Route::get('/guru/permohonan-izin/{id}', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'show'])->name('guru.permohonan-izin.show');
-    Route::post('/guru/permohonan-izin/{id}/approve', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'approve'])->name('guru.permohonan-izin.approve');
-    Route::post('/guru/permohonan-izin/{id}/reject', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'reject'])->name('guru.permohonan-izin.reject');
+    // Permohonan Izin Siswa (API endpoints untuk dashboard guru)
+    Route::get('/guru/permohonan-izin-siswa', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'index'])->name('guru.permohonan-izin-siswa');
+    Route::get('/guru/permohonan-izin-siswa/{id}', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'show'])->name('guru.permohonan-izin-siswa.show');
+    Route::post('/guru/permohonan-izin-siswa/{id}/approve', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'approve'])->name('guru.permohonan-izin-siswa.approve');
+    Route::post('/guru/permohonan-izin-siswa/{id}/reject', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'reject'])->name('guru.permohonan-izin-siswa.reject');
+    Route::get('/guru/permohonan-izin-siswa/document/{id}', [\App\Http\Controllers\Guru\LeaveRequestController::class, 'viewDocument'])->name('guru.permohonan-izin-siswa.document');
 });
 
 // API routes for announcements (accessible by all authenticated users)
@@ -488,8 +511,23 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/api/notifications/recent', [\App\Http\Controllers\NotificationController::class, 'getRecent'])->name('api.notifications.recent');
     Route::post('/api/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('api.notifications.mark-read');
     Route::post('/api/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
+    
+    // SSE route for real-time notifications
+    Route::get('/api/notifications/stream', [\App\Http\Controllers\NotificationSSEController::class, 'stream'])->name('api.notifications.stream');
 });
 
+
+// Storage fallback route (jika symlink tidak ada)
+// Route ini akan serve file dari storage jika symlink tidak dibuat
+Route::get('/storage/users/{filename}', function ($filename) {
+    $path = storage_path('app/public/users/' . $filename);
+    
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    
+    return response()->file($path);
+})->where('filename', '.*')->name('storage.users');
 
 // Catch-all routes
 Route::group(['prefix' => '/', 'middleware' => 'auth'], function () {

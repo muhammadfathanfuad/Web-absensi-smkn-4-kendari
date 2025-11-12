@@ -9,7 +9,11 @@ use Carbon\Carbon;
 use App\Models\Timetable;
 use App\Models\Student;
 use App\Models\Attendance;
+use App\Models\Subject;
+use App\Models\ClassSubject;
 use App\Services\TimeOverrideService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 // Jika nanti Anda memerlukan model, tambahkan di sini. Contoh:
 // use App\Models\Jadwal;
 // use App\Models\Pengumuman;
@@ -136,6 +140,7 @@ class DashboardMuridController extends Controller
         // Ambil rentang tanggal dari query string (format YYYY-MM-DD)
         $from = request()->query('from');
         $to = request()->query('to');
+        $subjectId = request()->query('subject_id');
 
         $user = Auth::user();
 
@@ -148,10 +153,183 @@ class DashboardMuridController extends Controller
             $query->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
         }
 
+        // Jika ada filter mata pelajaran, tambahkan kondisi
+        if ($subjectId) {
+            $query->whereHas('classSession.timetable.classSubject', function($q) use ($subjectId) {
+                $q->where('subject_id', $subjectId);
+            });
+        }
+
         // Pagination dengan limit 15 per halaman
         $attendances = $query->orderByDesc('created_at')->paginate(15);
 
-        return view('murid.riwayat-absensi', compact('attendances', 'from', 'to'));
+        // Get all subjects for filter dropdown (subjects from student's timetable/schedule)
+        $student = Student::where('user_id', $user->id)->first();
+        $classId = $student ? $student->class_id : null;
+        
+        $subjects = collect();
+        if ($classId) {
+            // Get unique subject IDs from student's timetables using join for better performance
+            $subjectIds = Timetable::join('class_subjects', 'timetables.class_subject_id', '=', 'class_subjects.id')
+                ->where('class_subjects.class_id', $classId)
+                ->where('timetables.is_active', true)
+                ->distinct()
+                ->pluck('class_subjects.subject_id')
+                ->filter()
+                ->toArray();
+            
+            // Get subjects by IDs
+            if (!empty($subjectIds)) {
+                $subjects = Subject::whereIn('id', $subjectIds)
+                    ->orderBy('name')
+                    ->get();
+            }
+        }
+
+        return view('murid.riwayat-absensi', compact('attendances', 'from', 'to', 'subjects', 'subjectId'));
+    }
+
+    /**
+     * Export attendance history to PDF
+     */
+    public function export(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $student = Student::where('user_id', $user->id)->first();
+
+            if (!$student) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Data siswa tidak ditemukan.'], 404);
+                }
+                return redirect()->route('murid.absensi')->with('error', 'Data siswa tidak ditemukan.');
+            }
+
+            // Get filter parameters
+            $from = $request->input('from');
+            $to = $request->input('to');
+            $subjectId = $request->input('subject_id');
+
+            // Query dasar untuk semua absensi siswa
+            $query = Attendance::with(['classSession.timetable.classSubject.subject', 'classSession.timetable.classSubject.class'])
+                ->where('student_id', $user->id);
+
+            // Apply filters
+            if ($from && $to) {
+                $query->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
+            }
+
+            if ($subjectId) {
+                $query->whereHas('classSession.timetable.classSubject', function($q) use ($subjectId) {
+                    $q->where('subject_id', $subjectId);
+                });
+            }
+
+            // Get all attendances
+            $attendances = $query->orderByDesc('created_at')->get();
+
+            // Prepare PDF data
+            $pdfData = [];
+            foreach ($attendances as $att) {
+                $subject = optional(optional(optional($att->classSession)->timetable)->classSubject)->subject;
+                $subjectName = $subject ? $subject->name : '—';
+
+                // Format status
+                $statusMap = [
+                    'H' => 'Hadir',
+                    'I' => 'Izin',
+                    'S' => 'Sakit',
+                    'T' => 'Terlambat',
+                    'A' => 'Alpa'
+                ];
+                $statusText = $statusMap[$att->status] ?? $att->status;
+
+                // Format keterangan
+                $notes = '';
+                if ($att->status === 'H') {
+                    if ($att->check_in_time) {
+                        $checkInTime = \Carbon\Carbon::parse($att->check_in_time)->format('H:i');
+                        $notes = "Hadir tepat waktu (Scan: {$checkInTime})";
+                    } else {
+                        $notes = 'Hadir tepat waktu';
+                    }
+                } elseif ($att->status === 'T') {
+                    $lateMinutes = abs(round($att->late_minutes ?? 0));
+                    if ($lateMinutes === 0) {
+                        $timeFormat = '0 menit';
+                    } elseif ($lateMinutes < 60) {
+                        $timeFormat = "{$lateMinutes} menit";
+                    } else {
+                        $hours = floor($lateMinutes / 60);
+                        $remainingMinutes = $lateMinutes % 60;
+                        if ($remainingMinutes === 0) {
+                            $timeFormat = "{$hours} jam";
+                        } else {
+                            $timeFormat = "{$hours} jam {$remainingMinutes} menit";
+                        }
+                    }
+                    if ($att->check_in_time) {
+                        $checkInTime = \Carbon\Carbon::parse($att->check_in_time)->format('H:i');
+                        $notes = "Terlambat {$timeFormat} (Scan: {$checkInTime})";
+                    } else {
+                        $notes = "Terlambat {$timeFormat}";
+                    }
+                } elseif ($att->status === 'A') {
+                    $notes = 'Tidak hadir - tidak melakukan scan';
+                } elseif ($att->status === 'I') {
+                    $notes = 'Izin';
+                } elseif ($att->status === 'S') {
+                    $notes = 'Sakit';
+                } else {
+                    $notes = $att->notes ?? '-';
+                }
+
+                if ($att->check_out_time) {
+                    $checkOutTime = \Carbon\Carbon::parse($att->check_out_time)->format('H:i');
+                    $notes .= " (Keluar: {$checkOutTime})";
+                }
+
+                $pdfData[] = [
+                    'tanggal' => $att->created_at ? $att->created_at->format('d F Y') : '—',
+                    'mata_pelajaran' => $subjectName,
+                    'status' => $statusText,
+                    'jam_masuk' => $att->check_in_time ? \Carbon\Carbon::parse($att->check_in_time)->format('H:i') : '-',
+                    'keterangan' => $notes,
+                ];
+            }
+
+            $studentName = $user->full_name ?? 'Siswa';
+
+            // Build filter info
+            $filterInfo = [];
+            if ($from && $to) {
+                $filterInfo[] = 'Periode: ' . Carbon::parse($from)->format('d M Y') . ' - ' . Carbon::parse($to)->format('d M Y');
+            }
+            if ($subjectId) {
+                $subject = Subject::find($subjectId);
+                if ($subject) {
+                    $filterInfo[] = 'Mata Pelajaran: ' . $subject->name;
+                }
+            }
+
+            // Generate filename
+            $filename = 'riwayat_absensi_' . date('YmdHis') . '.pdf';
+
+            // Load PDF view
+            $pdf = Pdf::loadView('murid.riwayat-absensi-pdf', [
+                'attendances' => $pdfData,
+                'studentName' => $studentName,
+                'filterInfo' => $filterInfo,
+            ]);
+
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error('Error exporting attendance history: ' . $e->getMessage());
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengexport data. Silakan coba lagi.'], 500);
+            }
+            return redirect()->route('murid.absensi')->with('error', 'Gagal mengexport data. Silakan coba lagi.');
+        }
     }
 
     /**

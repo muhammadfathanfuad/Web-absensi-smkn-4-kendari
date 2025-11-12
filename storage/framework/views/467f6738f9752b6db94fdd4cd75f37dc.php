@@ -14,8 +14,9 @@
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Pilih Jadwal Mata Pelajaran</label>
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="dropdownmapel"
-                                data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="dropdownmapel"
+                                data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true"
+                                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 Pilih Mata Pelajaran
                             </button>
                             <div class="dropdown-menu w-100" aria-labelledby="dropdownmapel" style="max-width: 100%; word-wrap: break-word;">
@@ -259,13 +260,37 @@
         #qrcode {
             overflow: hidden;
         }
+        
+        /* Fix dropdown button text overflow on mobile */
+        #dropdownmapel {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+            position: relative;
+        }
+        
+        @media (max-width: 575.98px) {
+            #dropdownmapel {
+                font-size: 0.875rem;
+                padding-left: 0.75rem;
+                padding-right: 2.5rem;
+            }
+            
+            /* Ensure dropdown toggle arrow is visible */
+            .dropdown > #dropdownmapel::after {
+                position: absolute;
+                right: 0.75rem;
+                top: 50%;
+                transform: translateY(-50%);
+                margin-left: 0;
+            }
+        }
     </style>
 
     <script>
         // Pastikan QRCode library sudah ter-load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Checking QRCode library...');
-            
             // Check if timetable_id is in URL (for delegation)
             const urlParams = new URLSearchParams(window.location.search);
             const timetableId = urlParams.get('timetable_id');
@@ -278,25 +303,20 @@
                 );
                 
                 if (targetItem) {
-                    console.log('Auto-selecting timetable:', timetableId);
                     // Wait a bit for the DOM to fully initialize
                     setTimeout(() => {
                         targetItem.click();
                     }, 500);
                 } else {
-                    console.error('Timetable ID not found in dropdown:', timetableId);
                     alert('Jadwal yang dipilih tidak tersedia atau bukan jadwal hari ini.');
                 }
             }
-            console.log('qrcode-generator type:', typeof qrcode);
             
             // Cek apakah qrcode-generator library tersedia
             if (typeof qrcode !== 'undefined') {
-                console.log('qrcode-generator library is ready');
                 window.QRCodeLoaded = true;
                 window.QRCodeType = 'qrcode-generator';
             } else {
-                console.error('qrcode-generator library not available');
                 window.QRCodeLoaded = false;
             }
         });
@@ -305,8 +325,6 @@
             const stopSessionBtn = document.getElementById('stopSession');
             if (stopSessionBtn) {
                 stopSessionBtn.classList.remove('show');
-                console.log('Stop session button hidden on page load');
-                console.log('Button classes after removing show:', stopSessionBtn.className);
             }
             
             const dropdownmapel = document.getElementById('dropdownmapel');
@@ -333,30 +351,37 @@
 
             // Event listener untuk tombol konfirmasi stop session
             document.getElementById('confirmStopSessionButton').addEventListener('click', function() {
-                console.log('=== Confirm stop session button clicked ===');
                 const sessionToken = document.getElementById('stopSessionToken').value;
-                console.log('Session token from hidden input:', sessionToken);
-                console.log('Session token type:', typeof sessionToken);
-                console.log('Session token length:', sessionToken ? sessionToken.length : 'null');
                 
                 if (sessionToken) {
-                    console.log('Calling stopAttendanceSession with token:', sessionToken);
                     stopAttendanceSession(sessionToken);
-                } else {
-                    console.error('No session token found in hidden input');
                 }
             });
 
             // Event listener untuk modal notifikasi
             const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
             
-            // Ensure close buttons work
-            document.querySelector('#notificationModal .btn-close').addEventListener('click', () => {
+            // Ensure close buttons work - remove focus before hiding to prevent accessibility warning
+            document.querySelector('#notificationModal .btn-close').addEventListener('click', (e) => {
+                e.target.blur(); // Remove focus before hiding
                 notificationModal.hide();
             });
-            document.querySelector('#notificationModal .btn-light').addEventListener('click', () => {
+            document.querySelector('#notificationModal .btn-light').addEventListener('click', (e) => {
+                e.target.blur(); // Remove focus before hiding
                 notificationModal.hide();
             });
+            
+            // Also handle when modal is hidden via Bootstrap events
+            const notificationModalEl = document.getElementById('notificationModal');
+            if (notificationModalEl) {
+                notificationModalEl.addEventListener('hidden.bs.modal', function() {
+                    // Remove focus from any focused element inside modal
+                    const focusedElement = this.querySelector(':focus');
+                    if (focusedElement) {
+                        focusedElement.blur();
+                    }
+                });
+            }
         });
 
         // Fungsi untuk reset dropdown
@@ -391,8 +416,6 @@
             // Sembunyikan tombol stop session
             if (stopSessionBtn) {
                 stopSessionBtn.classList.remove('show');
-                console.log('Stop session button hidden');
-                console.log('Button classes after removing show:', stopSessionBtn.className);
             }
             
             // Reset info text
@@ -409,14 +432,12 @@
                     Ya, Hentikan Sesi
                 `;
                 confirmStopBtn.disabled = false;
-                console.log('Confirm stop session button reset');
             }
             
             // Reset hidden input session token
             const stopSessionTokenInput = document.getElementById('stopSessionToken');
             if (stopSessionTokenInput) {
                 stopSessionTokenInput.value = '';
-                console.log('Stop session token input reset');
             }
             
             // Reset tabel hasil scan
@@ -441,8 +462,16 @@
             }
             
             try {
+                // Pastikan data adalah object yang valid
+                if (!data || typeof data !== 'object') {
+                    return Promise.reject(new Error('Data must be a valid object'));
+                }
+                
+                // Stringify data dengan format yang konsisten
+                const jsonString = JSON.stringify(data);
+                
                 const qr = qrcode(0, 'M');
-                qr.addData(JSON.stringify(data));
+                qr.addData(jsonString);
                 qr.make();
                 
                 // Clear container
@@ -486,20 +515,13 @@
 
         // Fungsi untuk generate QR Code
         function generateQRCode(timetableId, subjectName, className, time) {
-            console.log('generateQRCode called with:', { timetableId, subjectName, className, time });
-
             if (!timetableId) {
-                console.error('timetableId is empty or undefined');
                 return;
             }
 
             const qrCodeContainer = document.getElementById('qrcode');
             const qrInfoText = document.getElementById('qrInfoText');
             const stopSessionBtn = document.getElementById('stopSession');
-            
-            console.log('QR Code container found:', qrCodeContainer);
-            console.log('qrcode-generator library available:', typeof qrcode);
-            console.log('QRCode loaded flag:', window.QRCodeLoaded);
             
             // Tampilkan loading state
             qrCodeContainer.style.display = 'flex';
@@ -536,14 +558,11 @@
                     throw new Error(data.error);
                 }
                 
-                console.log('QR Data received:', data);
-                
                 // Simpan session token untuk stop session
                 window.currentSessionToken = data.session_id;
                 
                 // Cek apakah qrcode-generator library tersedia
                 if (!window.QRCodeLoaded || typeof qrcode === 'undefined') {
-                    console.error('qrcode-generator library not available');
                     qrCodeContainer.innerHTML = `
                         <div class="text-center text-danger">
                             <iconify-icon icon="solar:danger-circle-outline" class="fs-48 d-block mx-auto mb-2"></iconify-icon>
@@ -553,11 +572,17 @@
                     return;
                 }
 
-                // Generate QR Code dengan library yang tersedia
-                console.log('Generating QR Code with data:', data);
-                console.log('QR Code container element:', qrCodeContainer);
-                console.log('Using QRCode library type:', window.QRCodeType);
+                // Pastikan data adalah object yang valid
+                if (!data || typeof data !== 'object') {
+                    throw new Error('QR data is not a valid object');
+                }
                 
+                // Pastikan semua field required ada
+                if (!data.session_id || !data.timetable_id || !data.teacher_id || !data.checksum) {
+                    throw new Error('QR data is missing required fields');
+                }
+                
+                // Generate QR code dengan data yang sudah divalidasi
                 generateQRCodeWithLibrary(qrCodeContainer, data, {
                     cellSize: 4,
                     margin: 2,
@@ -565,69 +590,46 @@
                     lightColor: '#ffffff'
                 })
                 .then(() => {
-                    console.log('QR Code generated successfully');
-                    
                     // Hanya tampilkan tombol stop session jika QR code berhasil dibuat
                     showStopSessionButtons(data.session_id, timetableId);
                 })
                 .catch((error) => {
-                    console.error('QR Code generation failed:', error);
                     qrCodeContainer.innerHTML = `
                         <div class="text-center text-danger">
                             <iconify-icon icon="solar:danger-circle-outline" class="fs-48 d-block mx-auto mb-2"></iconify-icon>
                             Gagal menghasilkan QR Code: ${error.message}
+                            <br><small class="text-muted">Silakan refresh halaman dan coba lagi</small>
                         </div>
                     `;
-                    
-                    // Jangan tampilkan tombol stop session jika QR code gagal dibuat
-                    console.log('QR Code generation failed - not showing stop session button');
                 });
             })
             .catch(error => {
-                console.error('Error generating QR Code:', error);
                 qrCodeContainer.innerHTML = `
                     <div class="text-center text-danger">
                         <iconify-icon icon="solar:danger-circle-outline" class="fs-48 d-block mx-auto mb-2"></iconify-icon>
                         ${error.message}
                     </div>
                 `;
-                
-                // Jangan tampilkan tombol stop session jika ada error dalam fetch request
-                console.log('Fetch request failed - not showing stop session button');
             });
         }
 
         // Fungsi helper untuk menampilkan tombol stop session
         function showStopSessionButtons(sessionId, timetableId) {
-            console.log('=== showStopSessionButtons called ===');
-            console.log('Session ID:', sessionId);
-            console.log('Timetable ID:', timetableId);
-            
             // Validasi: pastikan sessionId dan timetableId ada
             if (!sessionId || !timetableId) {
-                console.error('Missing sessionId or timetableId - not showing stop session button');
-                console.log('sessionId:', sessionId);
-                console.log('timetableId:', timetableId);
                 return;
             }
             
             const stopSessionBtn = document.getElementById('stopSession');
-            console.log('Stop session button element:', stopSessionBtn);
             
             // Tampilkan tombol stop session di bawah QR code
             if (stopSessionBtn) {
-                console.log('Adding show class to stop session button');
                 stopSessionBtn.classList.add('show');
-                console.log('Button classes after adding show:', stopSessionBtn.className);
-                console.log('Button style display:', stopSessionBtn.style.display);
                 
                 stopSessionBtn.onclick = function() {
-                    console.log('Stop session button clicked');
                     showStopSessionModal(sessionId); // sessionId is actually the session token
                 };
-                console.log('Stop session button displayed successfully');
             } else {
-                console.error('Stop session button not found');
                 return;
             }
             
@@ -637,12 +639,7 @@
 
         // Fungsi untuk menampilkan modal konfirmasi stop session
         function showStopSessionModal(sessionToken) {
-            console.log('=== showStopSessionModal called ===');
-            console.log('Session token received:', sessionToken);
-            console.log('Current session token from window:', window.currentSessionToken);
-            
             if (!sessionToken) {
-                console.error('No session token provided');
                 return;
             }
 
@@ -650,34 +647,24 @@
             const hiddenInput = document.getElementById('stopSessionToken');
             if (hiddenInput) {
                 hiddenInput.value = sessionToken;
-                console.log('Session token set to hidden input:', hiddenInput.value);
             } else {
-                console.error('Hidden input stopSessionToken not found');
                 return;
             }
             
             // Tampilkan modal
             const modal = new bootstrap.Modal(document.getElementById('stopSessionModal'));
             modal.show();
-            console.log('Stop session modal shown');
         }
 
         // Fungsi untuk stop attendance session
         function stopAttendanceSession(sessionToken) {
-            console.log('=== stopAttendanceSession called ===');
-            console.log('Session token received:', sessionToken);
-            console.log('Session token type:', typeof sessionToken);
-            console.log('Session token length:', sessionToken ? sessionToken.length : 'null');
-            
             if (!sessionToken) {
-                console.error('No session token provided');
                 return;
             }
 
             // Tampilkan loading state pada tombol modal
             const confirmBtn = document.getElementById('confirmStopSessionButton');
             if (!confirmBtn) {
-                console.error('Confirm stop session button not found');
                 return;
             }
             
@@ -694,17 +681,12 @@
                 Menghentikan...
             `;
             confirmBtn.disabled = true;
-            console.log('Button set to loading state');
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]');
-            console.log('CSRF Token:', csrfToken ? csrfToken.getAttribute('content') : 'Not found');
-            console.log('Stop session URL:', '<?php echo e(route("guru.absensi.stop-session")); ?>');
 
             const requestBody = {
                 session_token: sessionToken
             };
-            console.log('Request body:', requestBody);
-            console.log('Request body JSON:', JSON.stringify(requestBody));
 
             fetch('<?php echo e(route("guru.absensi.stop-session")); ?>', {
                 method: 'POST',
@@ -715,10 +697,6 @@
                 body: JSON.stringify(requestBody)
             })
             .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response ok:', response.ok);
-                console.log('Response headers:', response.headers);
-                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -726,15 +704,10 @@
                 return response.json();
             })
             .then(data => {
-                console.log('Response data:', data);
-                
                 if (data.success) {
-                    console.log('Session stopped successfully');
-                    
                     // Reset tombol terlebih dahulu
                     confirmBtn.innerHTML = originalText;
                     confirmBtn.disabled = false;
-                    console.log('Button reset after successful stop');
                     
                     // Tutup modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('stopSessionModal'));
@@ -744,29 +717,20 @@
                     showNotification('Sesi absensi berhasil dihentikan', 'success');
                     resetDropdown();
                 } else {
-                    console.error('Server returned error:', data.error);
                     showNotification('Gagal menghentikan sesi: ' + (data.error || 'Unknown error'), 'error');
                     // Reset tombol jika gagal
                     if (confirmBtn) {
                         confirmBtn.innerHTML = originalText;
                         confirmBtn.disabled = false;
-                        console.log('Button reset after server error');
                     }
                 }
             })
             .catch(error => {
-                console.error('Error stopping session:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    stack: error.stack,
-                    name: error.name
-                });
                 showNotification('Terjadi kesalahan saat menghentikan sesi: ' + error.message, 'error');
                 // Reset tombol jika error
                 if (confirmBtn) {
                     confirmBtn.innerHTML = originalText;
                     confirmBtn.disabled = false;
-                    console.log('Button reset after error');
                 }
             });
         }
@@ -798,14 +762,30 @@
             modalMessage.textContent = message;
             
             // Pastikan tombol Close/Tutup menutup instance yang sama
+            // Remove focus before hiding to prevent accessibility warning
             const closeBtn = modalEl.querySelector('.btn-close');
             const dismissBtn = modalEl.querySelector('.btn-light[data-bs-dismiss="modal"]');
             if (closeBtn) {
-                closeBtn.onclick = () => modal.hide();
+                closeBtn.onclick = (e) => {
+                    e.target.blur(); // Remove focus before hiding
+                    modal.hide();
+                };
             }
             if (dismissBtn) {
-                dismissBtn.onclick = () => modal.hide();
+                dismissBtn.onclick = (e) => {
+                    e.target.blur(); // Remove focus before hiding
+                    modal.hide();
+                };
             }
+            
+            // Handle when modal is hidden via Bootstrap events
+            modalEl.addEventListener('hidden.bs.modal', function() {
+                // Remove focus from any focused element inside modal
+                const focusedElement = this.querySelector(':focus');
+                if (focusedElement) {
+                    focusedElement.blur();
+                }
+            }, { once: false });
 
             modal.show();
         }
@@ -825,7 +805,7 @@
                     updateScanResultsTable(data);
                 })
                 .catch(error => {
-                    console.error('Error fetching scan results:', error);
+                    // Silent error handling
                 });
             }, 3000);
         }

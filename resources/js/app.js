@@ -10,6 +10,7 @@ window.bootstrap = bootstrap;
 import "iconify-icon";
 import "simplebar/dist/simplebar";
 
+
 // Import ApexCharts and make it globally available
 import ApexCharts from "apexcharts";
 window.ApexCharts = ApexCharts;

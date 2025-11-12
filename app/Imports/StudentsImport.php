@@ -89,11 +89,21 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
             $className = $kelasData['class_name'];
             $grade = $kelasData['grade'];
 
-            // Find or create class
-            $class = Classroom::updateOrCreate(
-                ['name' => $className],
-                ['grade' => $grade, 'homeroom_teacher_id' => null, 'room_id' => null]
-            );
+            // Find or create class - Cari berdasarkan name DAN grade (bukan hanya name)
+            // Ini mencegah kelas dengan nama sama tapi grade berbeda saling menimpa
+            $class = Classroom::where('name', $className)
+                ->where('grade', $grade)
+                ->first();
+            
+            if (!$class) {
+                // Jika tidak ditemukan, buat kelas baru dengan name dan grade yang sesuai
+                $class = Classroom::create([
+                    'name' => $className,
+                    'grade' => $grade,
+                    'homeroom_teacher_id' => null,
+                    'room_id' => null
+                ]);
+            }
 
             // Create user (generate email from NIS if not provided)
             $email = $row['nis'] . '@student.smkn4kendari.sch.id';

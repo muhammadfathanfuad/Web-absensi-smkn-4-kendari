@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -60,6 +62,11 @@ class AnnouncementController extends Controller
             'created_by' => Auth::id()
         ]);
 
+        // Send notifications to target users if announcement is active
+        if ($announcement->is_active) {
+            $this->sendAnnouncementNotifications($announcement);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Pengumuman berhasil dibuat',
@@ -106,6 +113,9 @@ class AnnouncementController extends Controller
             'is_active' => 'boolean'
         ]);
 
+        $oldTarget = $announcement->target;
+        $oldIsActive = $announcement->is_active;
+        
         $announcement->update([
             'title' => $request->title,
             'content' => $request->content,
@@ -115,6 +125,11 @@ class AnnouncementController extends Controller
             'expires_at' => $request->expires_at,
             'is_active' => $request->has('is_active')
         ]);
+
+        // Send notifications if announcement is activated or target changed
+        if ($announcement->is_active && (!$oldIsActive || $oldTarget !== $announcement->target)) {
+            $this->sendAnnouncementNotifications($announcement);
+        }
 
         return response()->json([
             'success' => true,
@@ -160,6 +175,11 @@ class AnnouncementController extends Controller
 
         // Refresh to get updated data
         $announcement->refresh();
+
+        // Send notifications if announcement is activated
+        if ($announcement->is_active && !$oldStatus) {
+            $this->sendAnnouncementNotifications($announcement);
+        }
 
         Log::info('After update:', [
             'announcement_id' => $announcement->id,
@@ -307,5 +327,106 @@ class AnnouncementController extends Controller
                 'read_count' => $announcement->read_count
             ]
         ]);
+    }
+
+    /**
+     * Send notifications to target users for an announcement.
+     */
+    private function sendAnnouncementNotifications(Announcement $announcement)
+    {
+        try {
+            // Get target users based on announcement target
+            $users = $this->getTargetUsers($announcement->target);
+
+            // Prepare notification data
+            $priorityLabels = [
+                'urgent' => 'Penting',
+                'high' => 'Tinggi',
+                'normal' => 'Normal'
+            ];
+            
+            $priorityLabel = $priorityLabels[$announcement->priority] ?? 'Normal';
+            
+            // Truncate content for notification message
+            $message = strlen($announcement->content) > 150 
+                ? substr($announcement->content, 0, 150) . '...' 
+                : $announcement->content;
+
+            // Check if notifications already exist for this announcement
+            $existingNotificationUserIds = Notification::where('related_id', $announcement->id)
+                ->where('related_type', Announcement::class)
+                ->where('type', 'announcement')
+                ->pluck('user_id')
+                ->toArray();
+
+            // Create notifications for each user (skip if notification already exists)
+            $notifications = [];
+            foreach ($users as $user) {
+                // Skip if notification already exists for this user
+                if (in_array($user->id, $existingNotificationUserIds)) {
+                    continue;
+                }
+
+                $notifications[] = [
+                    'user_id' => $user->id,
+                    'type' => 'announcement',
+                    'title' => $announcement->title,
+                    'message' => $message,
+                    'related_id' => $announcement->id,
+                    'related_type' => Announcement::class,
+                    'is_read' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // Bulk insert notifications for better performance
+            if (!empty($notifications)) {
+                Notification::insert($notifications);
+                
+                Log::info('Announcement notifications sent', [
+                    'announcement_id' => $announcement->id,
+                    'target' => $announcement->target,
+                    'notifications_count' => count($notifications)
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send announcement notifications', [
+                'announcement_id' => $announcement->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get target users based on announcement target.
+     */
+    private function getTargetUsers(string $target)
+    {
+        $query = User::where('status', 'active');
+
+        switch ($target) {
+            case 'teachers':
+                $query->whereHas('roles', function($q) {
+                    $q->where('name', 'teacher');
+                });
+                break;
+            
+            case 'students':
+                $query->whereHas('roles', function($q) {
+                    $q->where('name', 'student');
+                });
+                break;
+            
+            case 'all':
+            default:
+                // Get all active users with teacher or student role
+                $query->whereHas('roles', function($q) {
+                    $q->whereIn('name', ['teacher', 'student']);
+                });
+                break;
+        }
+
+        return $query->get();
     }
 }

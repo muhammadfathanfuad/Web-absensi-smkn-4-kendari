@@ -16,8 +16,11 @@ use App\Models\AttendanceSession;
 use App\Models\SessionDelegation;
 use App\Models\Subject;
 use App\Models\Classroom;
+use App\Models\Term;
 use App\Services\TimeOverrideService;
+use App\Services\AttendanceCacheService;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AbsensiController extends Controller
 {
@@ -268,10 +271,11 @@ class AbsensiController extends Controller
         $expiresAt = TimeOverrideService::now()->addHours(2);
         
         // Buat data QR yang disederhanakan - hanya field essential
+        // Pastikan semua ID adalah integer untuk konsistensi
         $qrData = [
             'session_id' => $sessionToken,
-            'timetable_id' => $timetable->id,
-            'teacher_id' => $originalTeacherId,
+            'timetable_id' => (int) $timetable->id,
+            'teacher_id' => (int) $originalTeacherId,
             'checksum' => hash('sha256', $sessionToken . $timetable->id . $originalTeacherId)
         ];
 
@@ -290,9 +294,15 @@ class AbsensiController extends Controller
             'is_active' => true,
         ]);
         
-        Log::info('Attendance session created successfully:', $attendanceSession->toArray());
+        Log::info('Attendance session created successfully:', [
+            'session_id' => $attendanceSession->id,
+            'timetable_id' => $attendanceSession->timetable_id,
+            'session_token' => $sessionToken,
+            'qr_data' => $qrData
+        ]);
 
-        return response()->json($qrData);
+        // Return dengan JSON_FORCE_OBJECT untuk memastikan format konsisten
+        return response()->json($qrData, 200, [], JSON_NUMERIC_CHECK);
         
         } catch (\Exception $e) {
             Log::error('Error generating QR Code: ' . $e->getMessage());
@@ -352,21 +362,39 @@ class AbsensiController extends Controller
         $currentTime = TimeOverrideService::now();
         $lateMinutes = $currentTime->diffInMinutes($classStartTime);
 
-        // Tentukan status berdasarkan waktu
-        if ($lateMinutes <= 15) {
-            $status = 'H'; // Hadir tepat waktu
-            $isOnTime = true;
-        } elseif ($lateMinutes <= 30) {
-            $status = 'H'; // Hadir dengan toleransi
+        // Check for leave request first (for future dates or if student has approved/rejected leave request)
+        $today = TimeOverrideService::today();
+        $leaveRequestStatus = \App\Http\Controllers\Guru\LeaveRequestController::checkLeaveRequestForAttendance(
+            $studentId,
+            $qrData['timetable_id'],
+            $today
+        );
+
+        // If there's a leave request decision, use that status
+        if ($leaveRequestStatus) {
+            $status = $leaveRequestStatus;
             $isOnTime = false;
+            $notes = $status === 'I' 
+                ? 'Izin (disetujui oleh guru)' 
+                : 'Alpha (permohonan izin ditolak)';
         } else {
-            $status = 'T'; // Terlambat
-            $isOnTime = false;
+            // Tentukan status berdasarkan waktu
+            if ($lateMinutes <= 15) {
+                $status = 'H'; // Hadir tepat waktu
+                $isOnTime = true;
+            } elseif ($lateMinutes <= 30) {
+                $status = 'H'; // Hadir dengan toleransi
+                $isOnTime = false;
+            } else {
+                $status = 'T'; // Terlambat
+                $isOnTime = false;
+            }
+            $notes = $isOnTime ? null : 'Terlambat ' . $lateMinutes . ' menit';
         }
 
         // Pastikan ada ClassSession
         $classSession = ClassSession::firstOrCreate(
-            ['timetable_id' => $qrData['timetable_id'], 'date' => TimeOverrideService::today()],
+            ['timetable_id' => $qrData['timetable_id'], 'date' => $today],
             ['status' => 'ongoing', 'opened_by' => $qrData['teacher_id']]
         );
 
@@ -380,7 +408,7 @@ class AbsensiController extends Controller
             'check_in_time' => $currentTime->format('H:i:s'),
             'is_on_time' => $isOnTime,
             'late_minutes' => $lateMinutes,
-            'notes' => $isOnTime ? null : 'Terlambat ' . $lateMinutes . ' menit',
+            'notes' => $notes,
         ]);
 
         $student = Student::where('user_id', $studentId)->with('user')->first();
@@ -532,29 +560,91 @@ class AbsensiController extends Controller
         // Get logged in teacher
         $teacherId = Auth::id();
         
-        // Get only subjects that the teacher teaches
-        $subjects = Subject::whereHas('classSubjects.teacher', function($q) use ($teacherId) {
-            $q->where('user_id', $teacherId);
-        })->orderBy('name')->get();
-        
-        // Get only classrooms that the teacher teaches
-        $classrooms = Classroom::whereHas('classSubjects.teacher', function($q) use ($teacherId) {
-            $q->where('user_id', $teacherId);
-        })->orderBy('grade')->orderBy('name')->get();
+        // Get cached subjects and classrooms (optimized with cache)
+        $subjects = AttendanceCacheService::getTeacherSubjects($teacherId);
+        $classrooms = AttendanceCacheService::getTeacherClassrooms($teacherId);
         
         $selectedSubjectId = $request->input('subject_id');
         $selectedClassroomId = $request->input('classroom_id');
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
+        
+        // Determine default period preset based on current month
+        // If no preset is provided, default to current semester
+        $now = Carbon::now();
+        $defaultPreset = 'custom';
+        if (!$request->has('period_preset') && !$dateFrom && !$dateTo) {
+            // Auto-detect current semester based on month
+            if ($now->month >= 7 && $now->month <= 12) {
+                $defaultPreset = 'semester_ganjil';
+            } elseif ($now->month >= 1 && $now->month <= 6) {
+                $defaultPreset = 'semester_genap';
+            }
+        }
+        
+        $periodPreset = $request->input('period_preset', $defaultPreset);
+        $viewType = $request->input('view_type', 'summary'); // Default to 'summary' for better UX
+
+        // Handle period preset
+        $dateFromCarbon = null;
+        $dateToCarbon = null;
+        
+        if ($periodPreset !== 'custom') {
+            switch ($periodPreset) {
+                case 'semester_ganjil':
+                    // Juli - Desember
+                    $year = $now->year;
+                    if ($now->month >= 7) {
+                        $dateFromCarbon = Carbon::create($year, 7, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year, 12, 31)->endOfDay();
+                    } else {
+                        $dateFromCarbon = Carbon::create($year - 1, 7, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year - 1, 12, 31)->endOfDay();
+                    }
+                    break;
+                case 'semester_genap':
+                    // Januari - Juni
+                    $year = $now->year;
+                    if ($now->month >= 1 && $now->month <= 6) {
+                        $dateFromCarbon = Carbon::create($year, 1, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year, 6, 30)->endOfDay();
+                    } else {
+                        $dateFromCarbon = Carbon::create($year, 1, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year, 6, 30)->endOfDay();
+                    }
+                    break;
+                case 'bulan_ini':
+                    $dateFromCarbon = $now->copy()->startOfMonth()->startOfDay();
+                    $dateToCarbon = $now->copy()->endOfMonth()->endOfDay();
+                    break;
+            }
+            
+            if ($dateFromCarbon && $dateToCarbon) {
+                $dateFrom = $dateFromCarbon->format('Y-m-d');
+                $dateTo = $dateToCarbon->format('Y-m-d');
+            }
+        } else {
+            if ($dateFrom) {
+                $dateFromCarbon = Carbon::parse($dateFrom)->startOfDay();
+            }
+            if ($dateTo) {
+                $dateToCarbon = Carbon::parse($dateTo)->endOfDay();
+            }
+        }
 
         // Query dasar dengan semua relasi yang diperlukan
         // Hanya ambil attendance dari kelas yang diajarkan oleh guru yang login
+        // Optimasi: Select kolom spesifik untuk mengurangi memory usage
         $query = Attendance::with([
-            'student.user',
-            'student.classroom',
-            'classSession.timetable.classSubject.subject',
-            'classSession.timetable.classSubject.class',
-            'classSession.timetable.classSubject.teacher'
+            'student:user_id,nis,class_id', // FIXED: students table uses user_id as primary key, not id
+            'student.user:id,full_name',
+            'student.classroom:id,grade,name',
+            'classSession:id,timetable_id,date',
+            'classSession.timetable:id,class_subject_id',
+            'classSession.timetable.classSubject:id,subject_id,class_id,teacher_id',
+            'classSession.timetable.classSubject.subject:id,name',
+            'classSession.timetable.classSubject.class:id,grade,name',
+            'classSession.timetable.classSubject.teacher:user_id' // FIXED: teachers table uses user_id as primary key, not id
         ])->whereHas('classSession.timetable.classSubject.teacher', function($q) use ($teacherId) {
             $q->where('user_id', $teacherId);
         });
@@ -585,16 +675,422 @@ class AbsensiController extends Controller
             });
         }
 
-        $attendances = $query->latest('id')->get();
+        // Optimasi: Gunakan pagination untuk data besar (50 items per page)
+        $perPage = 50;
+        $attendances = $query->latest('attendances.id')->paginate($perPage)->withQueryString();
+
+        // Calculate summary if view type is summary
+        // Untuk summary, kita perlu query terpisah tanpa pagination untuk kalkulasi yang akurat
+        $summary = [];
+        if ($viewType === 'summary') {
+            // Query terpisah untuk summary (tanpa pagination)
+            $summaryQuery = Attendance::with([
+                'student:user_id,nis,class_id', // FIXED: students table uses user_id as primary key, not id
+                'student.user:id,full_name',
+                'student.classroom:id,grade,name'
+            ])->whereHas('classSession.timetable.classSubject.teacher', function($q) use ($teacherId) {
+                $q->where('user_id', $teacherId);
+            });
+
+            // Apply same filters
+            if ($dateFrom && $dateTo) {
+                $summaryQuery->whereHas('classSession', function ($q) use ($dateFrom, $dateTo) {
+                    $q->whereBetween('date', [$dateFrom, $dateTo]);
+                });
+            } elseif ($dateFrom) {
+                $summaryQuery->whereHas('classSession', function ($q) use ($dateFrom) {
+                    $q->where('date', $dateFrom);
+                });
+            }
+
+            if ($selectedSubjectId) {
+                $summaryQuery->whereHas('classSession.timetable.classSubject', function ($q) use ($selectedSubjectId) {
+                    $q->where('subject_id', $selectedSubjectId);
+                });
+            }
+
+            if ($selectedClassroomId) {
+                $summaryQuery->whereHas('student', function ($q) use ($selectedClassroomId) {
+                    $q->where('class_id', $selectedClassroomId);
+                });
+            }
+
+            // Process dengan chunking untuk summary
+            $summaryData = [];
+            $summaryQuery->latest('attendances.id')->chunk(500, function ($attendances) use (&$summaryData) {
+                foreach ($attendances as $attendance) {
+                    $studentId = $attendance->student_id;
+                    if (!isset($summaryData[$studentId])) {
+                        $summaryData[$studentId] = [
+                            'student_id' => $studentId,
+                            'nis' => $attendance->student->nis ?? 'N/A',
+                            'name' => $attendance->student->user->full_name ?? 'N/A',
+                            'class' => $attendance->student->classroom 
+                                ? ($attendance->student->classroom->grade . ' - ' . $attendance->student->classroom->name)
+                                : 'N/A',
+                            'total_hadir' => 0,
+                            'total_terlambat' => 0,
+                            'total_absen' => 0,
+                            'total_izin' => 0,
+                            'total_sakit' => 0,
+                            'total_pertemuan' => 0,
+                        ];
+                    }
+                    
+                    $status = $attendance->status;
+                    if ($status == 'H') {
+                        $summaryData[$studentId]['total_hadir']++;
+                    } elseif ($status == 'T') {
+                        $summaryData[$studentId]['total_terlambat']++;
+                    } elseif ($status == 'A') {
+                        $summaryData[$studentId]['total_absen']++;
+                    } elseif ($status == 'I') {
+                        $summaryData[$studentId]['total_izin']++;
+                    } elseif ($status == 'S') {
+                        $summaryData[$studentId]['total_sakit']++;
+                    }
+                    $summaryData[$studentId]['total_pertemuan']++;
+                }
+            });
+
+            // Calculate percentage
+            foreach ($summaryData as &$student) {
+                $student['persentase'] = $student['total_pertemuan'] > 0 
+                    ? round(($student['total_hadir'] / $student['total_pertemuan']) * 100, 2) 
+                    : 0;
+            }
+            
+            $summary = array_values($summaryData);
+        }
 
         return view('guru.status-absensi', compact(
             'subjects', 
             'classrooms',
             'attendances', 
+            'summary',
             'selectedSubjectId',
             'selectedClassroomId',
             'dateFrom',
-            'dateTo'
+            'dateTo',
+            'periodPreset',
+            'viewType'
         ));
+    }
+
+    /**
+     * Calculate attendance summary per student
+     */
+    private function calculateAttendanceSummary($attendances, $selectedSubjectId = null)
+    {
+        $summary = [];
+        
+        foreach ($attendances as $attendance) {
+            $studentId = $attendance->student_id;
+            $studentName = $attendance->student->user->full_name ?? 'N/A';
+            $studentNis = $attendance->student->nis ?? 'N/A';
+            $className = $attendance->student->classroom 
+                ? ($attendance->student->classroom->grade . ' - ' . $attendance->student->classroom->name)
+                : 'N/A';
+            
+            if (!isset($summary[$studentId])) {
+                $summary[$studentId] = [
+                    'student_id' => $studentId,
+                    'nis' => $studentNis,
+                    'name' => $studentName,
+                    'class' => $className,
+                    'total_hadir' => 0,
+                    'total_terlambat' => 0,
+                    'total_absen' => 0,
+                    'total_izin' => 0,
+                    'total_sakit' => 0,
+                    'total_pertemuan' => 0,
+                    'persentase' => 0
+                ];
+            }
+            
+            // Count by status
+            $status = $attendance->status;
+            if ($status == 'H') {
+                $summary[$studentId]['total_hadir']++;
+            } elseif ($status == 'T') {
+                $summary[$studentId]['total_terlambat']++;
+            } elseif ($status == 'A') {
+                $summary[$studentId]['total_absen']++;
+            } elseif ($status == 'I') {
+                $summary[$studentId]['total_izin']++;
+            } elseif ($status == 'S') {
+                $summary[$studentId]['total_sakit']++;
+            }
+            
+            $summary[$studentId]['total_pertemuan']++;
+        }
+        
+        // Calculate percentage for each student
+        foreach ($summary as &$student) {
+            if ($student['total_pertemuan'] > 0) {
+                $hadir = $student['total_hadir'] + $student['total_terlambat']; // Terlambat juga dihitung hadir
+                $student['persentase'] = round(($hadir / $student['total_pertemuan']) * 100, 2);
+            }
+        }
+        
+        // Sort by name
+        usort($summary, function($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
+        
+        return $summary;
+    }
+
+    public function export(Request $request)
+    {
+        try {
+            $teacherId = Auth::id();
+            $teacher = Auth::user();
+            $teacherName = $teacher->full_name ?? 'Guru';
+
+            $selectedSubjectId = $request->input('subject_id');
+            $selectedClassroomId = $request->input('classroom_id');
+            $dateFrom = $request->input('date_from');
+            $dateTo = $request->input('date_to');
+            $periodPreset = $request->input('period_preset', 'custom');
+            $viewType = $request->input('view_type', 'detail');
+
+        // Handle period preset
+        $dateFromCarbon = null;
+        $dateToCarbon = null;
+        
+        if ($periodPreset !== 'custom') {
+            $now = Carbon::now();
+            switch ($periodPreset) {
+                case 'semester_ganjil':
+                    $year = $now->year;
+                    if ($now->month >= 7) {
+                        $dateFromCarbon = Carbon::create($year, 7, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year, 12, 31)->endOfDay();
+                    } else {
+                        $dateFromCarbon = Carbon::create($year - 1, 7, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year - 1, 12, 31)->endOfDay();
+                    }
+                    break;
+                case 'semester_genap':
+                    $year = $now->year;
+                    if ($now->month >= 1 && $now->month <= 6) {
+                        $dateFromCarbon = Carbon::create($year, 1, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year, 6, 30)->endOfDay();
+                    } else {
+                        $dateFromCarbon = Carbon::create($year, 1, 1)->startOfDay();
+                        $dateToCarbon = Carbon::create($year, 6, 30)->endOfDay();
+                    }
+                    break;
+                case 'bulan_ini':
+                    $dateFromCarbon = $now->copy()->startOfMonth()->startOfDay();
+                    $dateToCarbon = $now->copy()->endOfMonth()->endOfDay();
+                    break;
+            }
+            
+            if ($dateFromCarbon && $dateToCarbon) {
+                $dateFrom = $dateFromCarbon->format('Y-m-d');
+                $dateTo = $dateToCarbon->format('Y-m-d');
+            }
+        }
+
+            // Query dasar dengan semua relasi yang diperlukan
+            // Optimasi: Select kolom spesifik untuk mengurangi memory usage
+            $baseQuery = Attendance::with([
+                'student:user_id,nis,class_id', // FIXED: students table uses user_id as primary key, not id
+                'student.user:id,full_name',
+                'student.classroom:id,grade,name',
+                'classSession:id,timetable_id,date',
+                'classSession.timetable:id,class_subject_id',
+                'classSession.timetable.classSubject:id,subject_id,class_id,teacher_id',
+                'classSession.timetable.classSubject.subject:id,name',
+                'classSession.timetable.classSubject.class:id,grade,name',
+                'classSession.timetable.classSubject.teacher:user_id' // FIXED: teachers table uses user_id as primary key, not id
+            ])->whereHas('classSession.timetable.classSubject.teacher', function($q) use ($teacherId) {
+                $q->where('user_id', $teacherId);
+            });
+
+            // Filter berdasarkan rentang tanggal
+            if ($dateFrom && $dateTo) {
+                $baseQuery->whereHas('classSession', function ($q) use ($dateFrom, $dateTo) {
+                    $q->whereBetween('date', [$dateFrom, $dateTo]);
+                });
+            } elseif ($dateFrom) {
+                $baseQuery->whereHas('classSession', function ($q) use ($dateFrom) {
+                    $q->where('date', $dateFrom);
+                });
+            }
+
+            // Filter berdasarkan mata pelajaran jika dipilih
+            if ($selectedSubjectId) {
+                $baseQuery->whereHas('classSession.timetable.classSubject', function ($q) use ($selectedSubjectId) {
+                    $q->where('subject_id', $selectedSubjectId);
+                });
+            }
+
+            // Filter berdasarkan kelas jika dipilih
+            if ($selectedClassroomId) {
+                $baseQuery->whereHas('student', function ($q) use ($selectedClassroomId) {
+                    $q->where('class_id', $selectedClassroomId);
+                });
+            }
+
+            // Optimasi: Gunakan chunking untuk memproses data besar per batch (500 records)
+            // Ini mencegah memory overflow dan timeout
+            $pdfData = [];
+            $counter = 0;
+            $summaryData = [];
+
+            if ($viewType === 'summary') {
+                // Untuk summary, kita perlu semua data untuk kalkulasi
+                // Tapi kita tetap gunakan chunking untuk mengurangi memory
+                $baseQuery->latest('attendances.id')->chunk(500, function ($attendances) use (&$summaryData) {
+                    foreach ($attendances as $attendance) {
+                        $studentId = $attendance->student_id;
+                        if (!isset($summaryData[$studentId])) {
+                            $summaryData[$studentId] = [
+                                'student_id' => $studentId,
+                                'nis' => $attendance->student->nis ?? 'N/A',
+                                'name' => $attendance->student->user->full_name ?? 'N/A',
+                                'class' => $attendance->student->classroom 
+                                    ? ($attendance->student->classroom->grade . ' - ' . $attendance->student->classroom->name)
+                                    : 'N/A',
+                                'total_hadir' => 0,
+                                'total_terlambat' => 0,
+                                'total_absen' => 0,
+                                'total_izin' => 0,
+                                'total_sakit' => 0,
+                                'total_pertemuan' => 0,
+                            ];
+                        }
+                        
+                        $status = $attendance->status;
+                        if ($status == 'H') {
+                            $summaryData[$studentId]['total_hadir']++;
+                        } elseif ($status == 'T') {
+                            $summaryData[$studentId]['total_terlambat']++;
+                        } elseif ($status == 'A') {
+                            $summaryData[$studentId]['total_absen']++;
+                        } elseif ($status == 'I') {
+                            $summaryData[$studentId]['total_izin']++;
+                        } elseif ($status == 'S') {
+                            $summaryData[$studentId]['total_sakit']++;
+                        }
+                        $summaryData[$studentId]['total_pertemuan']++;
+                    }
+                });
+
+                // Calculate percentage and prepare PDF data
+                foreach ($summaryData as $student) {
+                    $persentase = $student['total_pertemuan'] > 0 
+                        ? round(($student['total_hadir'] / $student['total_pertemuan']) * 100, 2) 
+                        : 0;
+                    
+                    $pdfData[] = [
+                        'no' => count($pdfData) + 1,
+                        'nis' => $student['nis'],
+                        'nama' => $student['name'],
+                        'kelas' => $student['class'],
+                        'total_hadir' => $student['total_hadir'],
+                        'total_terlambat' => $student['total_terlambat'],
+                        'total_absen' => $student['total_absen'],
+                        'total_izin' => $student['total_izin'],
+                        'total_sakit' => $student['total_sakit'],
+                        'total_pertemuan' => $student['total_pertemuan'],
+                        'persentase' => $persentase,
+                    ];
+                }
+            } else {
+                // Detail view - process dengan chunking
+                $baseQuery->latest('attendances.id')->chunk(500, function ($attendances) use (&$pdfData, &$counter) {
+                    foreach ($attendances as $absen) {
+                $status = 'N/A';
+                if ($absen->status == 'S') {
+                    $status = 'Sakit';
+                } elseif ($absen->status == 'I') {
+                    $status = 'Izin';
+                } elseif ($absen->status == 'T' || ($absen->notes === 'Terlambat' && $absen->status !== 'H')) {
+                    $status = 'Terlambat';
+                } elseif ($absen->status == 'H') {
+                    $status = 'Hadir';
+                }
+
+                    $tanggal = '-';
+                    if ($absen->classSession && $absen->classSession->date) {
+                        $tanggal = Carbon::parse($absen->classSession->date)->translatedFormat('d/m/Y');
+                    }
+
+                $pdfData[] = [
+                            'no' => ++$counter,
+                        'tanggal' => $tanggal,
+                    'nis' => $absen->student->nis ?? 'N/A',
+                    'nama' => $absen->student->user->full_name ?? 'N/A',
+                            'kelas' => $absen->student->classroom 
+                                ? $absen->student->classroom->grade . ' - ' . $absen->student->classroom->name 
+                                : 'N/A',
+                    'mapel' => $absen->classSession->timetable->classSubject->subject->name ?? 'N/A',
+                    'jam_masuk' => $absen->check_in_time ?? '-',
+                    'status' => $status,
+                ];
+                }
+                });
+            }
+
+            // Build filter info
+            $filterInfo = [];
+            if ($periodPreset !== 'custom') {
+                $presetText = match($periodPreset) {
+                    'semester_ganjil' => 'Semester Ganjil',
+                    'semester_genap' => 'Semester Genap',
+                    'bulan_ini' => 'Bulan Ini',
+                    default => 'Custom'
+                };
+                $filterInfo[] = 'Periode: ' . $presetText;
+            }
+            if ($selectedSubjectId) {
+                $subject = Subject::find($selectedSubjectId);
+                if ($subject) {
+                    $filterInfo[] = 'Mata Pelajaran: ' . $subject->name;
+                }
+            }
+            if ($selectedClassroomId) {
+                $classroom = Classroom::find($selectedClassroomId);
+                if ($classroom) {
+                    $filterInfo[] = 'Kelas: ' . $classroom->grade . ' - ' . $classroom->name;
+                }
+            }
+            if ($dateFrom && $dateTo) {
+                $filterInfo[] = 'Dari Tanggal: ' . Carbon::parse($dateFrom)->translatedFormat('d F Y');
+                $filterInfo[] = 'Sampai Tanggal: ' . Carbon::parse($dateTo)->translatedFormat('d F Y');
+            } elseif ($dateFrom) {
+                $filterInfo[] = 'Tanggal: ' . Carbon::parse($dateFrom)->translatedFormat('d F Y');
+            }
+            if (empty($filterInfo)) {
+                $filterInfo[] = 'Semua Data';
+            }
+
+            $filename = ($viewType === 'summary' ? 'ringkasan_' : 'rekap_') . 'kehadiran_siswa_' . date('YmdHis') . '.pdf';
+
+            $pdf = Pdf::loadView('guru.status-absensi-pdf', [
+                'attendances' => $pdfData,
+                'teacherName' => $teacherName,
+                'filterInfo' => $filterInfo,
+                'viewType' => $viewType,
+            ]);
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error('Export attendance history error: ' . $e->getMessage());
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengexport data: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Gagal mengexport data: ' . $e->getMessage());
+        }
     }
 }

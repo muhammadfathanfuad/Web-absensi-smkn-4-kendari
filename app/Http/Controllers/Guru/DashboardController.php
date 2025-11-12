@@ -97,16 +97,15 @@ class DashboardController extends Controller
             ->where('day_of_week', $dayOfWeek)
             ->get();
 
-        // Get all students from today's classes
-        $studentIds = collect();
-        foreach ($todayTimetables as $timetable) {
-            $classStudents = Student::where('class_id', $timetable->classSubject->class->id)->pluck('user_id');
-            $studentIds = $studentIds->merge($classStudents);
-        }
+        // Optimasi: Get all class IDs first, then get all students in one query
+        $classIds = $todayTimetables->pluck('classSubject.class.id')->unique()->filter();
+        
+        // Get all students from today's classes in one query (optimized)
+        $allClassStudents = Student::whereIn('class_id', $classIds)->pluck('user_id');
 
         // Get leave requests for today's students
-        $leaveRequests = \App\Models\LeaveRequest::with(['student', 'processedBy'])
-            ->whereIn('student_id', $studentIds->unique())
+        $leaveRequests = \App\Models\LeaveRequest::with(['student:user_id,nis,class_id', 'student.user:id,full_name', 'processedBy'])
+            ->whereIn('student_id', $allClassStudents)
             ->where(function($query) use ($today) {
                 $query->where('start_date', '<=', $today)
                       ->where('end_date', '>=', $today);
@@ -114,14 +113,22 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Optimasi: Pre-load students per class untuk menghindari N+1
+        $studentsByClass = Student::whereIn('class_id', $classIds)
+            ->get()
+            ->groupBy('class_id')
+            ->map(function($students) {
+                return $students->pluck('user_id');
+            });
+
         // Group by student and add class information
-        $siswaIzin = $leaveRequests->map(function($request) use ($todayTimetables) {
+        $siswaIzin = $leaveRequests->map(function($request) use ($todayTimetables, $studentsByClass) {
             $student = $request->student;
             $classes = collect();
             
             foreach ($todayTimetables as $timetable) {
-                $classStudents = Student::where('class_id', $timetable->classSubject->class->id)->pluck('user_id');
-                if ($classStudents->contains($student->id)) {
+                $classId = $timetable->classSubject->class->id ?? null;
+                if ($classId && $studentsByClass->get($classId) && $studentsByClass->get($classId)->contains($student->user_id)) {
                     $classes->push([
                         'class_name' => $timetable->classSubject->class->name,
                         'subject_name' => $timetable->classSubject->subject->name,

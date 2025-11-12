@@ -169,7 +169,7 @@ class PengaturanController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Foto profil berhasil diperbarui.',
-                'photo_url' => Storage::url($path)
+                'photo_url' => user_photo_url($fileName)
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -1,5 +1,78 @@
 @extends('layouts.vertical-admin', ['subtitle' => 'Pengumuman'])
 
+@section('css')
+<style>
+    /* Responsive layout for pengumuman header controls */
+    .pengumuman-header-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .pengumuman-actions-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 575.98px) {
+        .pengumuman-header-controls {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .pengumuman-description {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .pengumuman-actions-wrapper {
+            width: 100%;
+        }
+        
+        .pengumuman-actions-wrapper .btn {
+            width: 100%;
+        }
+        
+        /* Footer sticky di mobile */
+        .page-content {
+            padding-bottom: 60px;
+        }
+        
+        .footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1000;
+            width: 100% !important;
+        }
+    }
+    
+    /* Tablet responsive */
+    @media (min-width: 576px) and (max-width: 767.98px) {
+        .pengumuman-header-controls {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .pengumuman-actions-wrapper {
+            width: 100%;
+        }
+        
+        .pengumuman-actions-wrapper .btn {
+            width: auto;
+            min-width: 150px;
+        }
+    }
+</style>
+@endsection
+
 @section('content')
 
 @include('layouts.partials.page-title', ['title' => 'Admin', 'subtitle' => 'Pengumuman'])
@@ -7,14 +80,16 @@
 {{-- Create Announcement Button --}}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
+        <div class="pengumuman-header-controls">
+            <div class="pengumuman-description">
                 <h5 class="mb-0">Kelola Pengumuman</h5>
                 <p class="text-muted mb-0">Buat dan kelola pengumuman untuk guru dan siswa</p>
             </div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAnnouncementModal">
-                <i class="bx bx-plus me-1"></i> Buat Pengumuman
-            </button>
+            <div class="pengumuman-actions-wrapper">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAnnouncementModal">
+                    <i class="bx bx-plus me-1"></i> Buat Pengumuman
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -195,7 +270,6 @@
         </div>
     </div>
 </div>
-
 @endsection
 
 @section('scripts')

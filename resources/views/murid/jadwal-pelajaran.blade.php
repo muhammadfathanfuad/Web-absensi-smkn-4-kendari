@@ -23,10 +23,40 @@
         <div class="col-12">
                 <div class="card">
                 <div class="card-header">
-                    <h4 class="card-title mb-0 d-flex align-items-center">
-                        <i class="bx bx-calendar-check me-2"></i>
-                        Jadwal Pelajaran Hari Ini - {{ \App\Services\TimeOverrideService::localeFormat('dddd, D MMMM Y') }}
-                    </h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0 d-flex align-items-center">
+                            <i class="bx bx-calendar-check me-2"></i>
+                            <span id="jadwalTitle">
+                                @php
+                                    $viewDay = request()->input('view_day', 'today');
+                                    if ($viewDay === 'besok') {
+                                        $currentDay = \App\Services\TimeOverrideService::dayOfWeek();
+                                        if ($currentDay >= 5) {
+                                            $nextDate = \App\Services\TimeOverrideService::now()->copy();
+                                            $daysUntilMonday = (8 - $currentDay) % 7;
+                                            if ($daysUntilMonday == 0) {
+                                                $daysUntilMonday = 7;
+                                            }
+                                            $nextDate->addDays($daysUntilMonday);
+                                        } else {
+                                            $nextDate = \App\Services\TimeOverrideService::now()->addDay();
+                                        }
+                                        echo 'Jadwal Pelajaran Besok - ' . $nextDate->translatedFormat('l, j F Y');
+                                    } else {
+                                        echo 'Jadwal Pelajaran Hari Ini - ' . \App\Services\TimeOverrideService::localeFormat('dddd, D MMMM Y');
+                                    }
+                                @endphp
+                            </span>
+                        </h4>
+                        @php
+                            $viewDay = request()->input('view_day', 'today');
+                            $buttonText = $viewDay === 'besok' ? 'Hari Ini' : 'Besok';
+                            $buttonOnClick = $viewDay === 'besok' ? 'lihatJadwalHariIni()' : 'lihatJadwalBesok()';
+                        @endphp
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="tombolBesok" onclick="{{ $buttonOnClick }}">
+                            <i class="bx bx-calendar me-1"></i> {{ $buttonText }}
+                        </button>
+                    </div>
                 </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -42,7 +72,7 @@
                                         <th scope="col">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="todayTimetableBody">
                                     @forelse ($timetables ?? collect() as $i => $tt)
                                         <tr>
                                         <td>{{ $i + 1 }}</td>
@@ -55,13 +85,23 @@
                                         </td>
                                         <td>
                                             @php
-                                                $classGrade = optional($tt->classSubject->class)->grade ?? 0;
-                                                $classType = '';
-                                                if ($classGrade == 11) {
-                                                    $classType = optional($tt->classSubject->class)->class_type ?? '—';
+                                                // Format jenis kelas: use location_type if available, otherwise use type
+                                                // location_type: 'lab' -> 'Lab', 'theory' -> 'Teori'
+                                                // type: 'praktik' -> 'Praktik', 'teori' -> 'Teori'
+                                                $locationType = $tt->location_type ?? null;
+                                                $type = $tt->type ?? 'teori';
+                                                
+                                                if ($locationType === 'lab') {
+                                                    $typeDisplay = 'Lab';
+                                                } elseif ($locationType === 'theory') {
+                                                    $typeDisplay = 'Teori';
+                                                } elseif ($type === 'praktik' || $type === 'Praktik') {
+                                                    $typeDisplay = 'Praktik';
+                                                } else {
+                                                    $typeDisplay = 'Teori';
                                                 }
                                             @endphp
-                                            <span class="badge bg-secondary">{{ $classType ?: '—' }}</span>
+                                            <span class="badge bg-secondary">{{ $typeDisplay }}</span>
                                         </td>
                                         <td>{{ optional(optional($tt->classSubject->teacher)->user)->full_name ?? '—' }}</td>
                                         <td>
@@ -69,17 +109,26 @@
                                         </td>
                                         <td>
                                             @php
-                                                $now = \App\Services\TimeOverrideService::now();
-                                                $startTime = \Carbon\Carbon::parse($tt->start_time);
-                                                $endTime = \Carbon\Carbon::parse($tt->end_time);
+                                                $viewDay = request()->input('view_day', 'today');
+                                                if ($viewDay === 'besok') {
+                                                    // For tomorrow, always show as "Belum Dimulai"
+                                                    $statusBadge = '<span class="badge bg-secondary">Belum Dimulai</span>';
+                                                } else {
+                                                    // For today, calculate actual status
+                                                    $now = \App\Services\TimeOverrideService::now();
+                                                    $startTime = \Carbon\Carbon::parse($tt->start_time);
+                                                    $endTime = \Carbon\Carbon::parse($tt->end_time);
+                                                    
+                                                    if ($now->lt($startTime)) {
+                                                        $statusBadge = '<span class="badge bg-secondary">Belum Dimulai</span>';
+                                                    } elseif ($now->between($startTime, $endTime)) {
+                                                        $statusBadge = '<span class="badge bg-primary">Sedang Berlangsung</span>';
+                                                    } else {
+                                                        $statusBadge = '<span class="badge bg-success">Selesai</span>';
+                                                    }
+                                                }
                                             @endphp
-                                            @if($now->lt($startTime))
-                                                <span class="badge bg-secondary">Belum Dimulai</span>
-                                            @elseif($now->between($startTime, $endTime))
-                                                <span class="badge bg-primary">Sedang Berlangsung</span>
-                                            @else
-                                                <span class="badge bg-success">Selesai</span>
-                                            @endif
+                                            {!! $statusBadge ?? '<span class="badge bg-secondary">Belum Dimulai</span>' !!}
                                         </td>
                                         </tr>
                                     @empty
@@ -111,43 +160,28 @@
                     </h4>
                 </div>
                     <div class="card-body">
-                        {{-- Tombol Print untuk Semua Jadwal Pelajaran --}}
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">Jadwal Pelajaran Lengkap</h5>
-                            <button type="button" class="btn btn-outline-primary" onclick="printJadwalPelajaran()">
-                                <iconify-icon icon="solar:printer-outline" class="fs-16 me-2"></iconify-icon>
-                                Print
-                            </button>
+                        {{-- Filter dan Tombol Export untuk Semua Jadwal Pelajaran --}}
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="weekFilter" class="form-label mb-0">Filter Minggu:</label>
+                                <select id="weekFilter" class="form-select" style="width: auto; min-width: 150px;">
+                                    <option value="all">Semua Minggu</option>
+                                    <option value="ganjil">Minggu Ganjil</option>
+                                    <option value="genap">Minggu Genap</option>
+                                </select>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
+                                    aria-expanded="false" id="exportJadwalMuridDropdownBtn">
+                                    <i class="bx bx-download"></i> <span>Export</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="exportJadwalMurid('pdf'); return false;">
+                                            <i class="bx bx-file"></i> Export PDF (.pdf)
+                                        </a></li>
+                                </ul>
+                            </div>
                         </div>
-                    {{-- Filter Hari --}}
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <label for="dayFilter" class="form-label">Filter Hari</label>
-                            <select class="form-select" id="dayFilter">
-                                <option value="">Semua Hari</option>
-                                <option value="monday">Senin</option>
-                                <option value="tuesday">Selasa</option>
-                                <option value="wednesday">Rabu</option>
-                                <option value="thursday">Kamis</option>
-                                <option value="friday">Jumat</option>
-                                <option value="saturday">Sabtu</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="subjectFilter" class="form-label">Filter Mata Pelajaran</label>
-                            <select class="form-select" id="subjectFilter">
-                                <option value="">Semua Mata Pelajaran</option>
-                                @if(isset($allTimetables))
-                                    @php
-                                        $subjects = $allTimetables->pluck('classSubject.subject.name')->filter()->unique()->sort();
-                                    @endphp
-                                    @foreach($subjects as $subject)
-                                        <option value="{{ strtolower(str_replace(' ', '-', $subject)) }}">{{ $subject }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        </div>
-                    </div>
 
                     <div class="table-responsive" id="printableJadwalPelajaran">
                         <table class="table table-hover table-centered" id="allScheduleTable">
@@ -162,7 +196,7 @@
                                     <th scope="col">Jam</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="allScheduleTableBody">
                                 @forelse ($allTimetables ?? collect() as $i => $tt)
                                     @php
                                         $days = [
@@ -186,7 +220,7 @@
                                         ];
                                         $dayBadgeClass = $dayClass[$tt->day_of_week] ?? 'bg-secondary';
                                     @endphp
-                                    <tr data-day="{{ strtolower($dayName) }}" data-subject="{{ strtolower(str_replace(' ', '-', optional($tt->classSubject->subject)->name ?? '')) }}">
+                                    <tr>
                                         <td>{{ $i + 1 }}</td>
                                         <td>
                                             <span class="badge {{ $dayBadgeClass }}">{{ $dayName }}</span>
@@ -200,13 +234,23 @@
                                         </td>
                                         <td>
                                             @php
-                                                $classGrade = optional($tt->classSubject->class)->grade ?? 0;
-                                                $classType = '';
-                                                if ($classGrade == 11) {
-                                                    $classType = optional($tt->classSubject->class)->class_type ?? '—';
+                                                // Format jenis kelas: use location_type if available, otherwise use type
+                                                // location_type: 'lab' -> 'Lab', 'theory' -> 'Teori'
+                                                // type: 'praktik' -> 'Praktik', 'teori' -> 'Teori'
+                                                $locationType = $tt->location_type ?? null;
+                                                $type = $tt->type ?? 'teori';
+                                                
+                                                if ($locationType === 'lab') {
+                                                    $typeDisplay = 'Lab';
+                                                } elseif ($locationType === 'theory') {
+                                                    $typeDisplay = 'Teori';
+                                                } elseif ($type === 'praktik' || $type === 'Praktik') {
+                                                    $typeDisplay = 'Praktik';
+                                                } else {
+                                                    $typeDisplay = 'Teori';
                                                 }
                                             @endphp
-                                            <span class="badge bg-secondary">{{ $classType ?: '—' }}</span>
+                                            <span class="badge bg-secondary">{{ $typeDisplay }}</span>
                                         </td>
                                         <td>{{ optional(optional($tt->classSubject->teacher)->user)->full_name ?? '—' }}</td>
                                         <td>
@@ -233,144 +277,396 @@
     @endsection
 
 @push('scripts')
-        <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Filter functionality
-    const dayFilter = document.getElementById('dayFilter');
-    const subjectFilter = document.getElementById('subjectFilter');
-    const table = document.getElementById('allScheduleTable');
-    const rows = table.querySelectorAll('tbody tr');
-
-    function filterTable() {
-        const selectedDay = dayFilter.value;
-        const selectedSubject = subjectFilter.value;
-
-        rows.forEach(row => {
-            const rowDay = row.getAttribute('data-day');
-            const rowSubject = row.getAttribute('data-subject');
-            
-            const dayMatch = !selectedDay || rowDay === selectedDay;
-            const subjectMatch = !selectedSubject || rowSubject === selectedSubject;
-            
-            if (dayMatch && subjectMatch) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
-
-    dayFilter.addEventListener('change', filterTable);
-    subjectFilter.addEventListener('change', filterTable);
-            });
-
-    function printJadwalPelajaran() {
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        
-        // Get the table HTML and remove badge classes
-        const tableContainer = document.getElementById('printableJadwalPelajaran');
-        const tableClone = tableContainer.cloneNode(true);
-        
-        // Remove badge classes from all elements
-        const badges = tableClone.querySelectorAll('.badge');
-        badges.forEach(badge => {
-            badge.className = badge.className.replace(/badge[^"]*/g, '').trim();
-            badge.style.border = 'none';
-            badge.style.padding = '0';
-            badge.style.backgroundColor = 'transparent';
-            badge.style.color = '#000';
-        });
-        
-        // Remove text-muted elements (kode mata pelajaran)
-        const textMutedElements = tableClone.querySelectorAll('.text-muted');
-        textMutedElements.forEach(element => {
-            element.remove();
-        });
-        
-        const tableHTML = tableClone.innerHTML;
-        
-        // Create complete print document
-        const printContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Jadwal Pelajaran Lengkap</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                        background: white;
-                    }
-                    .print-header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                        border-bottom: 2px solid #000;
-                        padding-bottom: 15px;
-                    }
-                    .print-header h3 {
-                        margin: 0 0 10px 0;
-                        font-size: 18px;
-                        font-weight: bold;
-                    }
-                    .print-header p {
-                        margin: 5px 0;
-                        font-size: 14px;
-                    }
-                    .table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 20px;
-                    }
-                    .table th,
-                    .table td {
-                        border: 1px solid #000;
-                        padding: 8px;
-                        text-align: left;
-                    }
-                    .table thead th {
-                        background-color: #f5f5f5;
-                        font-weight: bold;
-                    }
-                    .badge {
-                        border: none !important;
-                        padding: 0 !important;
-                        font-size: 14px !important;
-                        background-color: transparent !important;
-                        color: #000 !important;
-                        font-weight: normal !important;
-                    }
-                    .text-muted {
-                        display: none !important;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-header">
-                    <h3>JADWAL PELAJARAN LENGKAP</h3>
-                    <p>SMK Negeri 4 Kendari</p>
-                    <p>Tanggal Print: ${new Date().toLocaleDateString('id-ID', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })}</p>
-                </div>
-                ${tableHTML}
-            </body>
-            </html>
-        `;
-        
-        // Write content to new window
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        
-        // Wait for content to load then print
-        printWindow.onload = function() {
-            printWindow.print();
-            printWindow.close();
+<script>
+    // CRITICAL: Prevent duplicate declarations - use window-level variable
+    if (typeof window._jadwalVars === 'undefined') {
+        window._jadwalVars = {
+            currentViewDay: @json(request()->input('view_day', 'today') === 'besok' ? 'besok' : null) // null = hari ini, atau 'besok' untuk besok
         };
     }
-        </script>
+    
+    // Use local reference for convenience
+    var currentViewDay = window._jadwalVars.currentViewDay;
+    
+    // Filter week change handler
+    document.addEventListener('DOMContentLoaded', function() {
+        const weekFilter = document.getElementById('weekFilter');
+        if (weekFilter) {
+            weekFilter.addEventListener('change', function() {
+                const selectedWeek = this.value;
+                loadAllTimetables(selectedWeek);
+            });
+        }
+    });
+
+    // Function to view tomorrow's schedule
+    function lihatJadwalBesok() {
+        const tbody = document.getElementById('todayTimetableBody');
+        const title = document.getElementById('jadwalTitle');
+        const tombolBesok = document.getElementById('tombolBesok');
+        
+        if (!tbody || !title) return;
+
+        // Show loading state
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+
+        // Build URL with tomorrow parameter
+        const url = new URL('{{ route("murid.jadwal") }}', window.location.origin);
+        url.searchParams.set('view_day', 'besok');
+
+        // Fetch data
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.timetables) {
+                currentViewDay = 'besok';
+                window._jadwalVars.currentViewDay = 'besok'; // Sync with window
+                renderTodayTimetable(data.timetables, data.dayName, data.dateText);
+                // Change button to "Hari Ini"
+                if (tombolBesok) {
+                    tombolBesok.innerHTML = '<i class="bx bx-calendar me-1"></i> Hari Ini';
+                    tombolBesok.onclick = lihatJadwalHariIni;
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-muted"><i class="bx bx-calendar-x display-4"></i><p class="mt-2">Tidak ada jadwal untuk besok</p></div></td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading tomorrow timetable:', error);
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-danger">Terjadi kesalahan saat memuat data.</div></td></tr>';
+        });
+    }
+
+    // Function to view today's schedule
+    function lihatJadwalHariIni() {
+        const tbody = document.getElementById('todayTimetableBody');
+        const title = document.getElementById('jadwalTitle');
+        const tombolBesok = document.getElementById('tombolBesok');
+        
+        if (!tbody || !title) return;
+
+        // Show loading state
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+
+        // Build URL without view_day parameter (default to today)
+        const url = new URL('{{ route("murid.jadwal") }}', window.location.origin);
+
+        // Fetch data
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.timetables) {
+                currentViewDay = null;
+                window._jadwalVars.currentViewDay = null; // Sync with window
+                renderTodayTimetable(data.timetables, data.dayName, data.dateText);
+                // Change button back to "Besok"
+                if (tombolBesok) {
+                    tombolBesok.innerHTML = '<i class="bx bx-calendar me-1"></i> Besok';
+                    tombolBesok.onclick = lihatJadwalBesok;
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-muted"><i class="bx bx-calendar-x display-4"></i><p class="mt-2">Tidak ada jadwal untuk hari ini</p></div></td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading today timetable:', error);
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-danger">Terjadi kesalahan saat memuat data.</div></td></tr>';
+        });
+    }
+
+    // Render today's timetable
+    function renderTodayTimetable(timetables, dayName, dateText) {
+        const tbody = document.getElementById('todayTimetableBody');
+        const title = document.getElementById('jadwalTitle');
+        
+        if (!tbody || !title) return;
+
+        // Update title
+        title.textContent = 'Jadwal Pelajaran ' + dayName + ' - ' + dateText;
+
+        if (timetables.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-muted"><i class="bx bx-calendar-x display-4"></i><p class="mt-2">Tidak ada jadwal untuk hari ini</p></div></td></tr>';
+            return;
+        }
+
+        let html = '';
+        timetables.forEach((tt, index) => {
+            // Format jenis kelas
+            let typeDisplay = 'Teori';
+            if (tt.location_type === 'lab') {
+                typeDisplay = 'Lab';
+            } else if (tt.location_type === 'theory') {
+                typeDisplay = 'Teori';
+            } else if (tt.type === 'praktik' || tt.type === 'Praktik') {
+                typeDisplay = 'Praktik';
+            }
+
+            const startTime = formatTime(tt.start_time);
+            const endTime = formatTime(tt.end_time);
+            
+            // Determine status (simplified - always show as upcoming for tomorrow)
+            // Use window-level variable to ensure consistency
+            const viewDay = (window._jadwalVars && window._jadwalVars.currentViewDay !== undefined) 
+                ? window._jadwalVars.currentViewDay 
+                : currentViewDay;
+            let statusBadge = '';
+            if (viewDay === 'besok') {
+                statusBadge = '<span class="badge bg-secondary">Belum Dimulai</span>';
+            } else {
+                // For today, we could calculate status, but for simplicity, show as upcoming
+                statusBadge = '<span class="badge bg-secondary">Belum Dimulai</span>';
+            }
+
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>
+                        <h6 class="mb-0">${tt.subject_name || '—'}</h6>
+                        ${tt.subject_code ? '<small class="text-muted">' + tt.subject_code + '</small>' : ''}
+                    </td>
+                    <td><span class="badge bg-info">${tt.class_name || '—'}</span></td>
+                    <td><span class="badge bg-secondary">${typeDisplay}</span></td>
+                    <td>${tt.teacher_name || '—'}</td>
+                    <td><span class="badge bg-primary">${startTime} - ${endTime}</span></td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // Format time helper
+    function formatTime(timeStr) {
+        if (!timeStr) return '—';
+        const parts = timeStr.split(':');
+        if (parts.length >= 2) {
+            return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+        }
+        return timeStr;
+    }
+
+    // Load all timetables based on week filter
+    function loadAllTimetables(weekType = 'all') {
+        const tbody = document.getElementById('allScheduleTableBody');
+        if (!tbody) return;
+
+        // Show loading state
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+
+        // Build URL with filter
+        const url = new URL('{{ route("murid.jadwal") }}', window.location.origin);
+        url.searchParams.set('week_filter', weekType);
+
+        // Fetch data
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.timetables) {
+                renderTimetablesTable(data.timetables);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-muted"><i class="bx bx-calendar-x display-4"></i><p class="mt-2">Tidak ada jadwal pelajaran ditemukan</p></div></td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading timetables:', error);
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-danger">Terjadi kesalahan saat memuat data.</div></td></tr>';
+        });
+    }
+
+    // Render timetables table
+    function renderTimetablesTable(timetables) {
+        const tbody = document.getElementById('allScheduleTableBody');
+        if (!tbody) return;
+
+        if (timetables.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="text-muted"><i class="bx bx-calendar-x display-4"></i><p class="mt-2">Tidak ada jadwal pelajaran ditemukan</p></div></td></tr>';
+            return;
+        }
+
+        const days = {
+            1: 'Senin',
+            2: 'Selasa',
+            3: 'Rabu',
+            4: 'Kamis',
+            5: 'Jumat',
+            6: 'Sabtu',
+            7: 'Minggu'
+        };
+
+        const dayClass = {
+            1: 'bg-primary',
+            2: 'bg-success',
+            3: 'bg-warning',
+            4: 'bg-info',
+            5: 'bg-danger',
+            6: 'bg-secondary',
+            7: 'bg-dark'
+        };
+
+        let html = '';
+        timetables.forEach((tt, index) => {
+            const dayName = days[tt.day_of_week] || 'Unknown';
+            const dayBadgeClass = dayClass[tt.day_of_week] || 'bg-secondary';
+            
+            // Format jenis kelas
+            let typeDisplay = 'Teori';
+            if (tt.location_type === 'lab') {
+                typeDisplay = 'Lab';
+            } else if (tt.location_type === 'theory') {
+                typeDisplay = 'Teori';
+            } else if (tt.type === 'praktik' || tt.type === 'Praktik') {
+                typeDisplay = 'Praktik';
+            }
+
+            // Format time (assuming format is HH:mm:ss or HH:mm)
+            const formatTime = (timeStr) => {
+                if (!timeStr) return '—';
+                const parts = timeStr.split(':');
+                if (parts.length >= 2) {
+                    return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                }
+                return timeStr;
+            };
+            
+            const startTime = formatTime(tt.start_time);
+            const endTime = formatTime(tt.end_time);
+
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><span class="badge ${dayBadgeClass}">${dayName}</span></td>
+                    <td>
+                        <h6 class="mb-0">${tt.subject_name || '—'}</h6>
+                        ${tt.subject_code ? '<small class="text-muted">' + tt.subject_code + '</small>' : ''}
+                    </td>
+                    <td><span class="badge bg-info">${tt.class_name || '—'}</span></td>
+                    <td><span class="badge bg-secondary">${typeDisplay}</span></td>
+                    <td>${tt.teacher_name || '—'}</td>
+                    <td><span class="badge bg-primary">${startTime} - ${endTime}</span></td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // Show loading indicator for export
+    function showExportLoading(format, reportType = '', message = '', type = 'info') {
+        const formatText = format === 'pdf' ? 'PDF' : 'File';
+        const alertClass = type === 'success' ? 'alert-success' : (type === 'danger' ? 'alert-danger' : 'alert-info');
+        const iconClass = type === 'success' ? 'bx-check-circle' : (type === 'danger' ? 'bx-x-circle' : '');
+        const spinnerHtml = type === 'success' || type === 'danger' ? '' : '<div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>';
+        const iconHtml = iconClass ? `<i class="bx ${iconClass} me-2" style="font-size: 1.2em;"></i>` : '';
+        
+        const loadingHtml = `
+            <div id="exportLoading" class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+                <div class="d-flex align-items-center">
+                    ${spinnerHtml}
+                    ${iconHtml}
+                    <div>
+                        <strong>${message || `Sedang memproses export ${formatText}${reportType ? ' - ' + reportType : ''}...`}</strong>
+                        ${message ? '' : '<br><small>File akan segera diunduh</small>'}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing loading if any
+        const existingLoading = document.getElementById('exportLoading');
+        if (existingLoading) {
+            existingLoading.remove();
+        }
+        
+        // Add new loading indicator
+        document.body.insertAdjacentHTML('beforeend', loadingHtml);
+    }
+    
+    // Show success message in loading indicator
+    function showExportSuccess(message = 'Export berhasil! File sedang diunduh.') {
+        showExportLoading('pdf', '', message, 'success');
+        setTimeout(function() {
+            const loadingElement = document.getElementById('exportLoading');
+            if (loadingElement) {
+                loadingElement.classList.remove('show');
+                setTimeout(function() {
+                    loadingElement.remove();
+                }, 150);
+            }
+        }, 3000);
+    }
+    
+    // Show error message in loading indicator
+    function showExportError(message = 'Gagal mengexport data. Silakan coba lagi atau hubungi administrator.') {
+        showExportLoading('pdf', '', message, 'danger');
+        setTimeout(function() {
+            const loadingElement = document.getElementById('exportLoading');
+            if (loadingElement) {
+                loadingElement.classList.remove('show');
+                setTimeout(function() {
+                    loadingElement.remove();
+                }, 3000);
+            }
+        }, 5000);
+    }
+    
+    // Export function for student timetable
+    function exportJadwalMurid(format = 'pdf') {
+        try {
+            // Check if export is already in progress
+            if (window.exportNavigating) {
+                console.log('Export already in progress, skipping...');
+                return;
+            }
+
+            // Get selected week filter
+            const weekFilter = document.getElementById('weekFilter');
+            const selectedWeek = weekFilter ? weekFilter.value : 'all';
+
+            // Build export URL with week filter
+            let exportUrl = '{{ route("murid.jadwal.export") }}?format=' + format;
+            if (selectedWeek && selectedWeek !== 'all') {
+                exportUrl += '&week_filter=' + encodeURIComponent(selectedWeek);
+            }
+            
+            // Show loading indicator
+            showExportLoading(format, 'Jadwal Pelajaran');
+            
+            // Mark as navigating to prevent duplicate
+            window.exportNavigating = true;
+            
+            // Use window.location.href for direct download (more reliable)
+            window.location.href = exportUrl;
+            
+            // Show success message after a delay
+            setTimeout(function() {
+                showExportSuccess('Export berhasil! File sedang diunduh.');
+                window.exportNavigating = false;
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Export error:', error);
+            showExportError('Terjadi kesalahan saat export: ' + error.message);
+            window.exportNavigating = false;
+        }
+    }
+</script>
 @endpush

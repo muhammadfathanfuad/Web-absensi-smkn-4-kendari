@@ -9,6 +9,7 @@
             
             <div class="card mb-3">
                 <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <div class="avatar-md bg-primary bg-opacity-10 rounded-circle">
@@ -18,6 +19,32 @@
                         <div class="flex-grow-1 ms-3">
                             <h5 class="mb-1">Selamat Datang, <?php echo e($namaGuru); ?>!</h5>
                             <p class="text-muted mb-0">Dashboard Guru - <?php echo e(\App\Services\TimeOverrideService::translatedFormat('l, j F Y')); ?></p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center d-none d-xl-block">
+                            <button type="button" id="btnPresence" class="btn btn-primary btn-lg" onclick="recordPresence()" style="min-width: 200px; text-align: center;">
+                                <i class="bx bx-check-circle me-2"></i>
+                                <span id="presenceButtonText">Catat Kehadiran</span>
+                            </button>
+                            <div id="presenceStatus" class="mt-2">
+                                <small class="text-muted" id="presenceStatusText"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="d-xl-none mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <button type="button" id="btnPresenceMobile" class="btn btn-primary btn-lg w-100" onclick="recordPresence()" style="text-align: center;">
+                            <i class="bx bx-check-circle me-2"></i>
+                            <span id="presenceButtonTextMobile">Catat Kehadiran</span>
+                        </button>
+                        <div id="presenceStatusMobile" class="mt-2 text-center">
+                            <small class="text-muted" id="presenceStatusTextMobile"></small>
                         </div>
                     </div>
                 </div>
@@ -262,7 +289,7 @@
     <div class="row">
         
         <div class="col-lg-6">
-            <div class="card card-height-100">
+            <div class="card card-height-100" id="list-siswa-izin-hari-ini">
                 <div class="card-header">
                     <h4 class="card-title mb-0">List Siswa Izin Hari Ini</h4>
                 </div>
@@ -465,6 +492,7 @@
             </div>
         </div>
     </div>
+
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
@@ -476,6 +504,142 @@
         
         let currentRequestId = null;
         let currentAction = null;
+
+        // Load presence status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPresenceStatus();
+            // Refresh status every 30 seconds
+            setInterval(loadPresenceStatus, 30000);
+        });
+
+        function updatePresenceButton(button, buttonText, statusText, data) {
+            if (!button) return;
+            
+            const iconElement = button.querySelector('i');
+            
+            if (data.has_presence) {
+                button.disabled = true;
+                button.classList.remove('btn-primary', 'btn-secondary');
+                button.classList.add('btn-success');
+                if (iconElement) {
+                    iconElement.className = 'bx bx-check-circle me-2';
+                }
+                buttonText.textContent = 'Sudah Mencatat Kehadiran';
+                
+                const statusBadge = {
+                    'H': '<span class="badge bg-success">Hadir</span>',
+                    'A': '<span class="badge bg-danger">Alfa</span>',
+                    'I': '<span class="badge bg-info">Izin</span>',
+                    'S': '<span class="badge bg-warning">Sakit</span>'
+                };
+                
+                statusText.innerHTML = 'Status: ' + (statusBadge[data.status] || '') + 
+                    (data.check_in_time ? ' | Waktu: ' + new Date(data.check_in_time).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '');
+            } else {
+                if (data.is_within_time) {
+                    button.disabled = false;
+                    button.classList.remove('btn-success', 'btn-secondary');
+                    button.classList.add('btn-primary');
+                    if (iconElement) {
+                        iconElement.className = 'bx bx-check-circle me-2';
+                    }
+                    buttonText.textContent = 'Catat Kehadiran';
+                    statusText.innerHTML = '<small class="text-muted">Waktu: ' + data.current_time + '</small>';
+                } else {
+                    button.disabled = true;
+                    button.classList.remove('btn-primary', 'btn-success');
+                    button.classList.add('btn-secondary');
+                    if (iconElement) {
+                        iconElement.className = 'bx bx-time me-2';
+                    }
+                    buttonText.textContent = 'Di Luar Waktu';
+                    statusText.innerHTML = '<small class="text-warning">Tombol hanya bisa ditekan dari jam 07:00 - 14:45</small>';
+                }
+            }
+        }
+
+        function loadPresenceStatus() {
+            fetch('<?php echo e(route("guru.presence.today-status")); ?>')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update desktop button
+                        const btnPresence = document.getElementById('btnPresence');
+                        const btnText = document.getElementById('presenceButtonText');
+                        const statusText = document.getElementById('presenceStatusText');
+                        if (btnPresence) {
+                            updatePresenceButton(btnPresence, btnText, statusText, data);
+                        }
+                        
+                        // Update mobile button
+                        const btnPresenceMobile = document.getElementById('btnPresenceMobile');
+                        const btnTextMobile = document.getElementById('presenceButtonTextMobile');
+                        const statusTextMobile = document.getElementById('presenceStatusTextMobile');
+                        if (btnPresenceMobile) {
+                            updatePresenceButton(btnPresenceMobile, btnTextMobile, statusTextMobile, data);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading presence status:', error);
+                });
+        }
+
+        function recordPresence() {
+            const btnPresence = document.getElementById('btnPresence');
+            const btnPresenceMobile = document.getElementById('btnPresenceMobile');
+            const btnText = document.getElementById('presenceButtonText');
+            const btnTextMobile = document.getElementById('presenceButtonTextMobile');
+            
+            const originalText = btnText ? btnText.textContent : 'Catat Kehadiran';
+            
+            // Disable both buttons
+            if (btnPresence) {
+                btnPresence.disabled = true;
+                btnText.textContent = 'Memproses...';
+            }
+            if (btnPresenceMobile) {
+                btnPresenceMobile.disabled = true;
+                btnTextMobile.textContent = 'Memproses...';
+            }
+            
+            fetch('<?php echo e(route("guru.presence.store")); ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message);
+                    loadPresenceStatus();
+                } else {
+                    showAlert('error', data.message || 'Terjadi kesalahan saat mencatat kehadiran.');
+                    if (btnPresence) {
+                        btnPresence.disabled = false;
+                        btnText.textContent = originalText;
+                    }
+                    if (btnPresenceMobile) {
+                        btnPresenceMobile.disabled = false;
+                        btnTextMobile.textContent = originalText;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Terjadi kesalahan saat mencatat kehadiran.');
+                if (btnPresence) {
+                    btnPresence.disabled = false;
+                    btnText.textContent = originalText;
+                }
+                if (btnPresenceMobile) {
+                    btnPresenceMobile.disabled = false;
+                    btnTextMobile.textContent = originalText;
+                }
+            });
+        }
 
         function showDetailModal(requestId) {
             console.log('showDetailModal called with ID:', requestId);
@@ -498,8 +662,9 @@
             modal.show();
             
             // Fetch data
-            console.log('Fetching data from:', `/guru/permohonan-izin/${requestId}`);
-            fetch(`/guru/permohonan-izin/${requestId}`)
+            const url = `<?php echo e(route('guru.permohonan-izin-siswa.show', ':id')); ?>`.replace(':id', requestId);
+            console.log('Fetching data from:', url);
+            fetch(url)
                 .then(response => {
                     console.log('Response status:', response.status);
                     return response.json();
@@ -582,13 +747,32 @@
                 <div class="row mt-3">
                     <div class="col-12">
                         <h6 class="text-muted">Dokumen Pendukung</h6>
-                        <a href="${encodeURI(request.document_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                        <button type="button" class="btn btn-outline-primary btn-sm view-document-btn" data-document-url="${String(request.document_url || '').replace(/"/g, '&quot;')}">
                             <i class="bx bx-file"></i> Lihat Dokumen
-                        </a>
+                        </button>
                     </div>
                 </div>
                 ` : ''}
             `;
+            
+            // Add event listeners for view document buttons
+            setTimeout(() => {
+                document.querySelectorAll('.view-document-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const documentUrl = this.getAttribute('data-document-url');
+                        if (documentUrl && window.viewDocument) {
+                            window.viewDocument(documentUrl, e);
+                        } else {
+                            console.error('Document URL not found or viewDocument function not available', {
+                                url: documentUrl,
+                                function: window.viewDocument
+                            });
+                        }
+                    });
+                });
+            }, 100);
             
             // Show action buttons based on current teacher's individual status
             const currentTeacherId = <?php echo e(Auth::user()->teacher->user_id ?? 'null'); ?>;
@@ -656,7 +840,10 @@
             if (!currentAction || !currentRequestId) return;
             
             const notes = document.getElementById('adminNotes').value;
-            const url = `/guru/permohonan-izin/${currentRequestId}/${currentAction}`;
+            const routeName = currentAction === 'approve' ? 'guru.permohonan-izin-siswa.approve' : 'guru.permohonan-izin-siswa.reject';
+            const url = currentAction === 'approve' 
+                ? `<?php echo e(route('guru.permohonan-izin-siswa.approve', ':id')); ?>`.replace(':id', currentRequestId)
+                : `<?php echo e(route('guru.permohonan-izin-siswa.reject', ':id')); ?>`.replace(':id', currentRequestId);
             
             // Show loading
             this.disabled = true;
@@ -772,6 +959,54 @@
                 }
             }, 5000);
         }
+        
+        // Smooth scroll to list siswa izin hari ini if hash is present
+        if (window.location.hash === '#list-siswa-izin-hari-ini') {
+            setTimeout(() => {
+                const targetElement = document.getElementById('list-siswa-izin-hari-ini');
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Add highlight effect
+                    targetElement.style.transition = 'box-shadow 0.3s ease';
+                    targetElement.style.boxShadow = '0 0 20px rgba(13, 110, 253, 0.5)';
+                    setTimeout(() => {
+                        targetElement.style.boxShadow = '';
+                    }, 2000);
+                }
+            }, 100);
+        }
+
+        // Function to view document in new tab (global scope)
+        window.viewDocument = function(documentUrl, event) {
+            // Prevent default behavior and stop event propagation if event is provided
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            // Ensure URL is a string
+            let decodedUrl = documentUrl;
+            if (typeof documentUrl === 'string') {
+                // Don't decode if it's already a valid URL
+                if (documentUrl.indexOf('%') === -1) {
+                    decodedUrl = documentUrl;
+                } else {
+                    try {
+                        decodedUrl = decodeURIComponent(documentUrl);
+                    } catch (e) {
+                        // If decode fails, use original URL
+                        decodedUrl = documentUrl;
+                    }
+                }
+            }
+            
+            console.log('Opening document in new tab:', decodedUrl);
+            
+            // Open document in new tab
+            // The route will return the file with Content-Disposition: inline header
+            // which will display the PDF in browser instead of downloading
+            window.open(decodedUrl, '_blank', 'noopener,noreferrer');
+        };
     </script>
     <?php echo app('Illuminate\Foundation\Vite')(['resources/js/pages/dashboard.js']); ?>
 <?php $__env->stopSection(); ?>

@@ -173,7 +173,7 @@ function checkForUpdates() {
         }
     })
     .catch(error => {
-        console.error('Error checking for updates:', error);
+        // Silent error handling
     });
 }
 
@@ -197,8 +197,6 @@ function showUpdateNotification() {
 }
 
 function loadAnnouncements() {
-    console.log('Loading announcements for teachers...');
-    
     fetch('/api/announcements/teachers', {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
@@ -207,7 +205,6 @@ function loadAnnouncements() {
         }
     })
         .then(response => {
-            console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -218,12 +215,10 @@ function loadAnnouncements() {
                 renderAnnouncements(data.data);
                 renderTimeline(data.data);
             } else {
-                console.error('API returned success: false');
                 showNoAnnouncements();
             }
         })
         .catch(error => {
-            console.error('Error loading announcements:', error);
             let errorMessage = 'Gagal memuat pengumuman: ' + error.message;
             
             // Add more specific error messages
@@ -463,7 +458,6 @@ function toggleReadStatus(announcementId, isCurrentlyRead) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         // Restore button state on error
         button.disabled = false;
         button.innerHTML = originalText;

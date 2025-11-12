@@ -49,6 +49,12 @@
                          </span>
                          <span class="nav-text"> Tugas Pengganti </span>
                     </a>
+                    <a class="nav-link" href="<?php echo e(route('guru.permohonan-izin')); ?>">
+                         <span class="nav-icon">
+                              <i class='bx bx-file'></i>    
+                         </span>
+                         <span class="nav-text"> Permohonan Izin </span>
+                    </a>
                     <a class="nav-link" href="<?php echo e(route('any', 'pengumuman-guru')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-news'></i>
