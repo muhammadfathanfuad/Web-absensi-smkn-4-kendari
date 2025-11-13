@@ -25,17 +25,17 @@ class AttendanceSessionObserver
         }
 
         $teacherId = $session->teacher_id;
-        $today = TimeOverrideService::today();
+        $todayCarbon = TimeOverrideService::now();
+        $today = $todayCarbon->toDateString();
 
         // Get all required timetables for this teacher today
-        $carbonDayOfWeek = $today->dayOfWeek; // 0=Sunday, 1=Monday, ..., 6=Saturday
+        $carbonDayOfWeek = $todayCarbon->dayOfWeek; // 0=Sunday, 1=Monday, ..., 6=Saturday
         $dbDayOfWeek = $carbonDayOfWeek == 0 ? 7 : $carbonDayOfWeek;
         
         $requiredTimetables = \App\Models\Timetable::whereHas('classSubject', function($query) use ($teacherId) {
                 $query->where('teacher_id', $teacherId);
             })
             ->where('day_of_week', $dbDayOfWeek)
-            ->where('is_active', true)
             ->get();
         
         $totalRequiredSessions = $requiredTimetables->count();
@@ -113,7 +113,7 @@ class AttendanceSessionObserver
             'teacher_id' => $teacherId,
             'session_id' => $session->id,
             'timetable_id' => $session->timetable_id,
-            'date' => $today->format('Y-m-d')
+            'date' => $today
         ]);
     }
 }
