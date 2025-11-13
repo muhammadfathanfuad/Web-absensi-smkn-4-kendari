@@ -306,18 +306,62 @@
 
 @push('scripts')
     <!-- HTML5 QR Code Scanner Library -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- Prevent duplicate loading using JavaScript check -->
+    <script>
+        // Prevent duplicate library loading
+        (function() {
+            // Check if library is already loaded
+            if (typeof Html5Qrcode !== 'undefined' || typeof Html5QrcodeScanner !== 'undefined') {
+                console.log('html5-qrcode library already loaded, skipping duplicate load');
+                window.html5QrcodeLoaded = true;
+                return;
+            }
+            
+            // Check if script tag already exists
+            const existingScript = document.querySelector('script[src*="html5-qrcode"]');
+            if (existingScript) {
+                console.log('html5-qrcode script tag already exists, skipping duplicate load');
+                return;
+            }
+            
+            // Load library only once
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+            script.async = true;
+            script.onerror = function() {
+                console.error('Failed to load html5-qrcode library from CDN');
+                window.html5QrcodeLoadError = true;
+            };
+            script.onload = function() {
+                console.log('html5-qrcode library loaded successfully');
+                window.html5QrcodeLoaded = true;
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
     
     <script>
-        // CRITICAL: Prevent duplicate declarations - use window-level variables
-        // Initialize only once, reuse if script runs multiple times
-        if (typeof window._qrScannerVars === 'undefined') {
-            window._qrScannerVars = {
-                html5QrcodeScanner: null,
-                html5Qrcode: null,
-                isScanning: false
-            };
-        }
+        // CRITICAL: Prevent duplicate script execution
+        if (window._qrScannerScriptExecuted) {
+            console.warn('QR scanner script already executed, skipping duplicate execution');
+            // Reuse existing variables if they exist
+            if (typeof window._qrScannerVars !== 'undefined') {
+                var html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
+                var html5Qrcode = window._qrScannerVars.html5Qrcode;
+                var isScanning = window._qrScannerVars.isScanning;
+            }
+        } else {
+            window._qrScannerScriptExecuted = true;
+            
+            // CRITICAL: Prevent duplicate declarations - use window-level variables
+            // Initialize only once, reuse if script runs multiple times
+            if (typeof window._qrScannerVars === 'undefined') {
+                window._qrScannerVars = {
+                    html5QrcodeScanner: null,
+                    html5Qrcode: null,
+                    isScanning: false
+                };
+            }
         
         // Use local references for convenience, but always sync with window
         var html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
@@ -470,7 +514,7 @@
         }
 
         // Start camera function - Updated to use Html5Qrcode API
-        function startCamera() {
+        async function startCamera() {
             if (isScanning) {
                 return;
             }
@@ -491,6 +535,37 @@
                 
                 // Check if library is loaded - try both Html5QrcodeScanner and Html5Qrcode
                 let useScanner = false;
+                
+                // Check if there was a load error
+                if (window.html5QrcodeLoadError) {
+                    updateCameraStatus('Gagal memuat library scanner dari CDN. Silakan refresh halaman atau cek koneksi internet.', 'danger');
+                    return;
+                }
+                
+                // Wait a bit for library to load if it's still loading
+                if (typeof Html5QrcodeScanner === 'undefined' && typeof Html5Qrcode === 'undefined') {
+                    updateCameraStatus('Menunggu library scanner dimuat...', 'info');
+                    
+                    // Wait for library with timeout
+                    let libraryLoaded = false;
+                    for (let i = 0; i < 20; i++) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        if (typeof Html5QrcodeScanner !== 'undefined' || typeof Html5Qrcode !== 'undefined') {
+                            libraryLoaded = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!libraryLoaded) {
+                        updateCameraStatus('Library scanner tidak tersedia setelah menunggu. Memuat ulang halaman...', 'danger');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                        return;
+                    }
+                }
+                
+                // Determine which API to use
                 if (typeof Html5QrcodeScanner !== 'undefined') {
                     useScanner = true;
                 } else if (typeof Html5Qrcode === 'undefined') {
@@ -507,28 +582,69 @@
                 
                 if (useScanner) {
                     // Use Html5QrcodeScanner if available
+                    const readerElement = document.getElementById('reader');
+                    const readerWidth = readerElement ? readerElement.offsetWidth : 500;
+                    const qrboxSize = Math.min(readerWidth * 0.7, 300);
+                    
+                    console.log('Starting Html5QrcodeScanner with qrbox size:', qrboxSize);
+                    
                     window._qrScannerVars.html5QrcodeScanner = new Html5QrcodeScanner(
                         "reader",
                         { 
                             fps: 10, 
-                            qrbox: { width: 250, height: 250 },
-                            aspectRatio: 1.0
+                            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                                const minEdgePercentage = 0.7;
+                                const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                                const size = Math.floor(minEdgeSize * minEdgePercentage);
+                                return {
+                                    width: size,
+                                    height: size
+                                };
+                            },
+                            aspectRatio: 1.0,
+                            disableFlip: false
                         },
                         false
                     );
                     html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
                     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                    console.log('Html5QrcodeScanner rendered');
                 } else {
                     // Use Html5Qrcode API directly
                     const html5QrCodeInstance = new Html5Qrcode("reader");
                     window._qrScannerVars.html5Qrcode = html5QrCodeInstance;
                     html5Qrcode = html5QrCodeInstance;
                     
-                    // Camera configuration
+                    // Camera configuration - make QR box responsive
+                    const readerElement = document.getElementById('reader');
+                    const readerWidth = readerElement ? readerElement.offsetWidth : 500;
+                    const qrboxSize = Math.min(readerWidth * 0.8, 300); // 80% of reader width, max 300px
+                    
                     const config = {
                         fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0
+                        qrbox: function(viewfinderWidth, viewfinderHeight) {
+                            // Make QR box responsive to container size
+                            const minEdgePercentage = 0.7; // 70% of the smaller edge
+                            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                            return {
+                                width: qrboxSize,
+                                height: qrboxSize
+                            };
+                        },
+                        aspectRatio: 1.0,
+                        disableFlip: false, // Allow QR code to be scanned in any orientation
+                        videoConstraints: {
+                            facingMode: "environment" // Use back camera on mobile
+                        },
+                        // Support multiple QR code formats (if available)
+                        // This helps avoid "No MultiFormat" errors
+                        ...(typeof Html5QrcodeSupportedFormats !== 'undefined' ? {
+                            formatsToSupport: [
+                                Html5QrcodeSupportedFormats.QR_CODE
+                                // Add more formats if needed, but QR_CODE is the main one
+                            ]
+                        } : {})
                     };
                     
                     // Start camera with device selection
@@ -540,44 +656,142 @@
                         cameraId = { facingMode: "environment" };
                     }
                     
+                    console.log('Starting QR scanner with config:', config);
+                    console.log('Camera ID:', cameraId);
+                    
                     html5QrCodeInstance.start(
                         cameraId,
                         config,
                         onScanSuccess,
                         onScanFailure
                     ).then(() => {
+                        console.log('QR scanner started successfully');
+                        console.log('Scanner instance:', html5QrCodeInstance);
+                        console.log('Is scanning:', isScanning);
+                        
                         // Camera started successfully
                         isScanning = true;
                         window._qrScannerVars.isScanning = true;
                         
-                        // Check if video element exists after starting
+                        // Verify scanner is actually running
                         setTimeout(() => {
                             const reader = document.getElementById('reader');
-                            const video = reader ? reader.querySelector('video') : null;
-                            const canvas = reader ? reader.querySelector('canvas') : null;
-                            
-                            if (!video && !canvas) {
-                                console.warn('Video atau canvas tidak ditemukan setelah kamera dimulai');
-                                updateCameraStatus('Kamera dimulai tetapi video tidak terdeteksi. Coba refresh halaman.', 'warning');
+                            const video = reader?.querySelector('video');
+                            if (video && video.srcObject) {
+                                console.log('✓ Video stream confirmed active');
+                                console.log('✓ Scanner should be reading QR codes now');
+                                updateScanStatus('Scanner aktif - Arahkan kamera ke QR Code', 'info');
                             } else {
-                                // Ensure video is visible
-                                if (video) {
-                                    video.style.width = '100%';
-                                    video.style.height = '100%';
-                                    video.style.objectFit = 'cover';
-                                    video.style.maxWidth = '100%';
-                                    video.style.maxHeight = '100%';
+                                console.warn('⚠ Video stream not found - scanner may not be working');
+                            }
+                        }, 1000);
+                        
+                        // Function to ensure video is visible and playing
+                        function ensureVideoVisible() {
+                            const reader = document.getElementById('reader');
+                            if (!reader) return false;
+                            
+                            // CRITICAL: Remove duplicate video/canvas elements - keep only the first one
+                            const videos = reader.querySelectorAll('video');
+                            const canvases = reader.querySelectorAll('canvas');
+                            
+                            // If there are multiple videos, remove duplicates (keep the first one)
+                            if (videos.length > 1) {
+                                console.warn('Multiple video elements found, removing duplicates');
+                                for (let i = 1; i < videos.length; i++) {
+                                    videos[i].remove();
+                                }
+                            }
+                            
+                            // If there are multiple canvases, remove duplicates (keep the first one)
+                            if (canvases.length > 1) {
+                                console.warn('Multiple canvas elements found, removing duplicates');
+                                for (let i = 1; i < canvases.length; i++) {
+                                    canvases[i].remove();
+                                }
+                            }
+                            
+                            const video = reader.querySelector('video');
+                            const canvas = reader.querySelector('canvas');
+                            
+                            if (video) {
+                                // Force video to be visible but don't interfere with scanner
+                                // Only set essential styles, let scanner handle the rest
+                                video.style.display = 'block';
+                                video.style.visibility = 'visible';
+                                video.style.opacity = '1';
+                                video.removeAttribute('hidden');
+                                
+                                // Apply mirror transform only if not already applied by scanner
+                                if (!video.style.transform || video.style.transform === 'none') {
                                     video.style.transform = 'scaleX(-1)';
-                                    video.style.display = 'block';
-                                    
-                                    // Check if video is actually playing
+                                }
+                                
+                                // Check if video is actually playing
+                                if (video.readyState >= 2) {
+                                    console.log('Video ready, dimensions:', video.videoWidth, 'x', video.videoHeight);
+                                    console.log('Video stream active:', !video.paused && video.readyState >= 2);
+                                }
+                                
+                                // Ensure video plays
+                                if (video.paused) {
+                                    video.play().catch(e => console.warn('Video play error:', e));
+                                }
+                                
+                                // Verify video stream is connected
+                                if (video.srcObject) {
+                                    const tracks = video.srcObject.getTracks();
+                                    console.log('Video stream tracks:', tracks.length);
+                                    tracks.forEach(track => {
+                                        console.log('Track:', track.kind, 'enabled:', track.enabled, 'readyState:', track.readyState);
+                                    });
+                                }
+                                
+                                return true;
+                            }
+                            
+                            if (canvas) {
+                                canvas.style.width = '100%';
+                                canvas.style.height = '100%';
+                                canvas.style.objectFit = 'cover';
+                                canvas.style.maxWidth = '100%';
+                                canvas.style.maxHeight = '100%';
+                                canvas.style.transform = 'scaleX(-1)';
+                                canvas.style.display = 'block';
+                                canvas.style.visibility = 'visible';
+                                canvas.style.opacity = '1';
+                                canvas.style.position = 'relative';
+                                canvas.style.zIndex = '1';
+                                canvas.removeAttribute('hidden');
+                                return true;
+                            }
+                            
+                            return false;
+                        }
+                        
+                        // Poll for video element with multiple attempts
+                        let attempts = 0;
+                        const maxAttempts = 20; // Try for 10 seconds (20 * 500ms)
+                        const checkVideo = setInterval(() => {
+                            attempts++;
+                            const found = ensureVideoVisible();
+                            
+                            if (found) {
+                                clearInterval(checkVideo);
+                                console.log('Video element found and made visible after', attempts, 'attempts');
+                                updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                                
+                                // Add event listeners for video
+                                const video = document.getElementById('reader')?.querySelector('video');
+                                if (video) {
                                     video.addEventListener('loadedmetadata', () => {
                                         console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
+                                        ensureVideoVisible();
                                     });
                                     
                                     video.addEventListener('playing', () => {
                                         console.log('Video is playing');
-                                        updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                                        ensureVideoVisible();
                                     });
                                     
                                     video.addEventListener('error', (e) => {
@@ -585,29 +799,71 @@
                                         updateCameraStatus('Error pada video stream: ' + (e.message || 'Unknown error'), 'danger');
                                     });
                                 }
+                            } else if (attempts >= maxAttempts) {
+                                clearInterval(checkVideo);
+                                console.error('Video element not found after', maxAttempts, 'attempts');
+                                updateCameraStatus('Kamera dimulai tetapi video tidak terdeteksi. Coba refresh halaman atau klik Retry.', 'warning');
                                 
-                                if (canvas) {
-                                    canvas.style.width = '100%';
-                                    canvas.style.height = '100%';
-                                    canvas.style.objectFit = 'cover';
-                                    canvas.style.maxWidth = '100%';
-                                    canvas.style.maxHeight = '100%';
-                                    canvas.style.transform = 'scaleX(-1)';
-                                    canvas.style.display = 'block';
-                                }
+                                // Show debug info
+                                const reader = document.getElementById('reader');
+                                console.error('Reader element:', reader);
+                                console.error('Reader innerHTML length:', reader?.innerHTML?.length);
+                                console.error('Reader children:', reader?.children);
                             }
                         }, 500);
                         
-                        // Hide default elements immediately
-                        setTimeout(hideDefaultElements, 100);
-                        setTimeout(hideDefaultElements, 500);
-                        setTimeout(hideDefaultElements, 1000);
+                        // Also check immediately
+                        ensureVideoVisible();
                         
-                        // Use MutationObserver to continuously hide elements
+                        // Hide default elements immediately (but ensure video stays visible)
+                        setTimeout(() => {
+                            hideDefaultElements();
+                            ensureVideoVisible(); // Re-ensure after hiding
+                        }, 100);
+                        setTimeout(() => {
+                            hideDefaultElements();
+                            ensureVideoVisible(); // Re-ensure after hiding
+                        }, 500);
+                        setTimeout(() => {
+                            hideDefaultElements();
+                            ensureVideoVisible(); // Re-ensure after hiding
+                        }, 1000);
+                        
+                        // Use MutationObserver to continuously hide elements but keep video visible
                         const reader = document.getElementById('reader');
                         if (reader && !window._qrScannerObserver) {
+                            let isProcessing = false; // Prevent multiple simultaneous calls
                             const observer = new MutationObserver(function(mutations) {
+                                // Skip if already processing to prevent duplicate calls
+                                if (isProcessing) return;
+                                
+                                isProcessing = true;
+                                
+                                // Check if new video/canvas was added (which would be duplicate)
+                                const videos = reader.querySelectorAll('video');
+                                const canvases = reader.querySelectorAll('canvas');
+                                
+                                // Remove duplicates immediately
+                                if (videos.length > 1) {
+                                    console.warn('MutationObserver: Multiple videos detected, removing duplicates');
+                                    for (let i = 1; i < videos.length; i++) {
+                                        videos[i].remove();
+                                    }
+                                }
+                                
+                                if (canvases.length > 1) {
+                                    console.warn('MutationObserver: Multiple canvases detected, removing duplicates');
+                                    for (let i = 1; i < canvases.length; i++) {
+                                        canvases[i].remove();
+                                    }
+                                }
+                                
                                 hideDefaultElements();
+                                // Always ensure video is visible after hiding elements
+                                setTimeout(() => {
+                                    ensureVideoVisible();
+                                    isProcessing = false;
+                                }, 50);
                             });
                             
                             observer.observe(reader, {
@@ -619,7 +875,7 @@
                             window._qrScannerObserver = observer;
                         }
                         
-                        updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                        updateCameraStatus('Memulai kamera...', 'info');
                         updateScanStatus('Kamera siap untuk memindai QR Code', 'info');
                         hideStartButton();
                         showStopButton();
@@ -692,15 +948,57 @@
                         link.setAttribute('hidden', 'true');
                     });
                     
+                    // CRITICAL: Never hide canvas elements - scanner uses canvas for QR detection
+                    const scannerCanvases = reader.querySelectorAll('canvas');
+                    scannerCanvases.forEach(canvas => {
+                        // Ensure scanner canvas is visible and not hidden
+                        canvas.style.display = 'block';
+                        canvas.style.visibility = 'visible';
+                        canvas.style.opacity = '1';
+                        canvas.removeAttribute('hidden');
+                        // Don't modify canvas dimensions - let scanner handle it
+                    });
+                    
                     // Hide all span, p, label elements that might contain text
+                    // BUT NEVER hide video or canvas elements
                     const textElements = reader.querySelectorAll('span, p, label, div');
                     textElements.forEach(el => {
+                        // CRITICAL: Skip if element IS a video or canvas
+                        if (el.tagName && (el.tagName.toLowerCase() === 'video' || el.tagName.toLowerCase() === 'canvas')) {
+                            return; // Never hide video/canvas
+                        }
+                        
                         const text = el.textContent || '';
                         const tagName = el.tagName.toLowerCase();
                         
                         // Skip if it's a video or canvas element or their direct parent
                         if (el.querySelector('video, canvas')) {
                             // This is a container with video/canvas, keep it but make sure it's full width
+                            // But ensure video/canvas inside is visible
+                            // Also remove duplicates
+                            const videosInEl = el.querySelectorAll('video, canvas');
+                            if (videosInEl.length > 1) {
+                                // Keep first, remove others
+                                for (let i = 1; i < videosInEl.length; i++) {
+                                    videosInEl[i].remove();
+                                }
+                            }
+                            
+                            const video = el.querySelector('video, canvas');
+                            if (video) {
+                                video.style.width = '100%';
+                                video.style.height = '100%';
+                                video.style.objectFit = 'cover';
+                                video.style.maxWidth = '100%';
+                                video.style.maxHeight = '100%';
+                                video.style.transform = 'scaleX(-1)';
+                                video.style.display = 'block';
+                                video.style.visibility = 'visible';
+                                video.style.opacity = '1';
+                                video.style.position = 'relative';
+                                video.style.zIndex = '1';
+                                video.removeAttribute('hidden');
+                            }
                             return;
                         }
                         
@@ -730,15 +1028,48 @@
                         }
                     });
                     
-                    // Make video/canvas full width and flip horizontally
+                    // CRITICAL: Make video/canvas full width and flip horizontally - NEVER hide these
+                    // Also remove duplicates - keep only the first video and first canvas
+                    const allVideos = reader.querySelectorAll('video');
+                    const allCanvases = reader.querySelectorAll('canvas');
+                    
+                    // Remove duplicate videos (keep first)
+                    if (allVideos.length > 1) {
+                        console.warn('Multiple video elements in hideDefaultElements, removing duplicates');
+                        for (let i = 1; i < allVideos.length; i++) {
+                            allVideos[i].remove();
+                        }
+                    }
+                    
+                    // Remove duplicate canvases (keep first)
+                    if (allCanvases.length > 1) {
+                        console.warn('Multiple canvas elements in hideDefaultElements, removing duplicates');
+                        for (let i = 1; i < allCanvases.length; i++) {
+                            allCanvases[i].remove();
+                        }
+                    }
+                    
+                    // Now style the remaining video/canvas
                     const videos = reader.querySelectorAll('video, canvas');
                     videos.forEach(video => {
+                        // Force video/canvas to be visible
                         video.style.width = '100%';
                         video.style.height = '100%';
                         video.style.objectFit = 'cover';
                         video.style.maxWidth = '100%';
                         video.style.maxHeight = '100%';
-                        video.style.transform = 'scaleX(-1)'; // Mirror/flip video horizontally
+                        video.style.transform = 'scaleX(-1)';
+                        video.style.display = 'block';
+                        video.style.visibility = 'visible';
+                        video.style.opacity = '1';
+                        video.style.position = 'relative';
+                        video.style.zIndex = '1';
+                        video.removeAttribute('hidden');
+                        
+                        // Ensure video plays if it's a video element
+                        if (video.tagName.toLowerCase() === 'video' && video.paused) {
+                            video.play().catch(e => console.warn('Video play error:', e));
+                        }
                     });
                 }
                 
@@ -905,12 +1236,19 @@
 
         // Success callback
         function onScanSuccess(decodedText, decodedResult) {
-            // Stop scanning to prevent multiple submissions
-            stopCamera();
+            console.log('QR Code detected!', decodedText);
+            console.log('Decoded result:', decodedResult);
             
-            updateScanStatus('QR Code terdeteksi! Mengirim data absensi...', 'success');
+            // Update UI immediately for better UX
+            updateScanStatus('QR Code terdeteksi! Memproses...', 'success');
             
-            // Parse QR code data
+            // Stop scanning to prevent multiple submissions (async, don't wait)
+            // Stop camera in background so it doesn't block the submission
+            setTimeout(() => {
+                stopCamera();
+            }, 100);
+            
+            // Parse QR code data immediately
             try {
                 // Handle case where decodedText might be a string representation of an object
                 let qrData;
@@ -933,22 +1271,29 @@
                 
                 // Validate QR data format
                 if (validateQRData(qrData)) {
-                    // Submit attendance
+                    // Update status immediately
+                    updateScanStatus('Mengirim data absensi...', 'info');
+                    // Submit attendance immediately
                     submitAttendance(qrData);
                 } else {
                     updateScanStatus('Format QR Code tidak valid atau bukan QR guru. Pastikan QR code dari guru yang benar.', 'danger');
+                    // Stop camera immediately on validation failure
+                    stopCamera();
                     // After validation fails, ensure buttons are reset properly
                     setTimeout(() => {
                         resetButtonsToInitialState();
-                    }, 2000);
+                    }, 1500);
                 }
                 
             } catch (error) {
+                console.error('QR parsing error:', error);
                 updateScanStatus('Format QR Code tidak valid. Pastikan QR code dari guru yang benar.', 'danger');
+                // Stop camera immediately on parsing error
+                stopCamera();
                 // After parsing error, ensure buttons are reset properly
                 setTimeout(() => {
                     resetButtonsToInitialState();
-                }, 2000);
+                }, 1500);
             }
         }
 
@@ -996,8 +1341,40 @@
         }
 
         // Failure callback
+        let scanFailureCount = 0;
+        let lastErrorLogTime = 0;
+        
         function onScanFailure(error) {
-            // Silent error handling
+            // This function is called very frequently (every frame when no QR code is found)
+            // Don't log every attempt to avoid console spam
+            
+            scanFailureCount++;
+            
+            // Only log errors that are NOT normal "not found" errors
+            // And only log once per second to avoid spam
+            const now = Date.now();
+            const timeSinceLastLog = now - lastErrorLogTime;
+            
+            if (error) {
+                const errorStr = error.toString ? error.toString() : String(error);
+                const errorMessage = error.message || errorStr;
+                
+                // Check if it's a real error (not just "no QR found")
+                const isRealError = errorMessage && 
+                    !errorMessage.includes('No QR code found') &&
+                    !errorMessage.includes('NotFoundException') &&
+                    !errorMessage.includes('QR code parse error') && // Common parsing errors are normal
+                    !errorMessage.includes('No MultiFormat'); // This is a common error when QR format not supported
+                
+                // Only log real errors, and only once per second
+                if (isRealError && timeSinceLastLog > 1000) {
+                    console.warn('QR scanner error:', errorMessage);
+                    lastErrorLogTime = now;
+                }
+            }
+            
+            // Don't update UI on every failure - it's normal for scanner to fail when no QR is visible
+            // The scanner tries to read QR code every frame, so failures are expected
         }
 
         // Submit attendance function
@@ -1028,46 +1405,125 @@
                 return;
             }
             
-            // Submit to server
+            // Submit to server immediately
+            const startTime = Date.now();
+            
+            // Get fresh CSRF token
+            const freshCsrfToken = document.querySelector('meta[name="csrf-token"]');
+            const csrfTokenValue = freshCsrfToken ? freshCsrfToken.getAttribute('content') : '';
+            
+            if (!csrfTokenValue) {
+                console.error('CSRF token not found!');
+                updateScanStatus('Error: CSRF token tidak ditemukan. Silakan refresh halaman.', 'danger');
+                stopCamera();
+                return;
+            }
+            
+            console.log('Submitting attendance with CSRF token:', csrfTokenValue.substring(0, 10) + '...');
+            console.log('Request data:', requestData);
+            
+            // Add timeout to prevent hanging (30 seconds max)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
             fetch('{{ route("murid.absensi.scan") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken ? csrfToken.getAttribute('content') : ''
+                    'X-CSRF-TOKEN': csrfTokenValue,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify(requestData),
+                signal: controller.signal,
+                credentials: 'same-origin' // Include cookies for session
             })
             .then(response => {
+                clearTimeout(timeoutId);
+                const responseTime = Date.now() - startTime;
+                console.log('Server response time:', responseTime, 'ms');
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                // Handle 403 Forbidden specifically
+                if (response.status === 403) {
+                    return response.json().then(data => {
+                        throw new Error(`Akses ditolak (403): ${data.message || 'Anda tidak memiliki izin untuk melakukan aksi ini. Pastikan Anda login sebagai murid dan session belum expired.'}`);
+                    }).catch(() => {
+                        throw new Error('Akses ditolak (403). Silakan refresh halaman dan login kembali.');
+                    });
+                }
+                
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${data.message || 'Unknown error'}`);
+                    }).catch(err => {
+                        if (err.message.includes('HTTP error')) {
+                            throw err;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    });
+                }
                 return response.json();
             })
             .then(data => {
+                const totalTime = Date.now() - startTime;
+                console.log('Total processing time:', totalTime, 'ms');
                 
+                // Update UI immediately - show results right away
                 if (data.success) {
+                    // Update status immediately
                     updateScanStatus('Absensi berhasil! ' + (data.message || ''), 'success');
-                    showNotification(data.message || 'Absensi berhasil dicatat!', true);
                     
-                    // Refresh attendance history after successful scan
+                    // Show notification asynchronously (don't block)
                     setTimeout(() => {
-                        loadAttendanceHistory();
-                    }, 1000);
+                        showNotification(data.message || 'Absensi berhasil dicatat!', true);
+                    }, 100);
                     
-                    // Reset buttons after successful attendance
+                    // Refresh attendance history immediately (no delay)
+                    loadAttendanceHistory();
+                    
+                    // Reset buttons after successful attendance (shorter delay)
                     setTimeout(() => {
                         resetButtonsToInitialState();
-                    }, 2000);
+                    }, 1200);
                 } else {
+                    // Update status immediately
                     updateScanStatus('Gagal absensi: ' + (data.message || 'Terjadi kesalahan'), 'danger');
-                    showNotification(data.message || 'Terjadi kesalahan', false);
                     
-                    // Reset buttons after failed attendance
+                    // Show notification asynchronously (don't block)
+                    setTimeout(() => {
+                        showNotification(data.message || 'Terjadi kesalahan', false);
+                    }, 100);
+                    
+                    // Reset buttons after failed attendance (shorter delay)
                     setTimeout(() => {
                         resetButtonsToInitialState();
-                    }, 2000);
+                    }, 1200);
                 }
             })
             .catch(error => {
-                updateScanStatus('Terjadi kesalahan saat mengirim data', 'danger');
-                showNotification('Terjadi kesalahan saat mengirim data', false);
+                clearTimeout(timeoutId);
+                const totalTime = Date.now() - startTime;
+                console.error('Fetch error:', error);
+                console.error('Error after:', totalTime, 'ms');
+                
+                let errorMessage = 'Terjadi kesalahan saat mengirim data';
+                
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Request timeout (lebih dari 30 detik). Server mungkin sedang sibuk atau ada masalah koneksi.';
+                } else if (error.message.includes('403')) {
+                    errorMessage = 'Akses ditolak. Silakan refresh halaman dan pastikan Anda login sebagai murid.';
+                } else if (error.message.includes('401')) {
+                    errorMessage = 'Session expired. Silakan refresh halaman dan login kembali.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Error server. Silakan coba lagi atau hubungi administrator.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                updateScanStatus(errorMessage, 'danger');
+                showNotification(errorMessage, false);
                 
                 // Reset buttons after error
                 setTimeout(() => {
@@ -1497,5 +1953,6 @@
         window.stopCamera = stopCamera;
         window.retryCamera = retryCamera;
         window.loadCameraList = loadCameraList;
+        } // End of else block for duplicate script prevention
     </script>
 @endpush
