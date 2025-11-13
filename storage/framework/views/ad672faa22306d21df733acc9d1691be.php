@@ -35,7 +35,18 @@
                                     <p class="text-muted mb-0">
                                         Data Semua Warga Sekolah
                                     </p>
-                                    <div id="single-actions" class="ms-auto">
+                                    <div id="single-actions" class="ms-auto d-flex gap-2">
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
+                                                aria-expanded="false" id="exportUserDropdownBtn">
+                                                <i class="bx bx-download"></i> <span>Export</span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#" onclick="exportUserData('pdf'); return false;">
+                                                        <i class="bx bx-file"></i> Export PDF (.pdf)
+                                                    </a></li>
+                                            </ul>
+                                        </div>
                                         <button type="button" class="btn btn-primary" id="addUserBtn" data-bs-toggle="modal"
                                             data-bs-target="#addUserModal">
                                             Tambah User
@@ -173,9 +184,15 @@
                         <div class="mb-3">
                             <label for="uploadGuruFile" class="form-label">Pilih File Excel atau CSV</label>
                             <input type="file" class="form-control" id="uploadGuruFile" name="file" accept=".xlsx,.xls,.csv" required>
-                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: Kode Guru, Nama Guru, NIP, Email, No Hp, Department.</small>
+                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: kode_guru, nama_guru, nip, email, no_hp, department.</small>
                         </div>
-                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary" id="uploadGuruSubmitBtn">
+                                <span class="spinner-border spinner-border-sm d-none" id="uploadGuruSpinner" role="status" aria-hidden="true"></span>
+                                <span id="uploadGuruBtnText">Upload</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -249,9 +266,15 @@
                         <div class="mb-3">
                             <label for="uploadMuridFile" class="form-label">Pilih File Excel atau CSV</label>
                             <input type="file" class="form-control" id="uploadMuridFile" name="file" accept=".xlsx,.xls,.csv" required>
-                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: nama_murid, email, phone, nis, kelas, grade, nama_wali, nomor_hp_wali.</small>
+                            <small class="form-text text-muted">Format file: Excel (.xlsx, .xls) atau CSV (.csv). Header kolom: nama, nis, kelas, nama_wali, telepon_wali.</small>
                         </div>
-                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary" id="uploadMuridSubmitBtn">
+                                <span class="spinner-border spinner-border-sm d-none" id="uploadMuridSpinner" role="status" aria-hidden="true"></span>
+                                <span id="uploadMuridBtnText">Upload</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -521,14 +544,31 @@
 
     <div id="notificationModal" class="modal fade" tabindex="-1" aria-labelledby="notificationModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="notificationModalLabel">Notifikasi</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0" id="notificationMessage" style="white-space: pre-wrap;"></p>
+                    <div id="notificationMessage" style="white-space: pre-wrap;"></div>
+                    <div id="notificationErrors" class="mt-3 d-none">
+                        <h6 class="text-danger mb-2">Detail Error:</h6>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th style="width: 60px;">Baris</th>
+                                        <th>Nama</th>
+                                        <th>Identitas</th>
+                                        <th>Penyebab Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notificationErrorsBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -625,6 +665,12 @@
             modalIds.forEach(modalId => setupModalAccessibility(modalId));
 
             const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+            const notificationModalElement = document.getElementById('notificationModal');
+
+            // Reload page when notification modal is closed
+            notificationModalElement.addEventListener('hidden.bs.modal', function() {
+                window.location.reload();
+            });
 
             // Ensure close buttons work - remove focus before hiding to prevent accessibility warning
             document.querySelector('#notificationModal .btn-close')?.addEventListener('click', (e) => {
@@ -636,9 +682,45 @@
                 notificationModal.hide();
             });
 
-            function showNotification(message, isSuccess = true) {
-                document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
-                document.getElementById('notificationMessage').innerText = message;
+            function showNotification(message, isSuccess = true, errors = null) {
+                const modalLabel = document.getElementById('notificationModalLabel');
+                const modalMessage = document.getElementById('notificationMessage');
+                const errorsContainer = document.getElementById('notificationErrors');
+                const errorsBody = document.getElementById('notificationErrorsBody');
+                
+                // Set modal title and message
+                modalLabel.innerText = isSuccess ? 'Berhasil' : 'Gagal';
+                modalLabel.className = 'modal-title ' + (isSuccess ? 'text-success' : 'text-danger');
+                modalMessage.innerText = message;
+                
+                // Show/hide errors table
+                if (errors && errors.length > 0) {
+                    errorsContainer.classList.remove('d-none');
+                    errorsBody.innerHTML = '';
+                    
+                    errors.forEach(error => {
+                        const row = document.createElement('tr');
+                        // Support both teacher and student error formats
+                        const name = error.nama_guru || error.nama || '(kosong)';
+                        const identifier = error.kode_guru || error.nis || '(kosong)';
+                        const identifierLabel = error.kode_guru ? 'Kode Guru' : (error.nis ? 'NIS' : '');
+                        
+                        row.innerHTML = `
+                            <td>${error.row}</td>
+                            <td>${name}</td>
+                            <td>${identifierLabel ? identifierLabel + ': ' : ''}${identifier}</td>
+                            <td>
+                                <ul class="mb-0 ps-3">
+                                    ${error.errors.map(err => `<li>${err}</li>`).join('')}
+                                </ul>
+                            </td>
+                        `;
+                        errorsBody.appendChild(row);
+                    });
+                } else {
+                    errorsContainer.classList.add('d-none');
+                }
+                
                 notificationModal.show();
             }
 
@@ -688,19 +770,27 @@
             document.getElementById('uploadGuruForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalText = submitButton.textContent;
+                const submitButton = document.getElementById('uploadGuruSubmitBtn');
+                const spinner = document.getElementById('uploadGuruSpinner');
+                const btnText = document.getElementById('uploadGuruBtnText');
+                const fileInput = document.getElementById('uploadGuruFile');
+                const uploadModal = bootstrap.Modal.getInstance(document.getElementById('uploadGuruModal'));
+                
+                // Show loading state
                 submitButton.disabled = true;
-                submitButton.textContent = 'Mengupload...';
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Mengupload...';
+                fileInput.disabled = true;
+                
                 fetch(this.action, {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
-                    showNotification(data.message, data.success);
-                    if (data.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('uploadGuruModal')).hide();
+                    showNotification(data.message, data.success, data.errors);
+                    if (data.success && data.error_count === 0) {
+                        uploadModal.hide();
                         this.reset();
                         // Refresh table
                         if (window.gridInstanceGuru) window.gridInstanceGuru.forceRender();
@@ -708,11 +798,13 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showNotification('Gagal mengupload data.', false);
+                    showNotification('Gagal mengupload data. ' + (error.message || ''), false);
                 })
                 .finally(() => {
                     submitButton.disabled = false;
-                    submitButton.textContent = originalText;
+                    spinner.classList.add('d-none');
+                    btnText.textContent = 'Upload';
+                    fileInput.disabled = false;
                 });
             });
 
@@ -720,41 +812,93 @@
             document.getElementById('uploadMuridForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalText = submitButton.textContent;
+                const submitButton = document.getElementById('uploadMuridSubmitBtn');
+                const spinner = document.getElementById('uploadMuridSpinner');
+                const btnText = document.getElementById('uploadMuridBtnText');
+                const fileInput = document.getElementById('uploadMuridFile');
                 const uploadModal = bootstrap.Modal.getInstance(document.getElementById('uploadMuridModal'));
-                const form = this;
+                
+                // Show loading state
                 submitButton.disabled = true;
-                submitButton.textContent = 'Mengupload...';
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Mengupload...';
+                fileInput.disabled = true;
+                
                 fetch(this.action, {
                     method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().catch(() => {
-                            throw new Error('Server error: ' + response.status);
-                        });
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
+                })
+                .then(async response => {
+                    // Handle 504 Gateway Timeout specially
+                    if (response.status === 504) {
+                        throw new Error('TIMEOUT_504');
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
                     return response.json();
+                    } else {
+                        // If response is not JSON, try to get text
+                        const text = await response.text();
+                        throw new Error(`Server mengembalikan response yang tidak valid. Status: ${response.status}`);
+                    }
                 })
                 .then(data => {
+                    // Close upload modal first
                     uploadModal.hide();
-                    showNotification(data.message || 'Upload selesai', data.success !== false);
-                    if (data.success) {
-                        form.reset();
+                    
+                    showNotification(data.message, data.success, data.errors);
+                    if (data.success && data.error_count === 0) {
+                        this.reset();
                         // Refresh table
                         if (window.gridInstanceMurid) window.gridInstanceMurid.forceRender();
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    let errorMessage = '';
+                    
+                    // Close upload modal first
                     uploadModal.hide();
-                    showNotification('Gagal mengupload data. ' + (error.message || ''), false);
+                    
+                    // Special handling for 504 Gateway Timeout
+                    if (error.message === 'TIMEOUT_504' || error.message.includes('504')) {
+                        errorMessage = 'Import memakan waktu terlalu lama dan server timeout.\n\n';
+                        errorMessage += 'Namun, data mungkin sudah berhasil diimpor ke database.\n';
+                        errorMessage += 'Silakan refresh halaman atau cek tabel data murid untuk memastikan.\n\n';
+                        errorMessage += 'Jika data sudah masuk, berarti import berhasil meskipun ada timeout.';
+                        
+                        // Show warning instead of error, and suggest to refresh
+                        showNotification(errorMessage, true); // Show as success/warning
+                        
+                        // Auto refresh table after a delay to check if data was imported
+                        setTimeout(() => {
+                            if (window.gridInstanceMurid) {
+                                window.gridInstanceMurid.forceRender();
+                            }
+                        }, 2000);
+                        
+                        return; // Exit early
+                    }
+                    
+                    // Regular error handling
+                    errorMessage = 'Gagal mengupload data.';
+                    if (error.message) {
+                        errorMessage += ' ' + error.message;
+                    } else {
+                        errorMessage += ' Terjadi kesalahan pada server.';
+                    }
+                    showNotification(errorMessage, false);
                 })
                 .finally(() => {
                     submitButton.disabled = false;
-                    submitButton.textContent = originalText;
+                    spinner.classList.add('d-none');
+                    btnText.textContent = 'Upload';
+                    fileInput.disabled = false;
                 });
             });
 
@@ -876,6 +1020,92 @@
                     console.error('Error:', error);
                 }
             });
+
+            // Export User Data function
+            window.exportUserData = function(format = 'pdf') {
+                try {
+                    // Build export URL
+                    const exportUrl = '<?php echo e(route("users.export")); ?>?format=' + format;
+                    
+                    // Show loading message
+                    const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+                    document.getElementById('notificationModalLabel').innerText = 'Export Data';
+                    document.getElementById('notificationMessage').innerText = 'Sedang mengexport data user ke PDF...';
+                    notificationModal.show();
+                    
+                    // Use fetch to get PDF blob (handles mixed content issues better)
+                    fetch(exportUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/pdf',
+                        },
+                        // Allow credentials if needed
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Gagal mengexport data. Status: ' + response.status);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        // Verify blob is valid
+                        if (!blob || blob.size === 0) {
+                            throw new Error('File PDF kosong atau tidak valid');
+                        }
+                        
+                        // Verify it's actually a PDF
+                        if (blob.type !== 'application/pdf' && !blob.type.includes('pdf')) {
+                            console.warn('Unexpected content type:', blob.type);
+                        }
+                        
+                        // Create blob URL
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        
+                        // Create download link
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = 'data_user_' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_') + '.pdf';
+                        link.style.display = 'none';
+                        
+                        // Append to body
+                        document.body.appendChild(link);
+                        
+                        // Trigger download
+                        link.click();
+                        
+                        // Clean up after download starts
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(blobUrl);
+                            
+                            // Hide loading and show success
+                            notificationModal.hide();
+                            showNotification('Export berhasil! File PDF akan terdownload.', true);
+                        }, 1000);
+                    })
+                    .catch(error => {
+                        console.error('Export error:', error);
+                        notificationModal.hide();
+                        
+                        // Provide more specific error message
+                        let errorMessage = 'Gagal mengexport data.';
+                        if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+                            errorMessage += ' Masalah koneksi atau server tidak dapat diakses.';
+                        } else if (error.message.includes('mixed content') || error.message.includes('insecure')) {
+                            errorMessage += ' Browser memblokir karena koneksi tidak aman. Silakan gunakan HTTPS atau izinkan mixed content di pengaturan browser.';
+                        } else {
+                            errorMessage += ' ' + error.message;
+                        }
+                        
+                        showNotification(errorMessage, false);
+                    });
+                    
+                } catch (error) {
+                    console.error('Export error:', error);
+                    showNotification('Gagal mengexport data: ' + (error.message || ''), false);
+                }
+            };
 
         });
     </script>

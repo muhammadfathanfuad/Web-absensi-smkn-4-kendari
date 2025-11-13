@@ -135,6 +135,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // User management
     Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/admin/users/table', [UserController::class, 'table'])->name('users.table');
+    Route::get('/admin/users/export', [UserController::class, 'export'])->name('users.export');
     Route::post('/admin/users', [UserController::class, 'store'])->name('users.store');
     Route::post('/admin/users/import', [UserController::class, 'import'])->name('users.import');
     Route::put('/admin/user/{id}', [UserController::class, 'update'])->name('users.update');

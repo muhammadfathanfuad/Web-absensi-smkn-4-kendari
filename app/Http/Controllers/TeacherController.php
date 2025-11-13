@@ -110,11 +110,63 @@ class TeacherController extends Controller
                 'file' => 'required|mimes:xlsx,xls,csv',
             ]);
 
-            Excel::import(new TeachersImport, $request->file('file'));
+            $import = new TeachersImport;
+            Excel::import($import, $request->file('file'));
 
-            return response()->json(['success' => true, 'message' => 'Guru berhasil diimpor!']);
+            $errors = $import->getErrors();
+            $successCount = $import->getSuccessCount();
+            $skipCount = $import->getSkipCount();
+
+            // Build response message
+            $message = '';
+            $hasErrors = !empty($errors);
+            $hasSuccess = $successCount > 0;
+
+            if ($hasSuccess) {
+                $message .= "Berhasil mengimpor {$successCount} data guru.\n";
+            }
+
+            if ($skipCount > 0) {
+                $message .= "Melewati {$skipCount} baris kosong.\n";
+            }
+
+            if ($hasErrors) {
+                $message .= "\nTerdapat " . count($errors) . " baris yang gagal diimpor:\n\n";
+                
+                foreach ($errors as $error) {
+                    $message .= "Baris {$error['row']} - {$error['nama_guru']} (Kode: {$error['kode_guru']}):\n";
+                    foreach ($error['errors'] as $err) {
+                        $message .= "  • {$err}\n";
+                    }
+                    $message .= "\n";
+                }
+            }
+
+            if (!$hasSuccess && !$hasErrors) {
+                $message = "Tidak ada data yang berhasil diimpor. Pastikan file berisi data yang valid.";
+            } elseif (!$hasSuccess && $hasErrors) {
+                $message = "Gagal mengimpor semua data. " . trim($message);
+            } else {
+                $message = trim($message);
+            }
+
+            return response()->json([
+                'success' => !$hasErrors || $hasSuccess,
+                'message' => $message,
+                'errors' => $errors,
+                'success_count' => $successCount,
+                'error_count' => count($errors),
+                'skip_count' => $skipCount
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Gagal mengimpor guru: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal mengimpor guru: ' . $e->getMessage(),
+                'errors' => [],
+                'success_count' => 0,
+                'error_count' => 0,
+                'skip_count' => 0
+            ], 500);
         }
     }
 

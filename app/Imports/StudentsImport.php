@@ -6,38 +6,23 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Classroom;
 use App\Models\Role;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
-class StudentsImport implements ToModel, WithHeadingRow, WithValidation
+class StudentsImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
-    public function prepareForValidation(array $row, int $rowIndex): array
+    private $errors = [];
+    private $successCount = 0;
+    private $skipCount = 0;
+    
+    public function chunkSize(): int
     {
-        // Jika nama kosong, anggap baris ini tidak valid
-        if (empty($row['nama'])) {
-            $row['nama'] = null;
-        }
-
-        // Cast fields to string if present
-        if (isset($row['nama']) && $row['nama'] !== null) {
-            $row['nama'] = (string) $row['nama'];
-        }
-        if (isset($row['nis']) && $row['nis'] !== null) {
-            $row['nis'] = (string) $row['nis'];
-        }
-        if (isset($row['kelas']) && $row['kelas'] !== null) {
-            $row['kelas'] = (string) $row['kelas'];
-        }
-        if (isset($row['nama_wali']) && $row['nama_wali'] !== null) {
-            $row['nama_wali'] = (string) $row['nama_wali'];
-        }
-        if (isset($row['telepon_wali']) && $row['telepon_wali'] !== null) {
-            $row['telepon_wali'] = (string) $row['telepon_wali'];
-        }
-
-        return $row;
+        return 100; // Process 100 rows at a time
     }
 
     private function parseKelasTingkatan($kelasString)
@@ -75,76 +60,241 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
         ];
     }
 
-    public function model(array $row)
+    public function collection(Collection $rows)
     {
-        // Check if nama is present
-        if (!empty($row['nama'])) {
-            // Check if student already exists by nis
-            if (Student::where('nis', $row['nis'])->exists()) {
-                return null;
+        // Initialize counters if not already set
+        if (!isset($this->errors)) {
+            $this->errors = [];
+        }
+        if (!isset($this->successCount)) {
+            $this->successCount = 0;
+        }
+        if (!isset($this->skipCount)) {
+            $this->skipCount = 0;
+        }
+
+        // Use database transaction for better performance
+        DB::beginTransaction();
+        
+        try {
+            foreach ($rows as $index => $row) {
+                $rowNumber = $index + 2; // +2 karena index mulai dari 0 dan ada header row
+                
+                try {
+                    // Skip empty rows
+                    if (empty(trim($row['nama'] ?? ''))) {
+                        $this->skipCount++;
+                        continue;
+                    }
+
+                    $nama = trim($row['nama'] ?? '');
+                    $nis = trim($row['nis'] ?? '');
+                    $kelas = trim($row['kelas'] ?? '');
+                    $namaWali = trim($row['nama_wali'] ?? '');
+                    $teleponWali = trim($row['telepon_wali'] ?? '');
+
+                    // Validasi field wajib
+                    $validationErrors = [];
+                    
+                    if (empty($nama)) {
+                        $validationErrors[] = "Nama harus diisi";
+                    }
+                    
+                    if (empty($nis)) {
+                        $validationErrors[] = "NIS harus diisi";
+                    }
+                    
+                    if (empty($kelas)) {
+                        $validationErrors[] = "Kelas harus diisi";
+                    }
+
+                    if (!empty($validationErrors)) {
+                        $this->errors[] = [
+                            'row' => $rowNumber,
+                            'nama' => $nama ?: '(kosong)',
+                            'nis' => $nis ?: '(kosong)',
+                            'errors' => $validationErrors
+                        ];
+                        continue;
+                    }
+
+                    // Check if student already exists by NIS
+                    if (Student::where('nis', $nis)->exists()) {
+                        $this->errors[] = [
+                            'row' => $rowNumber,
+                            'nama' => $nama,
+                            'nis' => $nis,
+                            'errors' => ["NIS '{$nis}' sudah ada di database (duplikat)"]
+                        ];
+                        continue;
             }
 
             // Parse kelas and tingkatan from combined format "10 TKJA"
-            $kelasData = $this->parseKelasTingkatan($row['kelas'] ?? '');
+                    $kelasData = $this->parseKelasTingkatan($kelas);
             $className = $kelasData['class_name'];
             $grade = $kelasData['grade'];
 
-            // Find or create class - Cari berdasarkan name DAN grade (bukan hanya name)
-            // Ini mencegah kelas dengan nama sama tapi grade berbeda saling menimpa
+                    // Validate grade
+                    if (!in_array($grade, [10, 11, 12])) {
+                        $this->errors[] = [
+                            'row' => $rowNumber,
+                            'nama' => $nama,
+                            'nis' => $nis,
+                            'errors' => ["Grade harus 10, 11, atau 12 (ditemukan: {$grade})"]
+                        ];
+                        continue;
+                    }
+
+                    // Find or create class
             $class = Classroom::where('name', $className)
                 ->where('grade', $grade)
                 ->first();
             
             if (!$class) {
-                // Jika tidak ditemukan, buat kelas baru dengan name dan grade yang sesuai
+                        try {
                 $class = Classroom::create([
                     'name' => $className,
                     'grade' => $grade,
                     'homeroom_teacher_id' => null,
                     'room_id' => null
                 ]);
-            }
+                        } catch (\Exception $e) {
+                            $this->errors[] = [
+                                'row' => $rowNumber,
+                                'nama' => $nama,
+                                'nis' => $nis,
+                                'errors' => ["Gagal membuat kelas: " . $e->getMessage()]
+                            ];
+                            continue;
+                        }
+                    }
 
-            // Create user (generate email from NIS if not provided)
-            $email = $row['nis'] . '@student.smkn4kendari.sch.id';
-            $user = User::create([
-                'full_name' => $row['nama'] ?? '',
-                'email' => $email,
+                    // Generate email from NIS
+                    $email = $nis . '@student.smkn4kendari.sch.id';
+                    
+                    // Check if email already exists
+                    $existingUser = User::where('email', $email)->first();
+                    if ($existingUser) {
+                        if ($existingUser->student) {
+                            $this->errors[] = [
+                                'row' => $rowNumber,
+                                'nama' => $nama,
+                                'nis' => $nis,
+                                'errors' => ["Email '{$email}' sudah terdaftar sebagai siswa"]
+                            ];
+                            continue;
+                        }
+                        if ($existingUser->teacher) {
+                            $this->errors[] = [
+                                'row' => $rowNumber,
+                                'nama' => $nama,
+                                'nis' => $nis,
+                                'errors' => ["Email '{$email}' sudah terdaftar sebagai guru"]
+                            ];
+                            continue;
+                        }
+                    }
+
+                    // Create user
+                    try {
+                        $user = User::firstOrCreate(
+                            ['email' => $email],
+                            [
+                                'full_name' => $nama,
                 'phone' => null,
-                'username' => $row['nis'] ?? null,
+                                'username' => $nis,
                 'password_hash' => Hash::make('password'),
                 'status' => 'suspended',
-            ]);
+                            ]
+                        );
 
-            // Create student
+                        // Update user if it already exists but not a student
+                        if ($user->wasRecentlyCreated === false) {
+                            $user->update([
+                                'full_name' => $nama,
+                                'username' => $nis,
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        $this->errors[] = [
+                            'row' => $rowNumber,
+                            'nama' => $nama,
+                            'nis' => $nis,
+                            'errors' => ["Gagal membuat user: " . $e->getMessage()]
+                        ];
+                        continue;
+                    }
+
+                    // Create student if doesn't exist
+                    if (!$user->student) {
+                        try {
             Student::create([
                 'user_id' => $user->id,
-                'nis' => $row['nis'] ?? null,
+                                'nis' => $nis,
                 'class_id' => $class->id,
-                'guardian_name' => $row['nama_wali'] ?? null,
-                'guardian_phone' => $row['telepon_wali'] ?? null,
+                                'guardian_name' => $namaWali ?: null,
+                                'guardian_phone' => $teleponWali ?: null,
             ]);
 
             // Assign role student
             $role = Role::where('name', 'student')->first();
             if ($role) {
-                $user->roles()->attach($role);
+                                $user->roles()->syncWithoutDetaching($role);
             }
+                        } catch (\Exception $e) {
+                            $this->errors[] = [
+                                'row' => $rowNumber,
+                                'nama' => $nama,
+                                'nis' => $nis,
+                                'errors' => ["Gagal membuat data siswa: " . $e->getMessage()]
+                            ];
+                            continue;
+                        }
+                    } else {
+                        $this->errors[] = [
+                            'row' => $rowNumber,
+                            'nama' => $nama,
+                            'nis' => $nis,
+                            'errors' => ["User dengan email '{$email}' sudah memiliki data siswa"]
+                        ];
+                        continue;
+                    }
 
-            return $user;
+                    $this->successCount++;
+                    Log::info("Successfully imported student: {$nama} (NIS: {$nis})");
+
+                } catch (\Exception $e) {
+                    $this->errors[] = [
+                        'row' => $rowNumber,
+                        'nama' => $row['nama'] ?? '(tidak diketahui)',
+                        'nis' => $row['nis'] ?? '(tidak diketahui)',
+                        'errors' => ["Error: " . $e->getMessage()]
+                    ];
+                    Log::error("Error importing student at row {$rowNumber}: " . $e->getMessage());
+                }
+            }
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error in batch import: " . $e->getMessage());
+            // Re-throw to be caught by controller
+            throw $e;
         }
-
-        return null;
     }
 
-    public function rules(): array
+    public function getErrors()
     {
-        return [
-            'nama' => 'nullable|string',
-            'nis' => 'nullable|string|unique:students,nis',
-            'kelas' => 'nullable|string',
-            'nama_wali' => 'nullable|string',
-            'telepon_wali' => 'nullable|string',
-        ];
+        return $this->errors;
+    }
+
+    public function getSuccessCount()
+    {
+        return $this->successCount;
+    }
+
+    public function getSkipCount()
+    {
+        return $this->skipCount;
     }
 }

@@ -1,3 +1,21 @@
+<?php $__env->startPush('styles'); ?>
+<style>
+    .presence-status-box {
+        transition: all 0.3s ease;
+        min-width: 100px;
+        max-width: 130px;
+    }
+    .presence-status-badge {
+        font-size: 0.65rem;
+        margin-top: 2px;
+    }
+    .presence-status-box i {
+        display: block;
+        margin-bottom: 4px;
+    }
+</style>
+<?php $__env->stopPush(); ?>
+
 <?php $__env->startSection('content'); ?>
 
     
@@ -22,13 +40,13 @@
                             </div>
                         </div>
                         
-                        <div class="text-center d-none d-xl-block">
-                            <button type="button" id="btnPresence" class="btn btn-primary btn-lg" onclick="recordPresence()" style="min-width: 200px; text-align: center;">
-                                <i class="bx bx-check-circle me-2"></i>
-                                <span id="presenceButtonText">Catat Kehadiran</span>
-                            </button>
-                            <div id="presenceStatus" class="mt-2">
-                                <small class="text-muted" id="presenceStatusText"></small>
+                        <div class="flex-shrink-0 ms-3 d-none d-xl-block" style="max-width: 130px;">
+                            <div class="presence-status-box text-center p-2 rounded border" id="presenceStatusBox" style="width: 100%;">
+                                <i class="bx bx-time fs-20 text-muted mb-1 d-block" id="presenceIcon"></i>
+                                <div class="presence-status-badge" id="presenceStatusBadge"></div>
+                            </div>
+                            <div class="mt-1 text-center">
+                                <small class="text-muted d-block" id="presenceStatusText" style="font-size: 0.7rem; line-height: 1.2;">Memuat...</small>
                             </div>
                         </div>
                     </div>
@@ -39,12 +57,14 @@
             <div class="d-xl-none mb-3">
                 <div class="card">
                     <div class="card-body">
-                        <button type="button" id="btnPresenceMobile" class="btn btn-primary btn-lg w-100" onclick="recordPresence()" style="text-align: center;">
-                            <i class="bx bx-check-circle me-2"></i>
-                            <span id="presenceButtonTextMobile">Catat Kehadiran</span>
-                        </button>
-                        <div id="presenceStatusMobile" class="mt-2 text-center">
-                            <small class="text-muted" id="presenceStatusTextMobile"></small>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="presence-status-box text-center p-2 rounded border" id="presenceStatusBoxMobile" style="min-width: 100px; max-width: 140px;">
+                                <i class="bx bx-time fs-20 text-muted mb-1" id="presenceIconMobile"></i>
+                                <div class="presence-status-badge" id="presenceStatusBadgeMobile"></div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <small class="text-muted" id="presenceStatusTextMobile" style="font-size: 0.75rem; line-height: 1.2;">Memuat...</small>
                         </div>
                     </div>
                 </div>
@@ -512,133 +532,104 @@
             setInterval(loadPresenceStatus, 30000);
         });
 
-        function updatePresenceButton(button, buttonText, statusText, data) {
-            if (!button) return;
-            
-            const iconElement = button.querySelector('i');
-            
-            if (data.has_presence) {
-                button.disabled = true;
-                button.classList.remove('btn-primary', 'btn-secondary');
-                button.classList.add('btn-success');
-                if (iconElement) {
-                    iconElement.className = 'bx bx-check-circle me-2';
-                }
-                buttonText.textContent = 'Sudah Mencatat Kehadiran';
-                
-                const statusBadge = {
-                    'H': '<span class="badge bg-success">Hadir</span>',
-                    'A': '<span class="badge bg-danger">Alfa</span>',
-                    'I': '<span class="badge bg-info">Izin</span>',
-                    'S': '<span class="badge bg-warning">Sakit</span>'
-                };
-                
-                statusText.innerHTML = 'Status: ' + (statusBadge[data.status] || '') + 
-                    (data.check_in_time ? ' | Waktu: ' + new Date(data.check_in_time).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '');
-            } else {
-                if (data.is_within_time) {
-                    button.disabled = false;
-                    button.classList.remove('btn-success', 'btn-secondary');
-                    button.classList.add('btn-primary');
-                    if (iconElement) {
-                        iconElement.className = 'bx bx-check-circle me-2';
-                    }
-                    buttonText.textContent = 'Catat Kehadiran';
-                    statusText.innerHTML = '<small class="text-muted">Waktu: ' + data.current_time + '</small>';
-                } else {
-                    button.disabled = true;
-                    button.classList.remove('btn-primary', 'btn-success');
-                    button.classList.add('btn-secondary');
-                    if (iconElement) {
-                        iconElement.className = 'bx bx-time me-2';
-                    }
-                    buttonText.textContent = 'Di Luar Waktu';
-                    statusText.innerHTML = '<small class="text-warning">Tombol hanya bisa ditekan dari jam 07:00 - 14:45</small>';
-                }
-            }
-        }
-
         function loadPresenceStatus() {
             fetch('<?php echo e(route("guru.presence.today-status")); ?>')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update desktop button
-                        const btnPresence = document.getElementById('btnPresence');
-                        const btnText = document.getElementById('presenceButtonText');
+                        const statusConfig = {
+                            'H': { 
+                                text: 'Hadir', 
+                                icon: 'bx-check-circle', 
+                                badge: '<span class="badge bg-success">Hadir</span>',
+                                boxClass: 'border-success bg-success bg-opacity-10'
+                            },
+                            'A': { 
+                                text: 'Alfa', 
+                                icon: 'bx-x-circle', 
+                                badge: '<span class="badge bg-danger">Alfa</span>',
+                                boxClass: 'border-danger bg-danger bg-opacity-10'
+                            },
+                            'I': { 
+                                text: 'Izin', 
+                                icon: 'bx-info-circle', 
+                                badge: '<span class="badge bg-info">Izin</span>',
+                                boxClass: 'border-info bg-info bg-opacity-10'
+                            },
+                            'S': { 
+                                text: 'Sakit', 
+                                icon: 'bx-error-circle', 
+                                badge: '<span class="badge bg-warning">Sakit</span>',
+                                boxClass: 'border-warning bg-warning bg-opacity-10'
+                            }
+                        };
+                        
+                        // Update desktop
+                        const statusBox = document.getElementById('presenceStatusBox');
+                        const statusIcon = document.getElementById('presenceIcon');
+                        const statusBadge = document.getElementById('presenceStatusBadge');
                         const statusText = document.getElementById('presenceStatusText');
-                        if (btnPresence) {
-                            updatePresenceButton(btnPresence, btnText, statusText, data);
+                        
+                        if (statusBox && statusIcon && statusBadge && statusText) {
+                            if (data.has_presence && data.status && statusConfig[data.status]) {
+                                const config = statusConfig[data.status];
+                                statusBox.className = 'presence-status-box text-center p-2 rounded border ' + config.boxClass;
+                                statusIcon.className = 'bx ' + config.icon + ' fs-20 mb-1';
+                                statusIcon.classList.remove('text-muted');
+                                if (data.status === 'H') statusIcon.classList.add('text-success');
+                                else if (data.status === 'A') statusIcon.classList.add('text-danger');
+                                else if (data.status === 'I') statusIcon.classList.add('text-info');
+                                else if (data.status === 'S') statusIcon.classList.add('text-warning');
+                                statusBadge.innerHTML = config.badge;
+                                const timeText = data.check_in_time ? ' | ' + new Date(data.check_in_time).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '';
+                                statusText.textContent = config.text + timeText;
+                            } else {
+                                statusBox.className = 'presence-status-box text-center p-2 rounded border';
+                                statusIcon.className = 'bx bx-time fs-20 text-muted mb-1';
+                                statusBadge.innerHTML = '';
+                                statusText.textContent = 'Absensi Belum Tercatat';
+                            }
                         }
                         
-                        // Update mobile button
-                        const btnPresenceMobile = document.getElementById('btnPresenceMobile');
-                        const btnTextMobile = document.getElementById('presenceButtonTextMobile');
+                        // Update mobile
+                        const statusBoxMobile = document.getElementById('presenceStatusBoxMobile');
+                        const statusIconMobile = document.getElementById('presenceIconMobile');
+                        const statusBadgeMobile = document.getElementById('presenceStatusBadgeMobile');
                         const statusTextMobile = document.getElementById('presenceStatusTextMobile');
-                        if (btnPresenceMobile) {
-                            updatePresenceButton(btnPresenceMobile, btnTextMobile, statusTextMobile, data);
+                        
+                        if (statusBoxMobile && statusIconMobile && statusBadgeMobile && statusTextMobile) {
+                            if (data.has_presence && data.status && statusConfig[data.status]) {
+                                const config = statusConfig[data.status];
+                                statusBoxMobile.className = 'presence-status-box text-center p-2 rounded border ' + config.boxClass;
+                                statusIconMobile.className = 'bx ' + config.icon + ' fs-20 mb-1';
+                                statusIconMobile.classList.remove('text-muted');
+                                if (data.status === 'H') statusIconMobile.classList.add('text-success');
+                                else if (data.status === 'A') statusIconMobile.classList.add('text-danger');
+                                else if (data.status === 'I') statusIconMobile.classList.add('text-info');
+                                else if (data.status === 'S') statusIconMobile.classList.add('text-warning');
+                                statusBadgeMobile.innerHTML = config.badge;
+                                const timeText = data.check_in_time ? ' | ' + new Date(data.check_in_time).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '';
+                                statusTextMobile.textContent = config.text + timeText;
+                            } else {
+                                statusBoxMobile.className = 'presence-status-box text-center p-2 rounded border';
+                                statusIconMobile.className = 'bx bx-time fs-20 text-muted mb-1';
+                                statusBadgeMobile.innerHTML = '';
+                                statusTextMobile.textContent = 'Absensi Belum Tercatat';
+                            }
                         }
                     }
                 })
                 .catch(error => {
                     console.error('Error loading presence status:', error);
+                    const statusText = document.getElementById('presenceStatusText');
+                    const statusTextMobile = document.getElementById('presenceStatusTextMobile');
+                    if (statusText) {
+                        statusText.textContent = 'Gagal memuat';
+                    }
+                    if (statusTextMobile) {
+                        statusTextMobile.textContent = 'Gagal memuat';
+                    }
                 });
-        }
-
-        function recordPresence() {
-            const btnPresence = document.getElementById('btnPresence');
-            const btnPresenceMobile = document.getElementById('btnPresenceMobile');
-            const btnText = document.getElementById('presenceButtonText');
-            const btnTextMobile = document.getElementById('presenceButtonTextMobile');
-            
-            const originalText = btnText ? btnText.textContent : 'Catat Kehadiran';
-            
-            // Disable both buttons
-            if (btnPresence) {
-                btnPresence.disabled = true;
-                btnText.textContent = 'Memproses...';
-            }
-            if (btnPresenceMobile) {
-                btnPresenceMobile.disabled = true;
-                btnTextMobile.textContent = 'Memproses...';
-            }
-            
-            fetch('<?php echo e(route("guru.presence.store")); ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('success', data.message);
-                    loadPresenceStatus();
-                } else {
-                    showAlert('error', data.message || 'Terjadi kesalahan saat mencatat kehadiran.');
-                    if (btnPresence) {
-                        btnPresence.disabled = false;
-                        btnText.textContent = originalText;
-                    }
-                    if (btnPresenceMobile) {
-                        btnPresenceMobile.disabled = false;
-                        btnTextMobile.textContent = originalText;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', 'Terjadi kesalahan saat mencatat kehadiran.');
-                if (btnPresence) {
-                    btnPresence.disabled = false;
-                    btnText.textContent = originalText;
-                }
-                if (btnPresenceMobile) {
-                    btnPresenceMobile.disabled = false;
-                    btnTextMobile.textContent = originalText;
-                }
-            });
         }
 
         function showDetailModal(requestId) {

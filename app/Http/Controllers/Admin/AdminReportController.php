@@ -460,7 +460,7 @@ class AdminReportController extends Controller
 
         // Optimasi: Process dengan chunking untuk data besar
         $studentsQuery->chunk(200, function ($students) use (&$studentSummary) {
-        foreach ($students as $student) {
+            foreach ($students as $student) {
                 // Optimasi: Single query dengan agregasi untuk menghitung semua status sekaligus
                 $stats = Attendance::selectRaw('
                     COUNT(*) as total_records,
@@ -475,20 +475,20 @@ class AdminReportController extends Controller
                 $presentCount = $stats->present_count ?? 0;
                 $lateCount = $stats->late_count ?? 0;
                 $absentCount = $stats->absent_count ?? 0;
-            $attendancePercentage = $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100, 2) : 0;
+                $attendancePercentage = $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100, 2) : 0;
 
-            $studentSummary->push((object)[
+                $studentSummary->push((object)[
                     'full_name' => $student->user->full_name ?? 'N/A',
                     'nis' => $student->nis ?? 'N/A',
                     'grade' => $student->classroom->grade ?? 'N/A',
                     'class_name' => $student->classroom->name ?? 'N/A',
-                'total_records' => $totalRecords,
-                'present' => $presentCount,
-                'late' => $lateCount,
-                'absent' => $absentCount,
-                'attendance_percentage' => $attendancePercentage
-            ]);
-        }
+                    'total_records' => $totalRecords,
+                    'present' => $presentCount,
+                    'late' => $lateCount,
+                    'absent' => $absentCount,
+                    'attendance_percentage' => $attendancePercentage
+                ]);
+            }
         });
 
         return ['student_summary' => $studentSummary];
@@ -653,7 +653,7 @@ class AdminReportController extends Controller
 
         // Optimasi: Process dengan chunking untuk data besar (mencegah timeout)
         $studentsQuery->chunk(200, function ($students) use (&$studentData, $dateFromCarbon, $dateToCarbon) {
-        foreach ($students as $student) {
+            foreach ($students as $student) {
                 // Optimasi: Single query dengan agregasi untuk menghitung semua status sekaligus
                 $stats = Attendance::selectRaw('
                     COUNT(*) as total_records,
@@ -669,72 +669,73 @@ class AdminReportController extends Controller
                 $studentPresent = $stats->present_count ?? 0;
                 $studentLate = $stats->late_count ?? 0;
                 $studentAbsent = $stats->absent_count ?? 0;
-            $studentPercentage = $studentTotal > 0 ? round(($studentPresent / $studentTotal) * 100, 2) : 0;
+                $studentPercentage = $studentTotal > 0 ? round(($studentPresent / $studentTotal) * 100, 2) : 0;
 
-            // Calculate presence status
-            $presences = \App\Services\StudentPresenceService::getPresenceStatusForRange(
-                $student->user_id,
-                $dateFromCarbon->toDateString(),
-                $dateToCarbon->toDateString()
-            );
-            
-            // Cek apakah ada presences dengan approval_count dan rejection_count (mixed approval)
-            // Mixed approval terjadi jika:
-            // 1. Ada presence dengan approval_count > 0 DAN rejection_count > 0 (satu hari dengan mixed)
-            // 2. Atau ada beberapa presences dengan approval_count > 0 dan beberapa dengan rejection_count > 0
-            $hasApproval = $presences->filter(function($p) {
-                return $p->approval_count > 0;
-            })->count() > 0;
-            $hasRejection = $presences->filter(function($p) {
-                return $p->rejection_count > 0;
-            })->count() > 0;
-            $hasMixedInSingleDay = $presences->filter(function($p) {
-                return $p->approval_count > 0 && $p->rejection_count > 0;
-            })->count() > 0;
-            
-            $hasMixedApproval = ($hasApproval && $hasRejection) || $hasMixedInSingleDay;
-            
-            // Jika ada mixed approval, tampilkan format "4 | 2"
-            if ($hasMixedApproval) {
-                $totalApproval = $presences->sum('approval_count');
-                $totalRejection = $presences->sum('rejection_count');
-                $statusKehadiranText = $totalApproval . ' | ' . $totalRejection;
-            } else {
-                $hadirCount = $presences->where('status', 'H')->count();
-                $alfaCount = $presences->where('status', 'A')->count();
-                $izinCount = $presences->where('status', 'I')->count();
-                $sakitCount = $presences->where('status', 'S')->count();
+                // Calculate presence status
+                $presences = \App\Services\StudentPresenceService::getPresenceStatusForRange(
+                    $student->user_id,
+                    $dateFromCarbon->toDateString(),
+                    $dateToCarbon->toDateString()
+                );
                 
-                // Tentukan status dominan berdasarkan prioritas: Alfa > Sakit > Izin > Hadir
-                // Note: Jika semua approve, status sudah menjadi 'H' (Hadir) di observer/service
-                $statusKehadiranText = '-';
+                // Cek apakah ada presences dengan approval_count dan rejection_count (mixed approval)
+                // Mixed approval terjadi jika:
+                // 1. Ada presence dengan approval_count > 0 DAN rejection_count > 0 (satu hari dengan mixed)
+                // 2. Atau ada beberapa presences dengan approval_count > 0 dan beberapa dengan rejection_count > 0
+                $hasApproval = $presences->filter(function($p) {
+                    return $p->approval_count > 0;
+                })->count() > 0;
+                $hasRejection = $presences->filter(function($p) {
+                    return $p->rejection_count > 0;
+                })->count() > 0;
+                $hasMixedInSingleDay = $presences->filter(function($p) {
+                    return $p->approval_count > 0 && $p->rejection_count > 0;
+                })->count() > 0;
                 
-                if ($alfaCount > 0) {
-                    $statusKehadiranText = 'Alfa';
-                } elseif ($sakitCount > 0) {
-                    $statusKehadiranText = 'Sakit';
-                } elseif ($izinCount > 0) {
-                    $statusKehadiranText = 'Izin';
-                } elseif ($hadirCount > 0) {
-                    $statusKehadiranText = 'Hadir';
+                $hasMixedApproval = ($hasApproval && $hasRejection) || $hasMixedInSingleDay;
+                
+                // Jika ada mixed approval, tampilkan format "4 | 2"
+                if ($hasMixedApproval) {
+                    $totalApproval = $presences->sum('approval_count');
+                    $totalRejection = $presences->sum('rejection_count');
+                    $statusKehadiranText = $totalApproval . ' | ' . $totalRejection;
+                } else {
+                    $hadirCount = $presences->where('status', 'H')->count();
+                    $alfaCount = $presences->where('status', 'A')->count();
+                    $izinCount = $presences->where('status', 'I')->count();
+                    $sakitCount = $presences->where('status', 'S')->count();
+                    
+                    // Tentukan status dominan berdasarkan prioritas: Alfa > Sakit > Izin > Hadir
+                    // Note: Jika semua approve, status sudah menjadi 'H' (Hadir) di observer/service
+                    $statusKehadiranText = '-';
+                    
+                    if ($alfaCount > 0) {
+                        $statusKehadiranText = 'Alfa';
+                    } elseif ($sakitCount > 0) {
+                        $statusKehadiranText = 'Sakit';
+                    } elseif ($izinCount > 0) {
+                        $statusKehadiranText = 'Izin';
+                    } elseif ($hadirCount > 0) {
+                        $statusKehadiranText = 'Hadir';
+                    }
                 }
-            }
 
-            $studentData[] = [
-                'name' => $student->user->full_name,
-                'nis' => $student->nis,
-                'grade' => $student->classroom->grade,
-                'class_name' => $student->classroom->name,
-                'status_kehadiran' => $statusKehadiranText,
-                'has_mixed_approval' => $hasMixedApproval,
-                'total_approval' => $hasMixedApproval ? $presences->sum('approval_count') : 0,
-                'total_rejection' => $hasMixedApproval ? $presences->sum('rejection_count') : 0,
-                'present' => $studentPresent,
-                'late' => $studentLate,
-                'absent' => $studentAbsent,
-                'percentage' => $studentPercentage,
-            ];
-        }
+                $studentData[] = [
+                    'name' => $student->user->full_name,
+                    'nis' => $student->nis,
+                    'grade' => $student->classroom->grade,
+                    'class_name' => $student->classroom->name,
+                    'status_kehadiran' => $statusKehadiranText,
+                    'has_mixed_approval' => $hasMixedApproval,
+                    'total_approval' => $hasMixedApproval ? $presences->sum('approval_count') : 0,
+                    'total_rejection' => $hasMixedApproval ? $presences->sum('rejection_count') : 0,
+                    'present' => $studentPresent,
+                    'late' => $studentLate,
+                    'absent' => $studentAbsent,
+                    'percentage' => $studentPercentage,
+                ];
+            }
+        });
 
         return $studentData;
     }

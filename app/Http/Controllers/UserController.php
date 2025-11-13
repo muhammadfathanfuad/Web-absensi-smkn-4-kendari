@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\UsersImport;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -169,6 +171,113 @@ class UserController extends Controller
             return response()->json(['success' => true, 'message' => 'Status user berhasil diubah ke suspended!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Export users to PDF
+    public function export(Request $request)
+    {
+        try {
+            // Get all users with their roles and classroom info
+            $allUsers = User::with('roles', 'teacher', 'student.classroom')
+                ->get()
+                ->map(function ($user) {
+                    $role = $user->roles->first();
+                    $user->role_name = $role ? $role->name : '-';
+                    
+                    // Determine user type and prepare data
+                    if ($user->teacher) {
+                        $user->user_type = 'Guru';
+                        $user->classroom_info = '-';
+                    } elseif ($user->student) {
+                        $user->user_type = 'Siswa';
+                        // Get classroom info
+                        $classroom = $user->student->classroom;
+                        if ($classroom) {
+                            $user->sort_grade = $classroom->grade ?? 0;
+                            $user->sort_class_name = $classroom->name ?? '';
+                            $user->classroom_info = ($classroom->grade ?? '') . ' - ' . ($classroom->name ?? '');
+                        } else {
+                            $user->sort_grade = 0;
+                            $user->sort_class_name = '';
+                            $user->classroom_info = '-';
+                        }
+                    } else {
+                        $user->user_type = 'Admin';
+                        $user->classroom_info = '-';
+                    }
+                    
+                    // Default password is "password"
+                    $user->default_password = 'password';
+                    
+                    return $user;
+                });
+
+            // Separate teachers and students (exclude admins)
+            $teachers = $allUsers->filter(function ($user) {
+                return $user->teacher; // Only teachers, exclude admins
+            })->sortBy('full_name')->values();
+
+            // Group students by classroom
+            $studentsByClass = $allUsers->filter(function ($user) {
+                return $user->student;
+            })->groupBy(function ($user) {
+                // Group by classroom_info, or 'Tidak Ada Kelas' if no classroom
+                return $user->classroom_info ?? 'Tidak Ada Kelas';
+            })->map(function ($classStudents, $className) {
+                // Sort students within each class by name
+                return $classStudents->sortBy('full_name')->values();
+            })->sortBy(function ($students, $className) {
+                // Sort classes: first by grade (10, 11, 12), then by class name
+                $firstStudent = $students->first();
+                if ($firstStudent && isset($firstStudent->sort_grade) && isset($firstStudent->sort_class_name)) {
+                    // Create sort key: grade * 10000 + first char of class name
+                    $gradeSort = ($firstStudent->sort_grade ?? 0) * 10000;
+                    $classSort = ord(substr($firstStudent->sort_class_name ?? '', 0, 1)) ?? 0;
+                    return $gradeSort + $classSort;
+                }
+                // For "Tidak Ada Kelas", put it last
+                return 999999;
+            });
+
+            // Generate filename
+            $filename = 'data_user_' . date('YmdHis') . '.pdf';
+
+            // Generate PDF
+            $pdf = Pdf::loadView('admin.users-pdf', [
+                'teachers' => $teachers,
+                'studentsByClass' => $studentsByClass,
+                'exportDate' => now()->format('d F Y H:i:s'),
+            ]);
+
+            $totalStudents = $studentsByClass->sum(function ($students) {
+                return $students->count();
+            });
+            
+            Log::info('Exporting users to PDF', [
+                'teachers_count' => $teachers->count(),
+                'students_count' => $totalStudents,
+                'classes_count' => $studentsByClass->count()
+            ]);
+
+            // Return PDF download (download() method already sets Content-Disposition: attachment header)
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error('Export users error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+
+            // Return JSON error for AJAX requests
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengexport data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Redirect back with error message for regular requests
+            return redirect()->back()->with('error', 'Gagal mengexport data: ' . $e->getMessage());
         }
     }
 }

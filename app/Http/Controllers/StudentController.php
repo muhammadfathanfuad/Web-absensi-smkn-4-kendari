@@ -85,82 +85,124 @@ class StudentController extends Controller
 
     public function destroy($id)
     {
+        try {
         $student = Student::findOrFail($id);
+            
+            // Delete user first, which will cascade delete student if foreign key is set up
+            // But we'll delete student explicitly to be safe
+            if ($student->user) {
         $student->user->delete();
+            }
+            // Student will be deleted automatically if cascade is set, but delete explicitly to be safe
         $student->delete();
+            
         return response()->json(['success' => true, 'message' => 'Murid berhasil dihapus!']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus murid: ' . $e->getMessage()], 500);
+        }
     }
 
     public function import(Request $request)
     {
         try {
+            // Increase execution time limit for large imports
+            set_time_limit(300); // 5 minutes
+            ini_set('max_execution_time', '300');
+            ini_set('memory_limit', '512M');
+            
+            // Disable output buffering to prevent timeout
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            // Send headers early to prevent web server timeout
+            if (!headers_sent()) {
+                header('Content-Type: application/json');
+                header('X-Accel-Buffering: no'); // Disable nginx buffering
+            }
+            
             $request->validate([
                 'file' => 'required|mimes:xlsx,xls,csv',
             ]);
 
-            Excel::import(new StudentsImport, $request->file('file'));
+            $import = new StudentsImport;
+            Excel::import($import, $request->file('file'));
 
-            return response()->json(['success' => true, 'message' => 'Murid berhasil diimpor!']);
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = $e->failures();
-            $errorMessages = [];
-            
-            foreach ($failures as $failure) {
-                $row = $failure->row(); // Nomor baris di Excel (dimulai dari 2 karena baris 1 adalah header)
-                $attribute = $failure->attribute(); // Field yang error (misalnya 'nis')
-                $errors = $failure->errors(); // Array error messages
+            $errors = $import->getErrors();
+            $successCount = $import->getSuccessCount();
+            $skipCount = $import->getSkipCount();
+
+            // Build response message
+            $message = '';
+            $hasErrors = !empty($errors);
+            $hasSuccess = $successCount > 0;
+
+            if ($hasSuccess) {
+                $message .= "Berhasil mengimpor {$successCount} data siswa.\n";
+            }
+
+            if ($skipCount > 0) {
+                $message .= "Melewati {$skipCount} baris kosong.\n";
+            }
+
+            if ($hasErrors) {
+                $message .= "\nTerdapat " . count($errors) . " baris yang gagal diimpor:\n\n";
                 
-                // Terjemahkan nama field ke bahasa Indonesia
-                $fieldNames = [
-                    'nama' => 'Nama',
-                    'nis' => 'NIS',
-                    'kelas' => 'Kelas',
-                    'nama_wali' => 'Nama Wali',
-                    'telepon_wali' => 'Telepon Wali',
-                ];
-                
-                $fieldName = $fieldNames[$attribute] ?? ucfirst($attribute);
-                
-                // Proses setiap error message
-                $processedErrors = [];
                 foreach ($errors as $error) {
-                    // Hapus prefix "The {row}.{field}" dan format ulang
-                    $errorText = preg_replace('/^' . preg_quote($attribute, '/') . ' /', '', $error);
-                    
-                    // Terjemahkan error messages ke bahasa Indonesia
-                    $translations = [
-                        'has already been taken' => 'sudah pernah digunakan (duplikat)',
-                        'is required' => 'harus diisi',
-                        'must be a string' => 'harus berupa teks',
-                        'must be unique' => 'harus unik (sudah ada di database)',
-                        'must be an integer' => 'harus berupa angka',
-                        'must be a valid email' => 'harus berupa email yang valid',
-                        'must be a valid date' => 'harus berupa tanggal yang valid',
-                    ];
-                    
-                    foreach ($translations as $en => $id) {
-                        if (stripos($errorText, $en) !== false) {
-                            $errorText = str_ireplace($en, $id, $errorText);
-                            break;
-                        }
+                    $message .= "Baris {$error['row']} - {$error['nama']} (NIS: {$error['nis']}):\n";
+                    foreach ($error['errors'] as $err) {
+                        $message .= "  • {$err}\n";
                     }
-                    
-                    $processedErrors[] = $errorText;
+                    $message .= "\n";
                 }
-                
-                $errorMessages[] = "Baris {$row} (kolom {$fieldName}): " . implode(', ', $processedErrors);
+            }
+
+            if (!$hasSuccess && !$hasErrors) {
+                $message = "Tidak ada data yang berhasil diimpor. Pastikan file berisi data yang valid.";
+            } elseif (!$hasSuccess && $hasErrors) {
+                $message = "Gagal mengimpor semua data. " . trim($message);
+            } else {
+                $message = trim($message);
+            }
+
+            return response()->json([
+                'success' => !$hasErrors || $hasSuccess,
+                'message' => $message,
+                'errors' => $errors,
+                'success_count' => $successCount,
+                'error_count' => count($errors),
+                'skip_count' => $skipCount
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Validasi gagal: ' . implode(', ', $e->validator->errors()->all()),
+                'errors' => [],
+                'success_count' => 0,
+                'error_count' => 0,
+                'skip_count' => 0
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error importing students: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Check if it's a timeout error
+            $errorMessage = $e->getMessage();
+            if (strpos($errorMessage, 'Maximum execution time') !== false || 
+                strpos($errorMessage, 'timeout') !== false) {
+                $errorMessage = 'Import memakan waktu terlalu lama. File terlalu besar atau server lambat. Silakan coba dengan file yang lebih kecil atau hubungi administrator.';
             }
             
-            $message = 'Gagal mengimpor murid. Terdapat kesalahan pada data berikut:' . "\n\n" . implode("\n", $errorMessages);
-            
             return response()->json([
                 'success' => false, 
-                'message' => $message
-            ], 400);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Gagal mengimpor murid: ' . $e->getMessage()
+                'message' => 'Gagal mengimpor murid: ' . $errorMessage,
+                'errors' => [],
+                'success_count' => 0,
+                'error_count' => 0,
+                'skip_count' => 0
             ], 500);
         }
     }
@@ -174,7 +216,18 @@ class StudentController extends Controller
                 'ids.*' => 'integer|exists:students,user_id',
             ]);
 
-            Student::whereIn('user_id', $request->ids)->delete();
+            // Get students with their users
+            $students = Student::whereIn('user_id', $request->ids)->with('user')->get();
+            
+            // Delete users (this will cascade delete students if foreign key is set up correctly)
+            // But to be safe, we'll delete both explicitly
+            foreach ($students as $student) {
+                if ($student->user) {
+                    $student->user->delete();
+                }
+                // Student will be deleted automatically if cascade is set, but delete explicitly to be safe
+                $student->delete();
+            }
 
             return response()->json(['success' => true, 'message' => 'Murid berhasil dihapus!']);
         } catch (\Exception $e) {

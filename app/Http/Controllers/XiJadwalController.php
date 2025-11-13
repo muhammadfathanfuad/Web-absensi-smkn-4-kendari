@@ -77,18 +77,11 @@ class XiJadwalController extends Controller
 
         \Log::info('Found ' . $timetables->count() . ' Kelas XI timetables');
 
-        // Check if we have any data
-        if ($timetables->isEmpty()) {
-            return response()->json([
-                'message' => 'Tidak ada data jadwal kelas XI yang ditemukan. Silakan import data terlebih dahulu.',
-                'data' => []
-            ]);
-        }
-
         // Group timetables by day and time for display
         $groupedTimetables = $this->groupTimetablesForDisplay($timetables, $days);
 
-        return response()->json($groupedTimetables);
+        // Return array directly (not wrapped in object) to match Grid.js expectations
+        return response()->json($groupedTimetables->values());
     }
 
     private function groupTimetablesForDisplay($timetables, $days)

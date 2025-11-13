@@ -1645,8 +1645,40 @@ class GridJadwalDatatable {
             search: true,
             server: {
                 url: serverUrl,
-                then: (data) =>
-                    data.map((jadwal) => [
+                then: (data) => {
+                    // Handle case where data is not an array
+                    if (!data || !Array.isArray(data)) {
+                        return [
+                            [
+                                "Tidak ada data jadwal kelas X yang ditemukan. Silakan import data terlebih dahulu.",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                            ],
+                        ];
+                    }
+                    
+                    // Handle empty array
+                    if (data.length === 0) {
+                        return [
+                            [
+                                "Tidak ada data jadwal kelas X yang ditemukan. Silakan import data terlebih dahulu.",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                            ],
+                        ];
+                    }
+                    
+                    return data.map((jadwal) => [
                         null, // checkbox
                         jadwal.hari ?? "-", // Hari
                         jadwal.jam ?? "-", // Jam
@@ -1656,7 +1688,8 @@ class GridJadwalDatatable {
                         jadwal.jenis ?? "-", // Jenis Kelas
                         jadwal.id, // ID (hidden)
                         null, // Aksi
-                    ]),
+                    ]);
+                },
             },
             language: { search: { placeholder: "Ketik untuk mencari…" } },
         }).render(mount);
@@ -2064,8 +2097,25 @@ class GridJadwalDatatable {
             server: {
                 url: serverUrl,
                 then: (data) => {
-                    // Handle empty data case
-                    if (!data || data.length === 0) {
+                    // Handle case where data is not an array
+                    if (!data || !Array.isArray(data)) {
+                        return [
+                            [
+                                "Tidak ada data jadwal kelas XI yang ditemukan. Silakan import data terlebih dahulu.",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                            ],
+                        ];
+                    }
+                    
+                    // Handle empty array
+                    if (data.length === 0) {
                         return [
                             [
                                 "Tidak ada data jadwal kelas XI yang ditemukan. Silakan import data terlebih dahulu.",

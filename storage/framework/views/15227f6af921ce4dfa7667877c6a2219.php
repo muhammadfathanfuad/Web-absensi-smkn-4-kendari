@@ -1201,11 +1201,6 @@
                                 <li><strong>Grade</strong> - Grade kelas (10, 11, atau 12)</li>
                             </ul>
                         </div>
-                        <div class="text-center">
-                            <a href="/public/data/Kelas.xlsx" class="btn btn-outline-primary btn-sm" download>
-                                <i class="bx bx-download me-1"></i> Download Template
-                            </a>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
