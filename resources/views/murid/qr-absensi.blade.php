@@ -87,7 +87,27 @@
                             width: 100%;
                         }
                         
-                        /* Hide html5-qrcode default buttons and links */
+                        /* Make video full width and height */
+                        #reader video,
+                        #reader canvas,
+                        #reader > div > video,
+                        #reader > div > canvas {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            transform: scaleX(-1) !important; /* Mirror/flip video horizontally */
+                        }
+                        
+                        /* Ensure container takes full space */
+                        #reader > div {
+                            width: 100% !important;
+                            height: 100% !important;
+                            min-height: 400px !important;
+                        }
+                        
+                        /* Hide html5-qrcode default buttons, links, and controls */
                         /* Target specific IDs and classes from html5-qrcode library */
                         #reader #html5-qrcode-button-camera-permission,
                         #reader #html5-qrcode-button-file-selection,
@@ -100,7 +120,10 @@
                         #reader button[id*="file-selection"],
                         #reader a[id*="scan-type-change"],
                         #reader a[href*="file"],
-                        #reader a[href*="image"] {
+                        #reader a[href*="image"],
+                        #reader select,
+                        #reader #html5-qrcode-select-camera,
+                        #reader #html5-qrcode-button-stop-scan {
                             display: none !important;
                             visibility: hidden !important;
                             opacity: 0 !important;
@@ -110,6 +133,45 @@
                             pointer-events: none !important;
                             position: absolute !important;
                             left: -9999px !important;
+                        }
+                        
+                        /* Hide all select elements inside reader */
+                        #reader select {
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                            height: 0 !important;
+                            width: 0 !important;
+                            overflow: hidden !important;
+                            pointer-events: none !important;
+                            position: absolute !important;
+                            left: -9999px !important;
+                        }
+                        
+                        /* Hide all buttons inside reader except video controls */
+                        #reader button:not(#basicVideo) {
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                            height: 0 !important;
+                            width: 0 !important;
+                            overflow: hidden !important;
+                            pointer-events: none !important;
+                            position: absolute !important;
+                            left: -9999px !important;
+                        }
+                        
+                        /* Hide text elements that might appear (but keep video/canvas visible) */
+                        #reader > div > span:not(:empty),
+                        #reader > div > p:not(:empty),
+                        #reader > div > label:not(:empty) {
+                            display: none !important;
+                        }
+                        
+                        /* Ensure video container is full width */
+                        #reader > div[style*="display"] {
+                            width: 100% !important;
+                            height: 100% !important;
                         }
                     </style>
 
@@ -252,16 +314,57 @@
         if (typeof window._qrScannerVars === 'undefined') {
             window._qrScannerVars = {
                 html5QrcodeScanner: null,
+                html5Qrcode: null,
                 isScanning: false
             };
         }
         
         // Use local references for convenience, but always sync with window
         var html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
+        var html5Qrcode = window._qrScannerVars.html5Qrcode;
         var isScanning = window._qrScannerVars.isScanning;
+
+        // Check if HTTPS is required
+        function isSecureContext() {
+            // HTTPS is required except for localhost
+            return window.isSecureContext || 
+                   location.protocol === 'https:' || 
+                   location.hostname === 'localhost' || 
+                   location.hostname === '127.0.0.1' ||
+                   location.hostname === '[::1]' ||
+                   location.hostname.endsWith('.local');
+        }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Check HTTPS requirement first
+            if (!isSecureContext()) {
+                updateCameraStatus('HTTPS diperlukan untuk akses kamera. Silakan gunakan HTTPS atau localhost.', 'danger');
+                const readerElement = document.getElementById('reader');
+                if (readerElement) {
+                    readerElement.innerHTML = `
+                        <div class="text-center py-5" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div class="mb-4">
+                                <i class="bx bx-error-circle fs-64 text-danger d-block"></i>
+                            </div>
+                            <h5 class="text-danger mb-3">HTTPS Diperlukan</h5>
+                            <p class="text-muted mb-0" style="max-width: 500px;">
+                                Browser memerlukan koneksi HTTPS untuk mengakses kamera. 
+                                Silakan akses halaman ini melalui HTTPS atau gunakan localhost untuk pengembangan.
+                            </p>
+                            <div class="alert alert-warning mt-3" style="max-width: 500px;">
+                                <strong>Solusi:</strong><br>
+                                1. Gunakan HTTPS (https://) untuk mengakses website<br>
+                                2. Atau gunakan localhost untuk pengembangan lokal<br>
+                                3. Hubungi administrator untuk mengaktifkan SSL/HTTPS
+                            </div>
+                        </div>
+                    `;
+                }
+                hideStartButton();
+                return;
+            }
+            
             // Add event listeners for buttons
             document.getElementById('startCameraBtn').addEventListener('click', startCamera);
             document.getElementById('stopCameraBtn').addEventListener('click', function(e) {
@@ -292,6 +395,18 @@
                         updateCameraStatus('Library QR scanner siap', 'success');
                     }
                 }, 2000);
+                
+                // Initialize reader container with placeholder
+                const readerElement = document.getElementById('reader');
+                if (readerElement && readerElement.innerHTML.trim() === '') {
+                    readerElement.innerHTML = `
+                        <div class="text-muted text-center" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px;">
+                            <i class="bx bx-camera fs-48 d-block mb-2" style="display: block; margin: 0 auto;"></i>
+                            <div style="text-align: center; width: 100%;">Kamera akan dimuat di sini...</div>
+                            <small class="text-muted" style="text-align: center; width: 100%; display: block; margin-top: 8px;">Klik "Mulai Kamera" untuk memulai pemindaian</small>
+                        </div>
+                    `;
+                }
             } else {
                 updateCameraStatus('Browser tidak mendukung akses kamera', 'danger');
                 hideStartButton();
@@ -354,9 +469,16 @@
             }
         }
 
-        // Start camera function - Exact copy from working test file
+        // Start camera function - Updated to use Html5Qrcode API
         function startCamera() {
             if (isScanning) {
+                return;
+            }
+            
+            // Check HTTPS requirement before starting camera
+            if (!isSecureContext()) {
+                updateCameraStatus('HTTPS diperlukan untuk akses kamera', 'danger');
+                alert('Browser memerlukan koneksi HTTPS untuk mengakses kamera. Silakan gunakan HTTPS atau localhost.');
                 return;
             }
             
@@ -367,95 +489,226 @@
                 const readerElement = document.getElementById('reader');
                 readerElement.innerHTML = '';
                 
-                // Check if library is loaded
-                if (typeof Html5QrcodeScanner === 'undefined') {
-                    updateCameraStatus('Library scanner tidak tersedia', 'danger');
+                // Check if library is loaded - try both Html5QrcodeScanner and Html5Qrcode
+                let useScanner = false;
+                if (typeof Html5QrcodeScanner !== 'undefined') {
+                    useScanner = true;
+                } else if (typeof Html5Qrcode === 'undefined') {
+                    updateCameraStatus('Library scanner tidak tersedia. Memuat ulang halaman...', 'danger');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                     return;
                 }
                 
-                // Store in window for reuse if script runs multiple times
-                window._qrScannerVars.html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader",
-                    { 
-                        fps: 10, 
+                // Get selected camera device
+                const cameraSelect = document.getElementById('cameraSelect');
+                const selectedDeviceId = cameraSelect ? cameraSelect.value : null;
+                
+                if (useScanner) {
+                    // Use Html5QrcodeScanner if available
+                    window._qrScannerVars.html5QrcodeScanner = new Html5QrcodeScanner(
+                        "reader",
+                        { 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        },
+                        false
+                    );
+                    html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
+                    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                } else {
+                    // Use Html5Qrcode API directly
+                    const html5QrCodeInstance = new Html5Qrcode("reader");
+                    window._qrScannerVars.html5Qrcode = html5QrCodeInstance;
+                    html5Qrcode = html5QrCodeInstance;
+                    
+                    // Camera configuration
+                    const config = {
+                        fps: 10,
                         qrbox: { width: 250, height: 250 },
                         aspectRatio: 1.0
-                    },
-                    false
-                );
-                html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
-
-                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                    };
+                    
+                    // Start camera with device selection
+                    let cameraId = null;
+                    if (selectedDeviceId && selectedDeviceId !== '' && selectedDeviceId !== 'default') {
+                        cameraId = selectedDeviceId;
+                    } else {
+                        // Use facing mode for default
+                        cameraId = { facingMode: "environment" };
+                    }
+                    
+                    html5QrCodeInstance.start(
+                        cameraId,
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    ).then(() => {
+                        // Camera started successfully
+                        isScanning = true;
+                        window._qrScannerVars.isScanning = true;
+                        
+                        // Hide default elements immediately
+                        setTimeout(hideDefaultElements, 100);
+                        setTimeout(hideDefaultElements, 500);
+                        setTimeout(hideDefaultElements, 1000);
+                        
+                        // Use MutationObserver to continuously hide elements
+                        const reader = document.getElementById('reader');
+                        if (reader && !window._qrScannerObserver) {
+                            const observer = new MutationObserver(function(mutations) {
+                                hideDefaultElements();
+                            });
+                            
+                            observer.observe(reader, {
+                                childList: true,
+                                subtree: true,
+                                attributes: false
+                            });
+                            
+                            window._qrScannerObserver = observer;
+                        }
+                        
+                        updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                        updateScanStatus('Kamera siap untuk memindai QR Code', 'info');
+                        hideStartButton();
+                        showStopButton();
+                        hideRetryButton();
+                        document.getElementById('startCameraBtn').disabled = true;
+                        document.getElementById('stopCameraBtn').disabled = false;
+                        document.getElementById('retryCameraBtn').disabled = true;
+                    }).catch(err => {
+                        console.error('Error starting camera:', err);
+                        updateCameraStatus('Gagal memulai kamera: ' + err.message, 'danger');
+                        showRetryButton();
+                        showStartButton();
+                        hideStopButton();
+                        isScanning = false;
+                        window._qrScannerVars.isScanning = false;
+                    });
+                }
                 
-                // Function to hide default buttons and links
+                // Function to hide default buttons and links (for both APIs)
                 function hideDefaultElements() {
                     const reader = document.getElementById('reader');
                     if (!reader) return;
                     
-                    // Hide all buttons that match criteria
+                    // Hide all select elements (camera selection dropdowns)
+                    const selects = reader.querySelectorAll('select');
+                    selects.forEach(select => {
+                        select.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
+                        select.setAttribute('hidden', 'true');
+                    });
+                    
+                    // Hide all buttons except video controls
                     const buttons = reader.querySelectorAll('button');
                     buttons.forEach(btn => {
                         const text = btn.textContent || '';
-                        if (text.includes('Request Camera') || 
-                            text.includes('Camera Permission') ||
-                            text.includes('Request') ||
-                            text.includes('Permission')) {
-                            btn.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important;';
+                        const id = btn.id || '';
+                        // Hide all buttons except if it's a video control (unlikely in this context)
+                        if (!id.includes('basicVideo') && !id.includes('video')) {
+                            btn.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
                             btn.setAttribute('hidden', 'true');
                         }
                     });
                     
-                    // Hide all links that match criteria
+                    // Hide all links
                     const links = reader.querySelectorAll('a');
                     links.forEach(link => {
-                        const text = link.textContent || '';
-                        const href = link.getAttribute('href') || '';
-                        if (text.includes('Scan an Image') || 
-                            text.includes('Image File') ||
-                            text.includes('file') ||
-                            href.includes('file') ||
-                            href.includes('image')) {
-                            link.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important;';
-                            link.setAttribute('hidden', 'true');
+                        link.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
+                        link.setAttribute('hidden', 'true');
+                    });
+                    
+                    // Hide all span, p, label elements that might contain text
+                    const textElements = reader.querySelectorAll('span, p, label, div');
+                    textElements.forEach(el => {
+                        const text = el.textContent || '';
+                        const tagName = el.tagName.toLowerCase();
+                        
+                        // Skip if it's a video or canvas element or their direct parent
+                        if (el.querySelector('video, canvas')) {
+                            // This is a container with video/canvas, keep it but make sure it's full width
+                            return;
+                        }
+                        
+                        // Hide if contains camera-related text or is a control element
+                        if (text.includes('Select Camera') || 
+                            text.includes('Stop Scanning') ||
+                            text.includes('Camera') ||
+                            text.includes('Scan') ||
+                            (tagName === 'div' && el.querySelector('select, button:not([id*="video"])'))) {
+                            el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
+                            el.setAttribute('hidden', 'true');
                         }
                     });
-                }
-                
-                // Hide immediately after render
-                setTimeout(hideDefaultElements, 100);
-                
-                // Use MutationObserver to hide elements that are added later
-                const reader = document.getElementById('reader');
-                if (reader) {
-                    const observer = new MutationObserver(function(mutations) {
-                        hideDefaultElements();
+                    
+                    // Hide any div that contains select or button (control panels)
+                    const controlDivs = reader.querySelectorAll('div');
+                    controlDivs.forEach(div => {
+                        // Skip if it contains video or canvas
+                        if (div.querySelector('video, canvas')) {
+                            return;
+                        }
+                        
+                        // Hide if it contains controls
+                        if (div.querySelector('select, button:not([id*="video"])')) {
+                            div.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
+                            div.setAttribute('hidden', 'true');
+                        }
                     });
                     
-                    observer.observe(reader, {
-                        childList: true,
-                        subtree: true,
-                        attributes: false
+                    // Make video/canvas full width and flip horizontally
+                    const videos = reader.querySelectorAll('video, canvas');
+                    videos.forEach(video => {
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        video.style.maxWidth = '100%';
+                        video.style.maxHeight = '100%';
+                        video.style.transform = 'scaleX(-1)'; // Mirror/flip video horizontally
                     });
-                    
-                    // Store observer for cleanup
-                    window._qrScannerObserver = observer;
                 }
                 
-                isScanning = true;
-                window._qrScannerVars.isScanning = true; // Sync with window
-                
-                updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
-                updateScanStatus('Kamera siap untuk memindai QR Code', 'info');
-                
-                // Hide start button, show stop button
-                hideStartButton();
-                showStopButton();
-                hideRetryButton();
-                
-                // Reset button disabled states
-                document.getElementById('startCameraBtn').disabled = true;
-                document.getElementById('stopCameraBtn').disabled = false;
-                document.getElementById('retryCameraBtn').disabled = true;
+                if (useScanner) {
+                    
+                    // Hide immediately after render
+                    setTimeout(hideDefaultElements, 100);
+                    
+                    // Use MutationObserver to hide elements that are added later
+                    const reader = document.getElementById('reader');
+                    if (reader) {
+                        const observer = new MutationObserver(function(mutations) {
+                            hideDefaultElements();
+                        });
+                        
+                        observer.observe(reader, {
+                            childList: true,
+                            subtree: true,
+                            attributes: false
+                        });
+                        
+                        // Store observer for cleanup
+                        window._qrScannerObserver = observer;
+                    }
+                    
+                    isScanning = true;
+                    window._qrScannerVars.isScanning = true; // Sync with window
+                    
+                    updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                    updateScanStatus('Kamera siap untuk memindai QR Code', 'info');
+                    
+                    // Hide start button, show stop button
+                    hideStartButton();
+                    showStopButton();
+                    hideRetryButton();
+                    
+                    // Reset button disabled states
+                    document.getElementById('startCameraBtn').disabled = true;
+                    document.getElementById('stopCameraBtn').disabled = false;
+                    document.getElementById('retryCameraBtn').disabled = true;
+                }
                 
             } catch (error) {
                 updateCameraStatus('Gagal memulai kamera: ' + error.message, 'danger');
@@ -465,18 +718,36 @@
             }
         }
         
-        // Stop camera function - using the same method as the working test file
+        // Stop camera function - updated to handle both APIs
         function stopCamera() {
             if (!isScanning) {
                 return;
             }
             
+            // Stop Html5QrcodeScanner if used
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.clear().catch(err => {
                     // Silent error handling
                 });
                 html5QrcodeScanner = null;
                 window._qrScannerVars.html5QrcodeScanner = null;
+            }
+            
+            // Stop Html5Qrcode if used
+            if (html5Qrcode) {
+                html5Qrcode.stop().then(() => {
+                    html5Qrcode.clear();
+                }).catch(err => {
+                    // Silent error handling
+                });
+                html5Qrcode = null;
+                window._qrScannerVars.html5Qrcode = null;
+            }
+            
+            // Stop basic camera stream if exists
+            if (window.basicCameraStream) {
+                window.basicCameraStream.getTracks().forEach(track => track.stop());
+                window.basicCameraStream = null;
             }
             
             // Disconnect observer if exists
@@ -859,7 +1130,7 @@
                     
                     // Display video directly
                     const readerElement = document.getElementById('reader');
-                    readerElement.innerHTML = '<video id="basicVideo" autoplay muted playsinline style="width: 100%; max-width: 500px; height: auto; border-radius: 8px;"></video>';
+                    readerElement.innerHTML = '<video id="basicVideo" autoplay muted playsinline style="width: 100%; max-width: 500px; height: auto; border-radius: 8px; transform: scaleX(-1);"></video>';
                     
                     const video = document.getElementById('basicVideo');
                     video.srcObject = stream;
@@ -928,7 +1199,7 @@
                     
                     // Display video directly
                     const readerElement = document.getElementById('reader');
-                    readerElement.innerHTML = '<video id="basicVideo" autoplay muted playsinline style="width: 100%; max-width: 500px; height: auto; border-radius: 8px;"></video>';
+                    readerElement.innerHTML = '<video id="basicVideo" autoplay muted playsinline style="width: 100%; max-width: 500px; height: auto; border-radius: 8px; transform: scaleX(-1);"></video>';
                     
                     const video = document.getElementById('basicVideo');
                     video.srcObject = stream;
