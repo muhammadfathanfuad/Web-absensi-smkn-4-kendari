@@ -131,37 +131,80 @@ class ScanController extends Controller
         } else {
             // Enhanced status logic based on scan time
             $timezone = 'Asia/Makassar';
-            $jamMasuk = Carbon::parse($timetable->start_time, $timezone);
-            $jamSelesai = Carbon::parse($timetable->end_time, $timezone);
+            $today = TimeOverrideService::today()->setTimezone($timezone);
             $jamScan = TimeOverrideService::now()->setTimezone($timezone);
 
-            // Determine status based on scan time
+            // Parse jam masuk dan selesai dengan tanggal hari ini
+            $jamMasuk = Carbon::parse($today->format('Y-m-d') . ' ' . $timetable->start_time, $timezone);
+            $jamSelesai = Carbon::parse($today->format('Y-m-d') . ' ' . $timetable->end_time, $timezone);
+            
+            // Validasi: scan harus dilakukan di hari yang sama dengan jadwal
+            if ($jamScan->format('Y-m-d') !== $today->format('Y-m-d')) {
+                // Scan di hari yang berbeda = TIDAK VALID, tolak scan
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat absen di hari yang berbeda. Silakan scan pada hari jadwal pelajaran.',
+                    'error' => 'invalid_scan_date'
+                ], 400);
+            }
+            
+            // Tentukan rentang waktu yang valid untuk scan
+            // Scan diizinkan: 30 menit sebelum jam masuk sampai 2 jam setelah jam selesai
+            $maxMinutesBeforeStart = 30; // Maksimal 30 menit sebelum jam masuk
+            $maxMinutesAfterEnd = 120; // Maksimal 2 jam setelah jam selesai
+            
+            $waktuValidMulai = $jamMasuk->copy()->subMinutes($maxMinutesBeforeStart);
+            $waktuValidSelesai = $jamSelesai->copy()->addMinutes($maxMinutesAfterEnd);
+            
+            // Validasi: scan harus dalam rentang waktu yang valid
+            if ($jamScan->isBefore($waktuValidMulai)) {
+                // Scan terlalu jauh sebelum jam masuk = TIDAK VALID, tolak scan
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat absen terlalu jauh sebelum jam masuk. Silakan scan maksimal 30 menit sebelum jam pelajaran dimulai.',
+                    'error' => 'scan_too_early',
+                    'class_start_time' => $jamMasuk->format('H:i'),
+                    'earliest_scan_time' => $waktuValidMulai->format('H:i')
+                ], 400);
+            }
+            
+            if ($jamScan->isAfter($waktuValidSelesai)) {
+                // Scan terlalu jauh setelah jam selesai = TIDAK VALID, tolak scan
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat absen setelah jam pelajaran berakhir terlalu lama. Silakan scan maksimal 2 jam setelah jam pelajaran selesai.',
+                    'error' => 'scan_too_late',
+                    'class_end_time' => $jamSelesai->format('H:i'),
+                    'latest_scan_time' => $waktuValidSelesai->format('H:i')
+                ], 400);
+            }
+            
+            // Jika sampai di sini, scan dalam waktu yang valid, tentukan status
             $status = 'A'; // Default: Tidak Hadir
             $note = null;
             $isOnTime = false;
             $lateMinutes = 0;
 
-            if ($jamScan->isBefore($jamMasuk)) {
-                // Scan sebelum jam masuk (tidak mungkin, tapi untuk safety)
+            // Hitung selisih waktu dalam menit
+            $diffMinutes = round($jamScan->diffInMinutes($jamMasuk, false)); // false = signed difference
+            
+            if ($diffMinutes <= 0 && $diffMinutes >= -$maxMinutesBeforeStart) {
+                // Scan sebelum jam masuk (dalam batas yang diizinkan) = Hadir lebih awal
                 $status = 'H';
                 $note = 'Hadir lebih awal';
                 $isOnTime = true;
-            } elseif ($jamScan->between($jamMasuk, $jamMasuk->copy()->addMinutes(15))) {
+                $lateMinutes = 0;
+            } elseif ($diffMinutes > 0 && $diffMinutes <= 15) {
                 // Scan dalam 15 menit pertama setelah jam masuk
                 $status = 'H';
                 $note = 'Hadir tepat waktu';
                 $isOnTime = true;
-            } elseif ($jamScan->between($jamMasuk->copy()->addMinutes(15), $jamSelesai)) {
-                // Scan setelah 15 menit tapi sebelum jam selesai
-                $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
+                $lateMinutes = 0;
+            } elseif ($diffMinutes > 15) {
+                // Scan setelah 15 menit = Terlambat
+                $lateMinutes = $diffMinutes;
                 $status = 'T';
                 $note = 'Terlambat ' . $lateMinutes . ' menit';
-                $isOnTime = false;
-            } else {
-                // Scan setelah jam selesai
-                $lateMinutes = round($jamScan->diffInMinutes($jamMasuk));
-                $status = 'T';
-                $note = 'Terlambat ' . $lateMinutes . ' menit (setelah jam selesai)';
                 $isOnTime = false;
             }
         }

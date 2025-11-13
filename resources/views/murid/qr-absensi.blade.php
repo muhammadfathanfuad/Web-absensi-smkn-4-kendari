@@ -87,17 +87,41 @@
                             width: 100%;
                         }
                         
-                        /* Make video full width and height */
+                        /* 1. Paksa VIDEO untuk tampil dan mengisi kontainer */
                         #reader video,
-                        #reader canvas,
-                        #reader > div > video,
-                        #reader > div > canvas {
+                        #reader > div > video {
                             width: 100% !important;
                             height: 100% !important;
                             object-fit: cover !important;
                             max-width: 100% !important;
                             max-height: 100% !important;
-                            transform: scaleX(-1) !important; /* Mirror/flip video horizontally */
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            position: relative !important;
+                            z-index: 10 !important;
+                        }
+                        
+                        /* Mirror/flip video hanya di desktop (bukan mobile) */
+                        @media (min-width: 768px) {
+                            #reader video,
+                            #reader > div > video {
+                                transform: scaleX(-1) !important; /* Mirror/flip video horizontally hanya di desktop */
+                            }
+                        }
+
+                        /* 2. Paksa CANVAS (yang dipakai library) untuk SEMBUNYI */
+                        #reader canvas,
+                        #reader > div > canvas {
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                            width: 0 !important;
+                            height: 0 !important;
+                            position: absolute !important;
+                            left: -9999px !important;
+                            pointer-events: none !important;
+                            z-index: -1 !important;
                         }
                         
                         /* Ensure container takes full space */
@@ -108,15 +132,14 @@
                         }
                         
                         /* Hide html5-qrcode default buttons, links, and controls */
+                        /* BUT: Keep camera permission button clickable (we'll click it automatically) */
                         /* Target specific IDs and classes from html5-qrcode library */
-                        #reader #html5-qrcode-button-camera-permission,
                         #reader #html5-qrcode-button-file-selection,
                         #reader #html5-qrcode-anchor-scan-type-change,
                         #reader #html5qr-code-full-region__dashboard,
                         #reader #html5qr-code-full-region__dashboard_section,
                         #reader #html5qr-code-full-region__dashboard_section_csr,
                         #reader #html5qr-code-full-region__dashboard_section_swaplink,
-                        #reader button[id*="camera-permission"],
                         #reader button[id*="file-selection"],
                         #reader a[id*="scan-type-change"],
                         #reader a[href*="file"],
@@ -133,6 +156,20 @@
                             pointer-events: none !important;
                             position: absolute !important;
                             left: -9999px !important;
+                        }
+                        
+                        /* Hide camera permission button visually but keep it functional for auto-click */
+                        #reader #html5-qrcode-button-camera-permission,
+                        #reader button[id*="camera-permission"] {
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                            position: fixed !important;
+                            top: -9999px !important;
+                            left: -9999px !important;
+                            /* Keep pointer-events: auto so it can be clicked programmatically */
+                            pointer-events: auto !important;
+                            z-index: 9999 !important;
                         }
                         
                         /* Hide all select elements inside reader */
@@ -312,7 +349,6 @@
         (function() {
             // Check if library is already loaded
             if (typeof Html5Qrcode !== 'undefined' || typeof Html5QrcodeScanner !== 'undefined') {
-                console.log('html5-qrcode library already loaded, skipping duplicate load');
                 window.html5QrcodeLoaded = true;
                 return;
             }
@@ -320,7 +356,6 @@
             // Check if script tag already exists
             const existingScript = document.querySelector('script[src*="html5-qrcode"]');
             if (existingScript) {
-                console.log('html5-qrcode script tag already exists, skipping duplicate load');
                 return;
             }
             
@@ -329,11 +364,9 @@
             script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
             script.async = true;
             script.onerror = function() {
-                console.error('Failed to load html5-qrcode library from CDN');
                 window.html5QrcodeLoadError = true;
             };
             script.onload = function() {
-                console.log('html5-qrcode library loaded successfully');
                 window.html5QrcodeLoaded = true;
             };
             document.head.appendChild(script);
@@ -343,7 +376,6 @@
     <script>
         // CRITICAL: Prevent duplicate script execution
         if (window._qrScannerScriptExecuted) {
-            console.warn('QR scanner script already executed, skipping duplicate execution');
             // Reuse existing variables if they exist
             if (typeof window._qrScannerVars !== 'undefined') {
                 var html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
@@ -353,15 +385,15 @@
         } else {
             window._qrScannerScriptExecuted = true;
             
-            // CRITICAL: Prevent duplicate declarations - use window-level variables
-            // Initialize only once, reuse if script runs multiple times
-            if (typeof window._qrScannerVars === 'undefined') {
-                window._qrScannerVars = {
-                    html5QrcodeScanner: null,
-                    html5Qrcode: null,
-                    isScanning: false
-                };
-            }
+        // CRITICAL: Prevent duplicate declarations - use window-level variables
+        // Initialize only once, reuse if script runs multiple times
+        if (typeof window._qrScannerVars === 'undefined') {
+            window._qrScannerVars = {
+                html5QrcodeScanner: null,
+                html5Qrcode: null,
+                    isScanning: false,
+            };
+        }
         
         // Use local references for convenience, but always sync with window
         var html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
@@ -513,13 +545,12 @@
             }
         }
 
-        // Start camera function - Updated to use Html5Qrcode API
+        // Start camera function - Disederhanakan untuk mencegah duplikat
         async function startCamera() {
             if (isScanning) {
                 return;
             }
             
-            // Check HTTPS requirement before starting camera
             if (!isSecureContext()) {
                 updateCameraStatus('HTTPS diperlukan untuk akses kamera', 'danger');
                 alert('Browser memerlukan koneksi HTTPS untuk mengakses kamera. Silakan gunakan HTTPS atau localhost.');
@@ -529,637 +560,123 @@
             try {
                 updateCameraStatus('Memulai kamera...', 'info');
                 
-                // Clear the reader container first
+                // 1. Hentikan instance yang mungkin masih ada
+                if (html5QrcodeScanner) {
+                    await html5QrcodeScanner.clear().catch(() => {});
+                    html5QrcodeScanner = null;
+                    window._qrScannerVars.html5QrcodeScanner = null;
+                }
+                if (html5Qrcode) {
+                    await html5Qrcode.stop().catch(() => {});
+                    html5Qrcode.clear();
+                    html5Qrcode = null;
+                    window._qrScannerVars.html5Qrcode = null;
+                }
+                
+                // 2. Bersihkan container
                 const readerElement = document.getElementById('reader');
-                readerElement.innerHTML = '';
+                readerElement.innerHTML = ''; // Pastikan bersih
                 
-                // Check if library is loaded - try both Html5QrcodeScanner and Html5Qrcode
-                let useScanner = false;
+                // Tunggu DOM bersih
+                await new Promise(resolve => setTimeout(resolve, 50));
                 
-                // Check if there was a load error
-                if (window.html5QrcodeLoadError) {
-                    updateCameraStatus('Gagal memuat library scanner dari CDN. Silakan refresh halaman atau cek koneksi internet.', 'danger');
+                // 3. Cek library
+                if (typeof Html5Qrcode === 'undefined') {
+                    updateCameraStatus('Library scanner belum dimuat. Coba refresh halaman.', 'danger');
                     return;
                 }
                 
-                // Wait a bit for library to load if it's still loading
-                if (typeof Html5QrcodeScanner === 'undefined' && typeof Html5Qrcode === 'undefined') {
-                    updateCameraStatus('Menunggu library scanner dimuat...', 'info');
-                    
-                    // Wait for library with timeout
-                    let libraryLoaded = false;
-                    for (let i = 0; i < 20; i++) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        if (typeof Html5QrcodeScanner !== 'undefined' || typeof Html5Qrcode !== 'undefined') {
-                            libraryLoaded = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!libraryLoaded) {
-                        updateCameraStatus('Library scanner tidak tersedia setelah menunggu. Memuat ulang halaman...', 'danger');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                        return;
-                    }
-                }
+                // --- SEMUA LOGIKA OBSERVER, SETINTERVAL, DAN HIDE-ELEMENTS DIHAPUS DARI SINI ---
                 
-                // Determine which API to use
-                if (typeof Html5QrcodeScanner !== 'undefined') {
-                    useScanner = true;
-                } else if (typeof Html5Qrcode === 'undefined') {
-                    updateCameraStatus('Library scanner tidak tersedia. Memuat ulang halaman...', 'danger');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                    return;
-                }
-                
-                // Get selected camera device
+                // 4. Buat instance baru
                 const cameraSelect = document.getElementById('cameraSelect');
                 const selectedDeviceId = cameraSelect ? cameraSelect.value : null;
                 
-                if (useScanner) {
-                    // Use Html5QrcodeScanner if available
-                    const readerElement = document.getElementById('reader');
-                    const readerWidth = readerElement ? readerElement.offsetWidth : 500;
-                    const qrboxSize = Math.min(readerWidth * 0.7, 300);
-                    
-                    console.log('Starting Html5QrcodeScanner with qrbox size:', qrboxSize);
-                    
-                    window._qrScannerVars.html5QrcodeScanner = new Html5QrcodeScanner(
-                        "reader",
-                        { 
-                            fps: 10, 
-                            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                                const minEdgePercentage = 0.7;
-                                const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                                const size = Math.floor(minEdgeSize * minEdgePercentage);
-                                return {
-                                    width: size,
-                                    height: size
-                                };
-                            },
-                            aspectRatio: 1.0,
-                            disableFlip: false
-                        },
-                        false
-                    );
-                    html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
-                    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-                    console.log('Html5QrcodeScanner rendered');
-                } else {
-                    // Use Html5Qrcode API directly
                     const html5QrCodeInstance = new Html5Qrcode("reader");
                     window._qrScannerVars.html5Qrcode = html5QrCodeInstance;
                     html5Qrcode = html5QrCodeInstance;
                     
-                    // Camera configuration - make QR box responsive
-                    const readerElement = document.getElementById('reader');
-                    const readerWidth = readerElement ? readerElement.offsetWidth : 500;
-                    const qrboxSize = Math.min(readerWidth * 0.8, 300); // 80% of reader width, max 300px
-                    
                     const config = {
                         fps: 10,
-                        qrbox: function(viewfinderWidth, viewfinderHeight) {
-                            // Make QR box responsive to container size
-                            const minEdgePercentage = 0.7; // 70% of the smaller edge
-                            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-                            return {
-                                width: qrboxSize,
-                                height: qrboxSize
-                            };
-                        },
-                        aspectRatio: 1.0,
-                        disableFlip: false, // Allow QR code to be scanned in any orientation
-                        videoConstraints: {
-                            facingMode: "environment" // Use back camera on mobile
-                        },
-                        // Support multiple QR code formats (if available)
-                        // This helps avoid "No MultiFormat" errors
-                        ...(typeof Html5QrcodeSupportedFormats !== 'undefined' ? {
-                            formatsToSupport: [
-                                Html5QrcodeSupportedFormats.QR_CODE
-                                // Add more formats if needed, but QR_CODE is the main one
-                            ]
-                        } : {})
-                    };
-                    
-                    // Start camera with device selection
-                    let cameraId = null;
-                    if (selectedDeviceId && selectedDeviceId !== '' && selectedDeviceId !== 'default') {
-                        cameraId = selectedDeviceId;
-                    } else {
-                        // Use facing mode for default
-                        cameraId = { facingMode: "environment" };
+                    qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        const minEdgePercentage = 0.7;
+                        const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                        const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                        return { width: qrboxSize, height: qrboxSize };
+                    },
+                    aspectRatio: 1.0,
+                    disableFlip: false,
+                    videoConstraints: {
+                        facingMode: "environment"
                     }
-                    
-                    console.log('Starting QR scanner with config:', config);
-                    console.log('Camera ID:', cameraId);
-                    
-                    html5QrCodeInstance.start(
+                };
+                
+                let cameraId = (selectedDeviceId && selectedDeviceId !== '' && selectedDeviceId !== 'default') 
+                    ? selectedDeviceId 
+                    : { facingMode: "environment" };
+                
+                // 5. Mulai kamera
+                await html5QrCodeInstance.start(
                         cameraId,
                         config,
                         onScanSuccess,
                         onScanFailure
-                    ).then(() => {
-                        console.log('QR scanner started successfully');
-                        console.log('Scanner instance:', html5QrCodeInstance);
-                        console.log('Is scanning:', isScanning);
-                        
-                        // Camera started successfully
+                );
+                
+                // 6. Update status
                         isScanning = true;
                         window._qrScannerVars.isScanning = true;
                         
-                        // Verify scanner is actually running
-                        setTimeout(() => {
-                            const reader = document.getElementById('reader');
-                            const video = reader?.querySelector('video');
-                            if (video && video.srcObject) {
-                                console.log('✓ Video stream confirmed active');
-                                console.log('✓ Scanner should be reading QR codes now');
-                                updateScanStatus('Scanner aktif - Arahkan kamera ke QR Code', 'info');
-                            } else {
-                                console.warn('⚠ Video stream not found - scanner may not be working');
-                            }
-                        }, 1000);
-                        
-                        // Function to ensure video is visible and playing
-                        function ensureVideoVisible() {
-                            const reader = document.getElementById('reader');
-                            if (!reader) return false;
-                            
-                            // CRITICAL: Remove duplicate video/canvas elements - keep only the first one
-                            const videos = reader.querySelectorAll('video');
-                            const canvases = reader.querySelectorAll('canvas');
-                            
-                            // If there are multiple videos, remove duplicates (keep the first one)
-                            if (videos.length > 1) {
-                                console.warn('Multiple video elements found, removing duplicates');
-                                for (let i = 1; i < videos.length; i++) {
-                                    videos[i].remove();
-                                }
-                            }
-                            
-                            // If there are multiple canvases, remove duplicates (keep the first one)
-                            if (canvases.length > 1) {
-                                console.warn('Multiple canvas elements found, removing duplicates');
-                                for (let i = 1; i < canvases.length; i++) {
-                                    canvases[i].remove();
-                                }
-                            }
-                            
-                            const video = reader.querySelector('video');
-                            const canvas = reader.querySelector('canvas');
-                            
-                            if (video) {
-                                // Force video to be visible but don't interfere with scanner
-                                // Only set essential styles, let scanner handle the rest
-                                video.style.display = 'block';
-                                video.style.visibility = 'visible';
-                                video.style.opacity = '1';
-                                video.removeAttribute('hidden');
-                                
-                                // Apply mirror transform only if not already applied by scanner
-                                if (!video.style.transform || video.style.transform === 'none') {
-                                    video.style.transform = 'scaleX(-1)';
-                                }
-                                
-                                // Check if video is actually playing
-                                if (video.readyState >= 2) {
-                                    console.log('Video ready, dimensions:', video.videoWidth, 'x', video.videoHeight);
-                                    console.log('Video stream active:', !video.paused && video.readyState >= 2);
-                                }
-                                
-                                // Ensure video plays
-                                if (video.paused) {
-                                    video.play().catch(e => console.warn('Video play error:', e));
-                                }
-                                
-                                // Verify video stream is connected
-                                if (video.srcObject) {
-                                    const tracks = video.srcObject.getTracks();
-                                    console.log('Video stream tracks:', tracks.length);
-                                    tracks.forEach(track => {
-                                        console.log('Track:', track.kind, 'enabled:', track.enabled, 'readyState:', track.readyState);
-                                    });
-                                }
-                                
-                                return true;
-                            }
-                            
-                            if (canvas) {
-                                canvas.style.width = '100%';
-                                canvas.style.height = '100%';
-                                canvas.style.objectFit = 'cover';
-                                canvas.style.maxWidth = '100%';
-                                canvas.style.maxHeight = '100%';
-                                canvas.style.transform = 'scaleX(-1)';
-                                canvas.style.display = 'block';
-                                canvas.style.visibility = 'visible';
-                                canvas.style.opacity = '1';
-                                canvas.style.position = 'relative';
-                                canvas.style.zIndex = '1';
-                                canvas.removeAttribute('hidden');
-                                return true;
-                            }
-                            
-                            return false;
-                        }
-                        
-                        // Poll for video element with multiple attempts
-                        let attempts = 0;
-                        const maxAttempts = 20; // Try for 10 seconds (20 * 500ms)
-                        const checkVideo = setInterval(() => {
-                            attempts++;
-                            const found = ensureVideoVisible();
-                            
-                            if (found) {
-                                clearInterval(checkVideo);
-                                console.log('Video element found and made visible after', attempts, 'attempts');
-                                updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
-                                
-                                // Add event listeners for video
-                                const video = document.getElementById('reader')?.querySelector('video');
-                                if (video) {
-                                    video.addEventListener('loadedmetadata', () => {
-                                        console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
-                                        ensureVideoVisible();
-                                    });
-                                    
-                                    video.addEventListener('playing', () => {
-                                        console.log('Video is playing');
-                                        ensureVideoVisible();
-                                    });
-                                    
-                                    video.addEventListener('error', (e) => {
-                                        console.error('Video error:', e);
-                                        updateCameraStatus('Error pada video stream: ' + (e.message || 'Unknown error'), 'danger');
-                                    });
-                                }
-                            } else if (attempts >= maxAttempts) {
-                                clearInterval(checkVideo);
-                                console.error('Video element not found after', maxAttempts, 'attempts');
-                                updateCameraStatus('Kamera dimulai tetapi video tidak terdeteksi. Coba refresh halaman atau klik Retry.', 'warning');
-                                
-                                // Show debug info
-                                const reader = document.getElementById('reader');
-                                console.error('Reader element:', reader);
-                                console.error('Reader innerHTML length:', reader?.innerHTML?.length);
-                                console.error('Reader children:', reader?.children);
-                            }
-                        }, 500);
-                        
-                        // Also check immediately
-                        ensureVideoVisible();
-                        
-                        // Hide default elements immediately (but ensure video stays visible)
-                        setTimeout(() => {
-                            hideDefaultElements();
-                            ensureVideoVisible(); // Re-ensure after hiding
-                        }, 100);
-                        setTimeout(() => {
-                            hideDefaultElements();
-                            ensureVideoVisible(); // Re-ensure after hiding
-                        }, 500);
-                        setTimeout(() => {
-                            hideDefaultElements();
-                            ensureVideoVisible(); // Re-ensure after hiding
-                        }, 1000);
-                        
-                        // Use MutationObserver to continuously hide elements but keep video visible
-                        const reader = document.getElementById('reader');
-                        if (reader && !window._qrScannerObserver) {
-                            let isProcessing = false; // Prevent multiple simultaneous calls
-                            const observer = new MutationObserver(function(mutations) {
-                                // Skip if already processing to prevent duplicate calls
-                                if (isProcessing) return;
-                                
-                                isProcessing = true;
-                                
-                                // Check if new video/canvas was added (which would be duplicate)
-                                const videos = reader.querySelectorAll('video');
-                                const canvases = reader.querySelectorAll('canvas');
-                                
-                                // Remove duplicates immediately
-                                if (videos.length > 1) {
-                                    console.warn('MutationObserver: Multiple videos detected, removing duplicates');
-                                    for (let i = 1; i < videos.length; i++) {
-                                        videos[i].remove();
-                                    }
-                                }
-                                
-                                if (canvases.length > 1) {
-                                    console.warn('MutationObserver: Multiple canvases detected, removing duplicates');
-                                    for (let i = 1; i < canvases.length; i++) {
-                                        canvases[i].remove();
-                                    }
-                                }
-                                
-                                hideDefaultElements();
-                                // Always ensure video is visible after hiding elements
-                                setTimeout(() => {
-                                    ensureVideoVisible();
-                                    isProcessing = false;
-                                }, 50);
-                            });
-                            
-                            observer.observe(reader, {
-                                childList: true,
-                                subtree: true,
-                                attributes: false
-                            });
-                            
-                            window._qrScannerObserver = observer;
-                        }
-                        
-                        updateCameraStatus('Memulai kamera...', 'info');
-                        updateScanStatus('Kamera siap untuk memindai QR Code', 'info');
+                        updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                updateScanStatus('Scanner aktif - Arahkan kamera ke QR Code', 'info');
                         hideStartButton();
                         showStopButton();
                         hideRetryButton();
                         document.getElementById('startCameraBtn').disabled = true;
                         document.getElementById('stopCameraBtn').disabled = false;
                         document.getElementById('retryCameraBtn').disabled = true;
-                    }).catch(err => {
-                        console.error('Error starting camera:', err);
-                        console.error('Error details:', {
-                            name: err.name,
-                            message: err.message,
-                            stack: err.stack
-                        });
-                        
-                        // Provide more detailed error messages
-                        let errorMessage = 'Gagal memulai kamera: ';
-                        if (err.name === 'NotAllowedError' || err.message.includes('permission')) {
-                            errorMessage += 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.';
-                        } else if (err.name === 'NotFoundError' || err.message.includes('not found')) {
-                            errorMessage += 'Kamera tidak ditemukan. Pastikan kamera terhubung.';
-                        } else if (err.name === 'NotReadableError' || err.message.includes('not readable')) {
-                            errorMessage += 'Kamera sedang digunakan oleh aplikasi lain.';
-                        } else if (err.name === 'OverconstrainedError' || err.message.includes('constraint')) {
-                            errorMessage += 'Kamera tidak mendukung pengaturan yang diminta.';
-                        } else if (err.message.includes('HTTPS') || err.message.includes('secure context')) {
-                            errorMessage += 'HTTPS diperlukan untuk akses kamera. Pastikan website menggunakan HTTPS.';
-                        } else {
-                            errorMessage += err.message || 'Terjadi kesalahan tidak diketahui.';
-                        }
-                        
-                        updateCameraStatus(errorMessage, 'danger');
-                        updateScanStatus('Gagal memulai kamera. Coba klik tombol Retry atau refresh halaman.', 'danger');
+                
+                // CSS Anda (di dalam <style>) akan otomatis menyembunyikan UI library.
+                
+            } catch (err) {
+                        updateCameraStatus('Gagal memulai kamera: ' + err.message, 'danger');
                         showRetryButton();
                         showStartButton();
                         hideStopButton();
                         isScanning = false;
                         window._qrScannerVars.isScanning = false;
-                    });
-                }
-                
-                // Function to hide default buttons and links (for both APIs)
-                function hideDefaultElements() {
-                    const reader = document.getElementById('reader');
-                    if (!reader) return;
-                    
-                    // Hide all select elements (camera selection dropdowns)
-                    const selects = reader.querySelectorAll('select');
-                    selects.forEach(select => {
-                        select.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
-                        select.setAttribute('hidden', 'true');
-                    });
-                    
-                    // Hide all buttons except video controls
-                    const buttons = reader.querySelectorAll('button');
-                    buttons.forEach(btn => {
-                        const text = btn.textContent || '';
-                        const id = btn.id || '';
-                        // Hide all buttons except if it's a video control (unlikely in this context)
-                        if (!id.includes('basicVideo') && !id.includes('video')) {
-                            btn.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
-                            btn.setAttribute('hidden', 'true');
-                        }
-                    });
-                    
-                    // Hide all links
-                    const links = reader.querySelectorAll('a');
-                    links.forEach(link => {
-                        link.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
-                        link.setAttribute('hidden', 'true');
-                    });
-                    
-                    // CRITICAL: Never hide canvas elements - scanner uses canvas for QR detection
-                    const scannerCanvases = reader.querySelectorAll('canvas');
-                    scannerCanvases.forEach(canvas => {
-                        // Ensure scanner canvas is visible and not hidden
-                        canvas.style.display = 'block';
-                        canvas.style.visibility = 'visible';
-                        canvas.style.opacity = '1';
-                        canvas.removeAttribute('hidden');
-                        // Don't modify canvas dimensions - let scanner handle it
-                    });
-                    
-                    // Hide all span, p, label elements that might contain text
-                    // BUT NEVER hide video or canvas elements
-                    const textElements = reader.querySelectorAll('span, p, label, div');
-                    textElements.forEach(el => {
-                        // CRITICAL: Skip if element IS a video or canvas
-                        if (el.tagName && (el.tagName.toLowerCase() === 'video' || el.tagName.toLowerCase() === 'canvas')) {
-                            return; // Never hide video/canvas
-                        }
-                        
-                        const text = el.textContent || '';
-                        const tagName = el.tagName.toLowerCase();
-                        
-                        // Skip if it's a video or canvas element or their direct parent
-                        if (el.querySelector('video, canvas')) {
-                            // This is a container with video/canvas, keep it but make sure it's full width
-                            // But ensure video/canvas inside is visible
-                            // Also remove duplicates
-                            const videosInEl = el.querySelectorAll('video, canvas');
-                            if (videosInEl.length > 1) {
-                                // Keep first, remove others
-                                for (let i = 1; i < videosInEl.length; i++) {
-                                    videosInEl[i].remove();
-                                }
-                            }
-                            
-                            const video = el.querySelector('video, canvas');
-                            if (video) {
-                                video.style.width = '100%';
-                                video.style.height = '100%';
-                                video.style.objectFit = 'cover';
-                                video.style.maxWidth = '100%';
-                                video.style.maxHeight = '100%';
-                                video.style.transform = 'scaleX(-1)';
-                                video.style.display = 'block';
-                                video.style.visibility = 'visible';
-                                video.style.opacity = '1';
-                                video.style.position = 'relative';
-                                video.style.zIndex = '1';
-                                video.removeAttribute('hidden');
-                            }
-                            return;
-                        }
-                        
-                        // Hide if contains camera-related text or is a control element
-                        if (text.includes('Select Camera') || 
-                            text.includes('Stop Scanning') ||
-                            text.includes('Camera') ||
-                            text.includes('Scan') ||
-                            (tagName === 'div' && el.querySelector('select, button:not([id*="video"])'))) {
-                            el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
-                            el.setAttribute('hidden', 'true');
-                        }
-                    });
-                    
-                    // Hide any div that contains select or button (control panels)
-                    const controlDivs = reader.querySelectorAll('div');
-                    controlDivs.forEach(div => {
-                        // Skip if it contains video or canvas
-                        if (div.querySelector('video, canvas')) {
-                            return;
-                        }
-                        
-                        // Hide if it contains controls
-                        if (div.querySelector('select, button:not([id*="video"])')) {
-                            div.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; position: absolute !important; left: -9999px !important;';
-                            div.setAttribute('hidden', 'true');
-                        }
-                    });
-                    
-                    // CRITICAL: Make video/canvas full width and flip horizontally - NEVER hide these
-                    // Also remove duplicates - keep only the first video and first canvas
-                    const allVideos = reader.querySelectorAll('video');
-                    const allCanvases = reader.querySelectorAll('canvas');
-                    
-                    // Remove duplicate videos (keep first)
-                    if (allVideos.length > 1) {
-                        console.warn('Multiple video elements in hideDefaultElements, removing duplicates');
-                        for (let i = 1; i < allVideos.length; i++) {
-                            allVideos[i].remove();
-                        }
-                    }
-                    
-                    // Remove duplicate canvases (keep first)
-                    if (allCanvases.length > 1) {
-                        console.warn('Multiple canvas elements in hideDefaultElements, removing duplicates');
-                        for (let i = 1; i < allCanvases.length; i++) {
-                            allCanvases[i].remove();
-                        }
-                    }
-                    
-                    // Now style the remaining video/canvas
-                    const videos = reader.querySelectorAll('video, canvas');
-                    videos.forEach(video => {
-                        // Force video/canvas to be visible
-                        video.style.width = '100%';
-                        video.style.height = '100%';
-                        video.style.objectFit = 'cover';
-                        video.style.maxWidth = '100%';
-                        video.style.maxHeight = '100%';
-                        video.style.transform = 'scaleX(-1)';
-                        video.style.display = 'block';
-                        video.style.visibility = 'visible';
-                        video.style.opacity = '1';
-                        video.style.position = 'relative';
-                        video.style.zIndex = '1';
-                        video.removeAttribute('hidden');
-                        
-                        // Ensure video plays if it's a video element
-                        if (video.tagName.toLowerCase() === 'video' && video.paused) {
-                            video.play().catch(e => console.warn('Video play error:', e));
-                        }
-                    });
-                }
-                
-                if (useScanner) {
-                    
-                    // Hide immediately after render
-                    setTimeout(hideDefaultElements, 100);
-                    
-                    // Use MutationObserver to hide elements that are added later
-                    const reader = document.getElementById('reader');
-                    if (reader) {
-                        const observer = new MutationObserver(function(mutations) {
-                            hideDefaultElements();
-                        });
-                        
-                        observer.observe(reader, {
-                            childList: true,
-                            subtree: true,
-                            attributes: false
-                        });
-                        
-                        // Store observer for cleanup
-                        window._qrScannerObserver = observer;
-                    }
-                    
-                    isScanning = true;
-                    window._qrScannerVars.isScanning = true; // Sync with window
-                    
-                    updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
-                    updateScanStatus('Kamera siap untuk memindai QR Code', 'info');
-                    
-                    // Hide start button, show stop button
-                    hideStartButton();
-                    showStopButton();
-                    hideRetryButton();
-                    
-                    // Reset button disabled states
-                    document.getElementById('startCameraBtn').disabled = true;
-                    document.getElementById('stopCameraBtn').disabled = false;
-                    document.getElementById('retryCameraBtn').disabled = true;
-                }
-                
-            } catch (error) {
-                updateCameraStatus('Gagal memulai kamera: ' + error.message, 'danger');
-                showRetryButton();
-                showStartButton();
-                hideStopButton();
             }
-        }
-        
-        // Stop camera function - updated to handle both APIs
+                }
+                
+        // Stop camera function - Disederhanakan
         function stopCamera() {
             if (!isScanning) {
                 return;
             }
             
-            // Stop Html5QrcodeScanner if used
+            // HAPUS SEMUA REFERENSI KE 'firstVideoElement', 'duplicateRemovalInterval', dan 'Observer'
+            isScanning = false;
+            window._qrScannerVars.isScanning = false;
+            
+            // Ambil instance dari window._qrScannerVars untuk konsistensi
+            html5Qrcode = window._qrScannerVars.html5Qrcode;
+            html5QrcodeScanner = window._qrScannerVars.html5QrcodeScanner;
             if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().catch(err => {
-                    // Silent error handling
-                });
+                html5QrcodeScanner.clear().catch(err => {});
                 html5QrcodeScanner = null;
                 window._qrScannerVars.html5QrcodeScanner = null;
             }
-            
-            // Stop Html5Qrcode if used
             if (html5Qrcode) {
                 html5Qrcode.stop().then(() => {
                     html5Qrcode.clear();
-                }).catch(err => {
-                    // Silent error handling
-                });
+                }).catch(err => {});
                 html5Qrcode = null;
                 window._qrScannerVars.html5Qrcode = null;
             }
-            
-            // Stop basic camera stream if exists
             if (window.basicCameraStream) {
                 window.basicCameraStream.getTracks().forEach(track => track.stop());
                 window.basicCameraStream = null;
             }
-            
-            // Disconnect observer if exists
-            if (window._qrScannerObserver) {
-                window._qrScannerObserver.disconnect();
-                window._qrScannerObserver = null;
-            }
-            
-            isScanning = false;
-            window._qrScannerVars.isScanning = false;
             
             // Reset UI
             document.getElementById('reader').innerHTML = `
@@ -1173,58 +690,19 @@
             updateCameraStatus('Kamera dihentikan', 'warning');
             updateScanStatus('Klik "Mulai Kamera" untuk memulai pemindaian', 'info');
             
-            // Reset button states
             showStartButton();
             hideStopButton();
             hideRetryButton();
             
-            // Reset button disabled states
             document.getElementById('startCameraBtn').disabled = false;
             document.getElementById('stopCameraBtn').disabled = true;
             document.getElementById('retryCameraBtn').disabled = false;
         }
         
-        // Helper function to reset UI after stopping camera
-        function resetUIAfterStop() {
-            try {
-                // Reset UI
-                const readerElement = document.getElementById('reader');
-                if (readerElement) {
-                    readerElement.innerHTML = `
-                        <div class="text-muted text-center" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <i class="bx bx-camera fs-48 d-block mb-2" style="display: block; margin: 0 auto;"></i>
-                            <div style="text-align: center; width: 100%;">Kamera akan dimuat di sini...</div>
-                            <small class="text-muted" style="text-align: center; width: 100%; display: block; margin-top: 8px;">Klik "Mulai Kamera" untuk memulai pemindaian</small>
-                        </div>
-                    `;
-                }
-                
-                updateCameraStatus('Kamera dihentikan', 'warning');
-                updateScanStatus('Klik "Mulai Kamera" untuk memulai pemindaian', 'info');
-                
-                // Reset button states to allow restart
-                showStartButton();
-                hideStopButton();
-                hideRetryButton();
-                
-                // Reset button disabled states with null checks
-                const startBtn = document.getElementById('startCameraBtn');
-                const stopBtn = document.getElementById('stopCameraBtn');
-                const retryBtn = document.getElementById('retryCameraBtn');
-                
-                if (startBtn) startBtn.disabled = false;
-                if (stopBtn) stopBtn.disabled = true;
-                if (retryBtn) retryBtn.disabled = false;
-                
-                // Clear manual stop flag after a delay
-                setTimeout(() => {
-                    window.manualStop = false;
-                }, 1000);
-                
-            } catch (error) {
-                // Silent error handling
-            }
-        }
+        // Hapus semua fungsi kompleks yang menyebabkan race condition
+        // function hideDefaultElements() - DIHAPUS
+        // function removeDuplicateVideos() - DIHAPUS  
+        // function ensureVideoVisible() - DIHAPUS
 
         // Retry camera function
         function retryCamera() {
@@ -1236,8 +714,6 @@
 
         // Success callback
         function onScanSuccess(decodedText, decodedResult) {
-            console.log('QR Code detected!', decodedText);
-            console.log('Decoded result:', decodedResult);
             
             // Update UI immediately for better UX
             updateScanStatus('QR Code terdeteksi! Memproses...', 'success');
@@ -1286,7 +762,6 @@
                 }
                 
             } catch (error) {
-                console.error('QR parsing error:', error);
                 updateScanStatus('Format QR Code tidak valid. Pastikan QR code dari guru yang benar.', 'danger');
                 // Stop camera immediately on parsing error
                 stopCamera();
@@ -1368,7 +843,6 @@
                 
                 // Only log real errors, and only once per second
                 if (isRealError && timeSinceLastLog > 1000) {
-                    console.warn('QR scanner error:', errorMessage);
                     lastErrorLogTime = now;
                 }
             }
@@ -1413,14 +887,11 @@
             const csrfTokenValue = freshCsrfToken ? freshCsrfToken.getAttribute('content') : '';
             
             if (!csrfTokenValue) {
-                console.error('CSRF token not found!');
                 updateScanStatus('Error: CSRF token tidak ditemukan. Silakan refresh halaman.', 'danger');
                 stopCamera();
                 return;
             }
             
-            console.log('Submitting attendance with CSRF token:', csrfTokenValue.substring(0, 10) + '...');
-            console.log('Request data:', requestData);
             
             // Add timeout to prevent hanging (30 seconds max)
             const controller = new AbortController();
@@ -1441,9 +912,6 @@
             .then(response => {
                 clearTimeout(timeoutId);
                 const responseTime = Date.now() - startTime;
-                console.log('Server response time:', responseTime, 'ms');
-                console.log('Response status:', response.status);
-                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
                 
                 // Handle 403 Forbidden specifically
                 if (response.status === 403) {
@@ -1468,7 +936,6 @@
             })
             .then(data => {
                 const totalTime = Date.now() - startTime;
-                console.log('Total processing time:', totalTime, 'ms');
                 
                 // Update UI immediately - show results right away
                 if (data.success) {
@@ -1481,7 +948,7 @@
                     }, 100);
                     
                     // Refresh attendance history immediately (no delay)
-                    loadAttendanceHistory();
+                        loadAttendanceHistory();
                     
                     // Reset buttons after successful attendance (shorter delay)
                     setTimeout(() => {
@@ -1493,7 +960,7 @@
                     
                     // Show notification asynchronously (don't block)
                     setTimeout(() => {
-                        showNotification(data.message || 'Terjadi kesalahan', false);
+                    showNotification(data.message || 'Terjadi kesalahan', false);
                     }, 100);
                     
                     // Reset buttons after failed attendance (shorter delay)
@@ -1505,8 +972,6 @@
             .catch(error => {
                 clearTimeout(timeoutId);
                 const totalTime = Date.now() - startTime;
-                console.error('Fetch error:', error);
-                console.error('Error after:', totalTime, 'ms');
                 
                 let errorMessage = 'Terjadi kesalahan saat mengirim data';
                 
