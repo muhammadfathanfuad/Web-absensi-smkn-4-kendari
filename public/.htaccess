@@ -19,3 +19,11 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Headers untuk mengizinkan akses kamera
+<IfModule mod_headers.c>
+    # Permissions-Policy untuk mengizinkan akses kamera
+    Header set Permissions-Policy "camera=(self), microphone=(), geolocation=(), interest-cohort=()"
+    # Feature-Policy untuk browser lama (deprecated)
+    Header set Feature-Policy "camera *; microphone 'none'; geolocation 'none'"
+</IfModule>

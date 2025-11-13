@@ -15,6 +15,21 @@ class RemoveInvalidPermissionsPolicy
      */
     public function handle(Request $request, Closure $next): Response
     {
-        return $next($request);
+        $response = $next($request);
+        
+        // Add Permissions-Policy header to allow camera access
+        // This is required for getUserMedia() to work on hosted servers
+        $response->headers->set(
+            'Permissions-Policy',
+            'camera=(self), microphone=(), geolocation=(), interest-cohort=()'
+        );
+        
+        // Also set Feature-Policy for older browsers (deprecated but some still use it)
+        $response->headers->set(
+            'Feature-Policy',
+            'camera *; microphone \'none\'; geolocation \'none\''
+        );
+        
+        return $response;
     }
 }

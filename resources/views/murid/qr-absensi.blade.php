@@ -550,6 +550,54 @@
                         isScanning = true;
                         window._qrScannerVars.isScanning = true;
                         
+                        // Check if video element exists after starting
+                        setTimeout(() => {
+                            const reader = document.getElementById('reader');
+                            const video = reader ? reader.querySelector('video') : null;
+                            const canvas = reader ? reader.querySelector('canvas') : null;
+                            
+                            if (!video && !canvas) {
+                                console.warn('Video atau canvas tidak ditemukan setelah kamera dimulai');
+                                updateCameraStatus('Kamera dimulai tetapi video tidak terdeteksi. Coba refresh halaman.', 'warning');
+                            } else {
+                                // Ensure video is visible
+                                if (video) {
+                                    video.style.width = '100%';
+                                    video.style.height = '100%';
+                                    video.style.objectFit = 'cover';
+                                    video.style.maxWidth = '100%';
+                                    video.style.maxHeight = '100%';
+                                    video.style.transform = 'scaleX(-1)';
+                                    video.style.display = 'block';
+                                    
+                                    // Check if video is actually playing
+                                    video.addEventListener('loadedmetadata', () => {
+                                        console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
+                                    });
+                                    
+                                    video.addEventListener('playing', () => {
+                                        console.log('Video is playing');
+                                        updateCameraStatus('Kamera aktif - Arahkan ke QR Code', 'success');
+                                    });
+                                    
+                                    video.addEventListener('error', (e) => {
+                                        console.error('Video error:', e);
+                                        updateCameraStatus('Error pada video stream: ' + (e.message || 'Unknown error'), 'danger');
+                                    });
+                                }
+                                
+                                if (canvas) {
+                                    canvas.style.width = '100%';
+                                    canvas.style.height = '100%';
+                                    canvas.style.objectFit = 'cover';
+                                    canvas.style.maxWidth = '100%';
+                                    canvas.style.maxHeight = '100%';
+                                    canvas.style.transform = 'scaleX(-1)';
+                                    canvas.style.display = 'block';
+                                }
+                            }
+                        }, 500);
+                        
                         // Hide default elements immediately
                         setTimeout(hideDefaultElements, 100);
                         setTimeout(hideDefaultElements, 500);
@@ -581,7 +629,30 @@
                         document.getElementById('retryCameraBtn').disabled = true;
                     }).catch(err => {
                         console.error('Error starting camera:', err);
-                        updateCameraStatus('Gagal memulai kamera: ' + err.message, 'danger');
+                        console.error('Error details:', {
+                            name: err.name,
+                            message: err.message,
+                            stack: err.stack
+                        });
+                        
+                        // Provide more detailed error messages
+                        let errorMessage = 'Gagal memulai kamera: ';
+                        if (err.name === 'NotAllowedError' || err.message.includes('permission')) {
+                            errorMessage += 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.';
+                        } else if (err.name === 'NotFoundError' || err.message.includes('not found')) {
+                            errorMessage += 'Kamera tidak ditemukan. Pastikan kamera terhubung.';
+                        } else if (err.name === 'NotReadableError' || err.message.includes('not readable')) {
+                            errorMessage += 'Kamera sedang digunakan oleh aplikasi lain.';
+                        } else if (err.name === 'OverconstrainedError' || err.message.includes('constraint')) {
+                            errorMessage += 'Kamera tidak mendukung pengaturan yang diminta.';
+                        } else if (err.message.includes('HTTPS') || err.message.includes('secure context')) {
+                            errorMessage += 'HTTPS diperlukan untuk akses kamera. Pastikan website menggunakan HTTPS.';
+                        } else {
+                            errorMessage += err.message || 'Terjadi kesalahan tidak diketahui.';
+                        }
+                        
+                        updateCameraStatus(errorMessage, 'danger');
+                        updateScanStatus('Gagal memulai kamera. Coba klik tombol Retry atau refresh halaman.', 'danger');
                         showRetryButton();
                         showStartButton();
                         hideStopButton();

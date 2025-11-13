@@ -8,6 +8,8 @@
 <meta name="robots" content="index, follow" />
 <meta name="theme-color" content="#ffffff">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+{{-- Permissions-Policy untuk mengizinkan akses kamera --}}
+<meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(), geolocation=(), interest-cohort=()">
 
 
 <!-- App favicon -->

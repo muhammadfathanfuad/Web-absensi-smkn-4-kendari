@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+        
+        // Add Permissions-Policy header globally to allow camera access
+        $middleware->append(\App\Http\Middleware\RemoveInvalidPermissionsPolicy::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
