@@ -19,6 +19,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithChunkReading
     private $errors = [];
     private $successCount = 0;
     private $skipCount = 0;
+    private $initialized = false;
     
     public function chunkSize(): int
     {
@@ -62,16 +63,22 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithChunkReading
 
     public function collection(Collection $rows)
     {
-        // Initialize counters if not already set
-        if (!isset($this->errors)) {
+        // Only initialize counters once (on first call)
+        // With chunking, this method may be called multiple times
+        if (!$this->initialized) {
             $this->errors = [];
-        }
-        if (!isset($this->successCount)) {
             $this->successCount = 0;
-        }
-        if (!isset($this->skipCount)) {
             $this->skipCount = 0;
+            $this->initialized = true;
+            Log::info('StudentsImport: Initialized counters', ['total_rows' => $rows->count()]);
         }
+
+        Log::info('StudentsImport: Processing chunk', [
+            'chunk_size' => $rows->count(),
+            'current_success' => $this->successCount,
+            'current_errors' => count($this->errors),
+            'current_skip' => $this->skipCount
+        ]);
 
         // Use database transaction for better performance
         DB::beginTransaction();
@@ -81,17 +88,36 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithChunkReading
                 $rowNumber = $index + 2; // +2 karena index mulai dari 0 dan ada header row
                 
                 try {
+                    // Normalize row keys to handle case sensitivity and spaces
+                    $normalizedRow = [];
+                    foreach ($row as $key => $value) {
+                        $normalizedKey = strtolower(trim(str_replace([' ', '_'], '', $key)));
+                        $normalizedRow[$normalizedKey] = $value;
+                    }
+                    
+                    // Map normalized keys to expected keys (try multiple variations)
+                    $nama = trim($normalizedRow['nama'] ?? $row['nama'] ?? $row['Nama'] ?? $row['NAMA'] ?? '');
+                    $nis = trim($normalizedRow['nis'] ?? $row['nis'] ?? $row['NIS'] ?? '');
+                    $kelas = trim($normalizedRow['kelas'] ?? $row['kelas'] ?? $row['Kelas'] ?? $row['KELAS'] ?? '');
+                    $namaWali = trim($normalizedRow['namawali'] ?? $row['nama_wali'] ?? $row['Nama Wali'] ?? $row['nama wali'] ?? $row['NamaWali'] ?? '');
+                    $teleponWali = trim($normalizedRow['teleponwali'] ?? $normalizedRow['telepon'] ?? $row['telepon_wali'] ?? $row['Telepon Wali'] ?? $row['telepon wali'] ?? $row['TeleponWali'] ?? '');
+                    
+                    // Log first row for debugging
+                    if ($index === 0) {
+                        Log::info('StudentsImport: First row sample', [
+                            'row_keys' => array_keys($row->toArray()),
+                            'normalized_keys' => array_keys($normalizedRow),
+                            'nama' => $nama,
+                            'nis' => $nis,
+                            'kelas' => $kelas
+                        ]);
+                    }
+                    
                     // Skip empty rows
-                    if (empty(trim($row['nama'] ?? ''))) {
+                    if (empty($nama)) {
                         $this->skipCount++;
                         continue;
                     }
-
-                    $nama = trim($row['nama'] ?? '');
-                    $nis = trim($row['nis'] ?? '');
-                    $kelas = trim($row['kelas'] ?? '');
-                    $namaWali = trim($row['nama_wali'] ?? '');
-                    $teleponWali = trim($row['telepon_wali'] ?? '');
 
                     // Validasi field wajib
                     $validationErrors = [];

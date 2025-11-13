@@ -398,13 +398,9 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="grade" class="form-label">Pilih Kelas</label>
-                            <select class="form-select" id="grade" name="grade" required>
-                                <option value="">Pilih Kelas</option>
-                                <option value="X">Kelas X</option>
-                                <option value="XI">Kelas XI</option>
-                                <option value="XII">Kelas XII</option>
-                            </select>
+                            <label for="grade" class="form-label">Kelas</label>
+                            <input type="text" class="form-control" id="grade" name="grade" value="Kelas X" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                            <input type="hidden" name="grade" value="X">
                         </div>
                         <div class="mb-3" id="weekTypeContainer" style="display: none;">
                             <label for="week_type" class="form-label">Tipe Minggu</label>
@@ -2319,6 +2315,11 @@
             
             const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
 
+            // Track if notification is from import XI or delete all
+            let isImportXINotification = false;
+            let isDeleteAllXNotification = false;
+            let isDeleteAllXINotification = false;
+
             // Ensure close buttons work
             document.querySelector('#notificationModal .btn-close').addEventListener('click', () => {
                 notificationModal.hide();
@@ -2327,15 +2328,316 @@
                 notificationModal.hide();
             });
 
+            // Auto-reload when notification modal is closed after import XI or delete all
+            document.getElementById('notificationModal').addEventListener('hidden.bs.modal', function() {
+                if (isImportXINotification) {
+                    // Reload Kelas XI table
+                    if (window.gridInstanceJadwalXI) {
+                        window.gridInstanceJadwalXI.forceRender();
+                    } else if (window.gridXiReload) {
+                        window.gridXiReload();
+                    } else {
+                        // Get current term_id from URL or filter
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const termId = urlParams.get('term_id') || document.getElementById('kelasXISemesterFilter')?.value;
+                        if (termId) {
+                            reloadKelasXITable(termId);
+                        } else {
+                            location.reload();
+                        }
+                    }
+                    isImportXINotification = false;
+                } else if (isDeleteAllXNotification) {
+                    // Reload page for Kelas X
+                    location.reload();
+                    isDeleteAllXNotification = false;
+                } else if (isDeleteAllXINotification) {
+                    // Reload page for Kelas XI
+                    location.reload();
+                    isDeleteAllXINotification = false;
+                }
+            });
+
             // Function to show notification (same as manage-user)
-            function showNotification(message, isSuccess = true) {
+            function showNotification(message, isSuccess = true, options = {}) {
                 document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
                 document.getElementById('notificationMessage').innerText = message;
+                
+                // Reset all flags
+                isImportXINotification = false;
+                isDeleteAllXNotification = false;
+                isDeleteAllXINotification = false;
+                
+                // Handle backward compatibility: if options is boolean (old format), treat as fromImportXI
+                if (typeof options === 'boolean') {
+                    options = { fromImportXI: options };
+                }
+                
+                // Set flags based on options
+                if (isSuccess && options && typeof options === 'object') {
+                    if (options.fromImportXI) {
+                        isImportXINotification = true;
+                    } else if (options.fromDeleteAllX) {
+                        isDeleteAllXNotification = true;
+                    } else if (options.fromDeleteAllXI) {
+                        isDeleteAllXINotification = true;
+                    }
+                }
+                
                 notificationModal.show();
             }
 
             // Make showNotification available globally
             window.showNotification = showNotification;
+
+            // Handle single delete for Kelas X
+            const confirmDeleteJadwalButton = document.getElementById('confirmDeleteJadwalButton');
+            if (confirmDeleteJadwalButton) {
+                confirmDeleteJadwalButton.addEventListener('click', function() {
+                    const id = document.getElementById('deleteJadwalId').value;
+                    if (!id) return;
+
+                    fetch(`/admin/jadwal/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Close delete modal
+                        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteJadwalModal'));
+                        if (deleteModal) {
+                            deleteModal.hide();
+                        }
+
+                        // Show notification
+                        showNotification(data.message || 'Jadwal berhasil dihapus', data.success !== false);
+
+                        // Reload table after notification is shown (delay to ensure modal is visible)
+                        if (data.success !== false) {
+                            setTimeout(() => {
+                                if (window.gridInstanceJadwal) {
+                                    window.gridInstanceJadwal.forceRender();
+                                } else {
+                                    location.reload();
+                                }
+                            }, 2000); // Wait 2 seconds for notification to be visible
+                        }
+                    })
+                    .catch(error => {
+                        // Close delete modal
+                        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteJadwalModal'));
+                        if (deleteModal) {
+                            deleteModal.hide();
+                        }
+                        showNotification('Gagal menghapus jadwal: ' + error.message, false);
+                    });
+                });
+            }
+
+            // Handle bulk delete for Kelas X
+            const confirmBulkDeleteJadwalButton = document.getElementById('confirmBulkDeleteJadwalButton');
+            if (confirmBulkDeleteJadwalButton) {
+                confirmBulkDeleteJadwalButton.addEventListener('click', function() {
+                    const ids = document.getElementById('deleteJadwalIds').value;
+                    if (!ids) {
+                        showNotification('Tidak ada jadwal yang dipilih', false);
+                        return;
+                    }
+
+                    fetch('/admin/jadwal/bulk-delete', {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: ids })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Close bulk delete modal
+                        const bulkDeleteModal = bootstrap.Modal.getInstance(document.getElementById('bulkDeleteJadwalModal'));
+                        if (bulkDeleteModal) {
+                            bulkDeleteModal.hide();
+                        }
+
+                        // Show notification
+                        showNotification(data.message || 'Jadwal berhasil dihapus', data.success !== false);
+
+                        // Reset checkboxes
+                        const selectAllCheckbox = document.getElementById('select-all-jadwal-checkbox');
+                        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                        document.querySelectorAll('.row-checkbox-jadwal').forEach(cb => cb.checked = false);
+
+                        // Reload table after notification is shown (delay to ensure modal is visible)
+                        if (data.success !== false) {
+                            setTimeout(() => {
+                                if (window.gridInstanceJadwal) {
+                                    window.gridInstanceJadwal.forceRender();
+                                } else {
+                                    location.reload();
+                                }
+                            }, 2000); // Wait 2 seconds for notification to be visible
+                        }
+                    })
+                    .catch(error => {
+                        // Close bulk delete modal
+                        const bulkDeleteModal = bootstrap.Modal.getInstance(document.getElementById('bulkDeleteJadwalModal'));
+                        if (bulkDeleteModal) {
+                            bulkDeleteModal.hide();
+                        }
+                        showNotification('Gagal menghapus jadwal: ' + error.message, false);
+                    });
+                });
+            }
+
+            // Hook bulk delete button to open modal with selected IDs for Kelas X
+            const bulkDeleteJadwalButton = document.getElementById('bulk-delete-jadwal');
+            if (bulkDeleteJadwalButton) {
+                bulkDeleteJadwalButton.addEventListener('click', function() {
+                    const selectedIds = Array.from(
+                        document.querySelectorAll('.row-checkbox-jadwal:checked')
+                    ).map(cb => cb.dataset.id || cb.value);
+
+                    if (selectedIds.length === 0) {
+                        showNotification('Pilih minimal satu jadwal untuk dihapus', false);
+                        return;
+                    }
+
+                    document.getElementById('deleteJadwalIds').value = selectedIds.join(',');
+                    const modal = new bootstrap.Modal(document.getElementById('bulkDeleteJadwalModal'));
+                    modal.show();
+                });
+            }
+
+            // Override deleteAllJadwal function to use notification with auto-reload
+            window.deleteAllJadwal = function() {
+                fetch('/admin/jadwal/delete-all', {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Close delete all modal
+                    const deleteAllModal = bootstrap.Modal.getInstance(document.getElementById('deleteAllJadwalModal'));
+                    if (deleteAllModal) {
+                        deleteAllModal.hide();
+                    }
+
+                    // Show notification with flag for auto-reload
+                    showNotification(data.message || 'Semua data jadwal kelas X berhasil dihapus!', data.success !== false, { fromDeleteAllX: true });
+                })
+                .catch(error => {
+                    // Close delete all modal
+                    const deleteAllModal = bootstrap.Modal.getInstance(document.getElementById('deleteAllJadwalModal'));
+                    if (deleteAllModal) {
+                        deleteAllModal.hide();
+                    }
+                    showNotification('Gagal menghapus semua data jadwal: ' + error.message, false);
+                });
+            };
+
+            // Override deleteAllJadwalXi function to use notification with auto-reload
+            window.deleteAllJadwalXi = function() {
+                fetch('/admin/jadwal-xi/delete-all', {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Close delete all modal
+                    const deleteAllModal = bootstrap.Modal.getInstance(document.getElementById('deleteAllJadwalXiModal'));
+                    if (deleteAllModal) {
+                        deleteAllModal.hide();
+                    }
+
+                    // Show notification with flag for auto-reload
+                    showNotification(data.message || 'Semua data jadwal kelas XI berhasil dihapus!', data.success !== false, { fromDeleteAllXI: true });
+                })
+                .catch(error => {
+                    // Close delete all modal
+                    const deleteAllModal = bootstrap.Modal.getInstance(document.getElementById('deleteAllJadwalXiModal'));
+                    if (deleteAllModal) {
+                        deleteAllModal.hide();
+                    }
+                    showNotification('Gagal menghapus semua data jadwal XI: ' + error.message, false);
+                });
+            };
+
+            // Handle import XI form submission with AJAX
+            const importJadwalXiForm = document.getElementById('importJadwalXiForm');
+            if (importJadwalXiForm) {
+                importJadwalXiForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    const submitButton = this.querySelector('button[type="submit"]') || 
+                                        document.querySelector('button[form="importJadwalXiForm"]');
+                    
+                    // Disable submit button and show loading
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        const originalText = submitButton.textContent;
+                        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengimport...';
+                        
+                        fetch('/admin/jadwal-xi/import', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw new Error(data.message || 'Gagal mengimport jadwal');
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Close import modal
+                            const importModal = bootstrap.Modal.getInstance(document.getElementById('importJadwalXIModal'));
+                            if (importModal) {
+                                importModal.hide();
+                            }
+                            
+                            // Show notification with flag for auto-reload
+                            showNotification(data.message || 'Jadwal berhasil diimport!', data.success !== false, { fromImportXI: true });
+                            
+                            // Reset form
+                            importJadwalXiForm.reset();
+                        })
+                        .catch(error => {
+                            // Close import modal
+                            const importModal = bootstrap.Modal.getInstance(document.getElementById('importJadwalXIModal'));
+                            if (importModal) {
+                                importModal.hide();
+                            }
+                            
+                            // Show error notification
+                            showNotification(error.message || 'Gagal mengimport jadwal. Silakan coba lagi.', false, false);
+                        })
+                        .finally(() => {
+                            // Re-enable submit button
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.textContent = originalText;
+                            }
+                        });
+                    }
+                });
+            }
         });
 
         // Export functions for Jadwal X and XI
@@ -2636,20 +2938,12 @@
             });
         })();
 
-        document.getElementById('grade').addEventListener('change', function() {
-            const grade = this.value;
-            const weekTypeContainer = document.getElementById('weekTypeContainer');
-            const weekTypeSelect = document.getElementById('week_type');
-
-            if (grade === 'XI' || grade === 'XII') {
-                weekTypeContainer.style.display = 'block';
-                weekTypeSelect.required = true;
-            } else {
-                weekTypeContainer.style.display = 'none';
-                weekTypeSelect.required = false;
-                weekTypeSelect.value = '';
-            }
-        });
+        // Grade is now fixed to 'X' for import jadwal, so no need for change event listener
+        // Ensure weekTypeContainer is hidden for Kelas X
+        const weekTypeContainer = document.getElementById('weekTypeContainer');
+        if (weekTypeContainer) {
+            weekTypeContainer.style.display = 'none';
+        }
 
         // Manual Class Subject Functions - Step by Step
         let currentStep = 1;
