@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Pengumuman'); ?>
 
 <?php $__env->startSection('css'); ?>

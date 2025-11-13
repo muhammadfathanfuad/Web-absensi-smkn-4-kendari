@@ -571,7 +571,7 @@
                     `;
                     return;
                 }
-
+                
                 // Pastikan data adalah object yang valid
                 if (!data || typeof data !== 'object') {
                     throw new Error('QR data is not a valid object');

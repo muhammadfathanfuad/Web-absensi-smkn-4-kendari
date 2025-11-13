@@ -43,7 +43,6 @@ class DashboardMuridController extends Controller
                     $query->where('class_id', $classId);
                 })
                 ->where('day_of_week', $day)
-                ->where('is_active', true)
                 ->orderBy('start_time')
                 ->get();
 
@@ -94,7 +93,6 @@ class DashboardMuridController extends Controller
                         $query->where('class_id', $classId);
                     })
                     ->where('day_of_week', $dayOfWeek)
-                    ->where('is_active', true)
                     ->count();
             }
             
@@ -172,7 +170,6 @@ class DashboardMuridController extends Controller
             // Get unique subject IDs from student's timetables using join for better performance
             $subjectIds = Timetable::join('class_subjects', 'timetables.class_subject_id', '=', 'class_subjects.id')
                 ->where('class_subjects.class_id', $classId)
-                ->where('timetables.is_active', true)
                 ->distinct()
                 ->pluck('class_subjects.subject_id')
                 ->filter()

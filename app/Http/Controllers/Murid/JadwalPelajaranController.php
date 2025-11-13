@@ -62,7 +62,6 @@ class JadwalPelajaranController extends Controller
                     $query->where('class_id', $classId);
                 })
                 ->where('day_of_week', $day)
-                ->where('is_active', true)
                 ->orderBy('start_time')
                 ->get();
 
@@ -77,7 +76,6 @@ class JadwalPelajaranController extends Controller
                 ->whereHas('classSubject', function($query) use ($classId) {
                     $query->where('class_id', $classId);
                 })
-                ->where('is_active', true)
                 ->orderBy('day_of_week')
                 ->orderBy('start_time')
                 ->get();
@@ -425,7 +423,6 @@ class JadwalPelajaranController extends Controller
                 ->whereHas('classSubject', function($query) use ($classId) {
                     $query->where('class_id', $classId);
                 })
-                ->where('is_active', true)
                 ->orderBy('day_of_week')
                 ->orderBy('start_time')
                 ->get();

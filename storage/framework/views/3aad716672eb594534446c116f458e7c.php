@@ -693,10 +693,10 @@
                 },
                 body: JSON.stringify(requestData)
             })
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
                 
                 if (data.success) {
                     updateScanStatus('Absensi berhasil! ' + (data.message || ''), 'success');

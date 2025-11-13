@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Bantuan'); ?>
 
 <?php $__env->startSection('content'); ?>
