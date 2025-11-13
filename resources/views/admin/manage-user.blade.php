@@ -33,10 +33,25 @@
                         <div class="tab-pane show active" id="semua">
                             <div class="card-header">
                                 <h5 class="card-title">Data User</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-0 flex-wrap">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                                    <div class="d-flex gap-2 align-items-center flex-wrap">
                                     <p class="text-muted mb-0">
                                         Data Semua Warga Sekolah
                                     </p>
+                                        <div class="d-flex gap-2">
+                                            <select class="form-select form-select-sm" id="roleFilter" style="width: auto; min-width: 150px;">
+                                                <option value="">Semua User</option>
+                                                <option value="teacher">Data Guru</option>
+                                                <option value="student">Data Siswa</option>
+                                            </select>
+                                            <select class="form-select form-select-sm" id="classFilter" style="width: auto; min-width: 180px; display: none !important;">
+                                                <option value="">Semua Kelas</option>
+                                                @foreach($classrooms as $classroom)
+                                                    <option value="{{ $classroom->id }}">{{ $classroom->grade }} - {{ $classroom->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div id="single-actions" class="ms-auto d-flex gap-2">
                                         <div class="btn-group" role="group">
                                             <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
@@ -1110,6 +1125,117 @@
             };
 
         });
+
+        // Filter event listeners untuk Data User tab
+        // Wait for both DOM and grid instance to be ready
+        function setupUserFilters() {
+            const roleFilter = document.getElementById('roleFilter');
+            const classFilter = document.getElementById('classFilter');
+            
+            if (!roleFilter || !classFilter) {
+                // Retry after a short delay if elements not found
+                setTimeout(setupUserFilters, 100);
+                return;
+            }
+            
+            // Function to reload table with current filters
+            function reloadUserTable() {
+                if (!window.gridInstance || !window.gridInstance.updateConfig) {
+                    console.log('Grid instance not ready yet');
+                    return;
+                }
+                
+                const roleValue = roleFilter.value || '';
+                const classValue = classFilter.value || '';
+                const params = new URLSearchParams();
+                if (roleValue) params.append('role_filter', roleValue);
+                if (classValue) params.append('class_filter', classValue);
+                const url = params.toString() ? `/admin/users/table?${params.toString()}` : '/admin/users/table';
+                
+                console.log('Reloading table with URL:', url);
+                
+                window.gridInstance.updateConfig({
+                    server: {
+                        url: url,
+                        then: (data) =>
+                            data.map((u) => [
+                                null, // checkbox
+                                u.full_name ?? "-",
+                                u.email ?? "-",
+                                u.phone ?? "-",
+                                u.status ?? "-",
+                                u.id, // hidden ID
+                                null, // Aksi
+                            ]),
+                    },
+                }).forceRender();
+            }
+            
+            // Event listener untuk filter role
+            roleFilter.addEventListener('change', function() {
+                console.log('Role filter changed to:', this.value);
+                // Show/hide class filter based on role selection
+                if (this.value === 'student') {
+                    classFilter.style.display = 'inline-block';
+                } else {
+                    classFilter.style.display = 'none';
+                    classFilter.value = ''; // Reset class filter
+                }
+                reloadUserTable();
+            });
+
+            // Event listener untuk filter kelas
+            classFilter.addEventListener('change', function() {
+                console.log('Class filter changed to:', this.value);
+                reloadUserTable();
+            });
+        }
+        
+        // Try to setup filters immediately
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                // Wait a bit for grid to initialize
+                setTimeout(setupUserFilters, 500);
+            });
+        } else {
+            // DOM already loaded, wait for grid
+            setTimeout(setupUserFilters, 500);
+        }
+        
+        // Force apply mobile styles for Data User tab buttons
+        function applyMobileButtonStyles() {
+            if (window.innerWidth <= 575.98) {
+                const singleActions = document.querySelector('#semua #single-actions');
+                if (singleActions) {
+                    singleActions.style.width = '100%';
+                    singleActions.style.display = 'flex';
+                    singleActions.style.justifyContent = 'center';
+                    singleActions.style.alignItems = 'center';
+                    singleActions.style.gap = '0.5rem';
+                    singleActions.style.marginLeft = '0';
+                    singleActions.style.marginRight = '0';
+                    singleActions.style.marginTop = '1.5rem';
+                    
+                    // Apply to buttons
+                    const buttons = singleActions.querySelectorAll('.btn, .btn-group');
+                    buttons.forEach(btn => {
+                        btn.style.flex = '0 0 auto';
+                        btn.style.width = 'auto';
+                        btn.style.minWidth = 'auto';
+                        btn.style.maxWidth = 'none';
+                    });
+                }
+            }
+        }
+        
+        // Apply on load and resize
+        window.addEventListener('load', applyMobileButtonStyles);
+        window.addEventListener('resize', applyMobileButtonStyles);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyMobileButtonStyles);
+        } else {
+            applyMobileButtonStyles();
+        }
     </script>
 @endsection
 
@@ -1138,12 +1264,24 @@
             gap: 1rem;
         }
         
+        /* Override untuk tab Data User - container tetap horizontal */
+        #semua .card-header .d-flex,
+        .tab-pane#semua .card-header .d-flex {
+            align-items: center !important;
+        }
+        
+        /* Tambahkan margin top untuk tombol action di tab Data User */
+        #semua #single-actions,
+        .tab-pane#semua #single-actions {
+            margin-top: 1.5rem !important;
+        }
+        
         .card-header .text-muted {
             width: 100%;
             text-align: center;
         }
         
-        #single-actions,
+        /* Tab lain tetap seperti sebelumnya */
         #single-actions-murid {
             width: 100%;
             display: flex;
@@ -1160,7 +1298,6 @@
             margin-left: 0 !important;
         }
         
-        #single-actions .btn,
         #single-actions-murid .btn {
             flex: 1;
             min-width: 0;
@@ -1170,6 +1307,34 @@
             flex: 1;
             min-width: 0;
             max-width: 200px;
+        }
+        
+        /* Khusus untuk tab Data User - tombol di tengah dan bersampingan */
+        #semua #single-actions,
+        .tab-pane#semua #single-actions,
+        #semua #single-actions.ms-auto,
+        .tab-pane#semua #single-actions.ms-auto {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            margin-inline-start: 0 !important;
+            margin-inline-end: 0 !important;
+        }
+        
+        #semua #single-actions .btn,
+        .tab-pane#semua #single-actions .btn,
+        #semua #single-actions .btn-group,
+        .tab-pane#semua #single-actions .btn-group,
+        #semua #single-actions .btn-group .btn,
+        .tab-pane#semua #single-actions .btn-group .btn {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: auto !important;
+            max-width: none !important;
         }
         
         #bulk-actions,

@@ -196,7 +196,7 @@
                                         Jadwal Pelajaran Semester 1
                                     </p>
                                     <div class="jadwal-actions-wrapper">
-                                        <div id="single-actions-jadwal-xii">
+                                        <div id="single-actions-jadwal-xii" style="display: none;">
                                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                                 data-bs-target="#addMuridModal">
                                                 Tambah Jadwal
@@ -207,7 +207,16 @@
                             </div>
 
                             <div class="card-body">
-                                <div id="table-murid"></div>
+                                <div class="text-center py-5">
+                                    <div class="mb-4">
+                                        <iconify-icon icon="solar:info-circle-outline" class="fs-64 text-info"></iconify-icon>
+                                    </div>
+                                    <h5 class="text-muted mb-3">Fitur Belum Dikembangkan</h5>
+                                    <p class="text-muted mb-0" style="max-width: 600px; margin: 0 auto;">
+                                        Fitur jadwal pelajaran untuk kelas XII belum dikembangkan karena tidak adanya data sebagai referensi pengembang. 
+                                        Fitur ini akan segera dikembangkan setelah data referensi tersedia.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         

@@ -14,12 +14,33 @@ class UserController extends Controller
     public function index()
     {
         $users = User::all();
-        return view('admin.manage-user', compact('users'));
+        $classrooms = \App\Models\Classroom::orderBy('grade')->orderBy('name')->get();
+        return view('admin.manage-user', compact('users', 'classrooms'));
     }
 
     public function table(Request $request)
     {
-        $users = User::with('roles', 'teacher', 'student')
+        $query = User::with('roles', 'teacher', 'student.classroom');
+        
+        // Filter berdasarkan role (guru atau siswa)
+        $roleFilter = $request->input('role_filter');
+        if ($roleFilter === 'teacher') {
+            // Hanya ambil user yang memiliki role teacher atau memiliki data di tabel teachers
+            $query->whereHas('teacher');
+        } elseif ($roleFilter === 'student') {
+            // Hanya ambil user yang memiliki role student atau memiliki data di tabel students
+            $query->whereHas('student');
+        }
+        
+        // Filter siswa berdasarkan kelas
+        $classFilter = $request->input('class_filter');
+        if ($classFilter && $roleFilter === 'student') {
+            $query->whereHas('student', function($q) use ($classFilter) {
+                $q->where('class_id', $classFilter);
+            });
+        }
+        
+        $users = $query
             ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('full_name', 'asc')
             ->get()

@@ -257,6 +257,22 @@ class GridDatatable {
         const mount = document.getElementById("table-search");
         if (!mount) return;
 
+        // Function to get filter parameters (accessible in this scope)
+        const getFilterParams = () => {
+            const roleFilter = document.getElementById('roleFilter')?.value || '';
+            const classFilter = document.getElementById('classFilter')?.value || '';
+            const params = new URLSearchParams();
+            if (roleFilter) params.append('role_filter', roleFilter);
+            if (classFilter) params.append('class_filter', classFilter);
+            return params.toString();
+        };
+
+        // Function to build URL with filters (accessible in this scope)
+        const getTableUrl = () => {
+            const params = getFilterParams();
+            return params ? `/admin/users/table?${params}` : '/admin/users/table';
+        };
+
         this.gridInstanceUser = new gridjs.Grid({
             columns: [
                 {
@@ -330,7 +346,7 @@ class GridDatatable {
             pagination: { limit: 10 },
             search: true,
             server: {
-                url: "/admin/users/table",
+                url: getTableUrl(), // Initial URL
                 then: (data) =>
                     data.map((u) => [
                         null, // checkbox
@@ -378,6 +394,10 @@ class GridDatatable {
         // Make reorderTableByStatus method accessible globally
         window.gridInstance.reorderTableByStatus = () =>
             this.reorderTableByStatus();
+
+        // Store functions in instance for later use
+        this.getFilterParams = getFilterParams;
+        this.getTableUrl = getTableUrl;
     }
 
     // ---------- EVENT LISTENERS ----------
