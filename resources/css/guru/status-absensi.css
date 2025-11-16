@@ -1,0 +1,191 @@
+@media print {
+    /* Sembunyikan semua elemen */
+    * {
+        visibility: hidden !important;
+    }
+    
+    /* Tampilkan hanya tabel data absensi dan header print */
+    #printableTable, 
+    #printableTable *,
+    #printableSummaryTable,
+    #printableSummaryTable *,
+    .print-header,
+    .print-header * {
+        visibility: visible !important;
+    }
+    
+    /* Posisikan tabel di atas */
+    #printableTable,
+    #printableSummaryTable {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Sembunyikan semua elemen UI yang tidak perlu */
+    .navbar,
+    .navbar *,
+    .sidebar,
+    .sidebar *,
+    .page-title,
+    .page-title *,
+    .card-header,
+    .card-header *,
+    .card-title,
+    .card-title *,
+    .card-body > form,
+    .card-body > form *,
+    .card-body > hr,
+    .d-flex.justify-content-between,
+    .d-flex.justify-content-between *,
+    .btn,
+    .btn *,
+    .form-control,
+    .form-control *,
+    .form-select,
+    .form-select *,
+    .form-label,
+    .form-label *,
+    .text-muted,
+    .text-muted *,
+    h4, h4 *,
+    h5, h5 *,
+    .card,
+    .card *,
+    .container,
+    .container *,
+    .row,
+    .row *,
+    .col-md-3,
+    .col-md-3 *,
+    .col-md-2,
+    .col-md-2 *,
+    .col-12,
+    .col-12 *,
+    .mt-4,
+    .mb-3,
+    .mb-4,
+    .align-items-end,
+    .align-items-end *,
+    .g-3,
+    .g-3 *,
+    .mt-2,
+    .mt-2 *,
+    .small,
+    .small *,
+    .table-responsive,
+    .table-responsive * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Styling tabel untuk print */
+    .table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+        text-align: left !important;
+        margin: 0 !important;
+    }
+    
+    .table thead th {
+        background-color: #f5f5f5 !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+    
+    .table tbody td {
+        color: #000 !important;
+    }
+    
+    /* Styling badge untuk print */
+    .badge {
+        border: 1px solid #000 !important;
+        color: #000 !important;
+        background-color: transparent !important;
+        padding: 2px 6px !important;
+        font-size: 12px !important;
+    }
+    
+    /* Pastikan tidak ada background color */
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: transparent !important;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: transparent !important;
+    }
+    
+    /* Reset body untuk print */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+    
+    /* Sembunyikan elemen layout utama */
+    .main-content,
+    .main-content *,
+    .page-wrapper,
+    .page-wrapper *,
+    .content-page,
+    .content-page *,
+    .container-fluid,
+    .container-fluid *,
+    .wrapper,
+    .wrapper * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Pastikan hanya print header dan tabel yang terlihat */
+    .print-header {
+        display: block !important;
+        visibility: visible !important;
+        position: relative !important;
+        margin-bottom: 20px !important;
+    }
+    
+    #printableTable,
+    #printableSummaryTable {
+        display: block !important;
+        visibility: visible !important;
+        position: relative !important;
+    }
+}
+
+.print-header {
+    display: none;
+}
+
+@media print {
+    .print-header {
+        display: block;
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+    }
+    
+    .print-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    
+    .print-header p {
+        margin: 5px 0 0 0;
+        font-size: 14px;
+    }
+}
+

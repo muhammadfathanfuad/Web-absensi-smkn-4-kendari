@@ -14,14 +14,14 @@ class CleanupOldNotifications extends Command
      *
      * @var string
      */
-    protected $signature = 'notifications:cleanup {--days=2 : Number of days to keep read notifications}';
+    protected $signature = 'notifications:cleanup {--days=2 : Number of days to keep read notifications} {--unread-days=30 : Number of days to keep unread notifications}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Clean up read notifications older than specified days (default: 2 days)';
+    protected $description = 'Clean up read notifications older than specified days (default: 2 days) and unread notifications older than specified days (default: 30 days)';
 
     /**
      * Execute the console command.
@@ -29,16 +29,17 @@ class CleanupOldNotifications extends Command
     public function handle()
     {
         $days = (int) $this->option('days');
+        $unreadDays = (int) $this->option('unread-days');
         $cutoffDate = Carbon::now()->subDays($days);
+        $unreadCutoffDate = Carbon::now()->subDays($unreadDays);
         
-        $this->info("Starting cleanup of read notifications older than {$days} days (read before {$cutoffDate->format('Y-m-d H:i:s')})");
+        $this->info("Starting cleanup of notifications:");
+        $this->info("- Read notifications older than {$days} days (read before {$cutoffDate->format('Y-m-d H:i:s')})");
+        $this->info("- Unread notifications older than {$unreadDays} days (created before {$unreadCutoffDate->format('Y-m-d H:i:s')})");
         
         try {
-            // Get count before deletion
-            // Delete notifications that are read AND:
-            // 1. Have read_at timestamp older than cutoff date, OR
-            // 2. Don't have read_at but were created before cutoff date (legacy data)
-            $countBefore = Notification::where('is_read', true)
+            // Get count before deletion for read notifications
+            $readCountBefore = Notification::where('is_read', true)
                 ->where(function($query) use ($cutoffDate) {
                     $query->where(function($q) use ($cutoffDate) {
                         // Has read_at and it's older than cutoff
@@ -52,13 +53,18 @@ class CleanupOldNotifications extends Command
                 })
                 ->count();
             
-            if ($countBefore === 0) {
-                $this->info("No read notifications found to delete.");
+            // Get count before deletion for unread notifications
+            $unreadCountBefore = Notification::where('is_read', false)
+                ->where('created_at', '<', $unreadCutoffDate)
+                ->count();
+            
+            if ($readCountBefore === 0 && $unreadCountBefore === 0) {
+                $this->info("No notifications found to delete.");
                 return Command::SUCCESS;
             }
             
             // Delete read notifications older than cutoff date
-            $deleted = Notification::where('is_read', true)
+            $deletedRead = Notification::where('is_read', true)
                 ->where(function($query) use ($cutoffDate) {
                     $query->where(function($q) use ($cutoffDate) {
                         // Has read_at and it's older than cutoff
@@ -72,13 +78,26 @@ class CleanupOldNotifications extends Command
                 })
                 ->delete();
             
+            // Delete unread notifications older than unread cutoff date
+            $deletedUnread = Notification::where('is_read', false)
+                ->where('created_at', '<', $unreadCutoffDate)
+                ->delete();
+            
+            $totalDeleted = $deletedRead + $deletedUnread;
+            
             $this->info("Cleanup completed successfully!");
-            $this->info("- Read notifications deleted: {$deleted}");
+            $this->info("- Read notifications deleted: {$deletedRead}");
+            $this->info("- Unread notifications deleted: {$deletedUnread}");
+            $this->info("- Total deleted: {$totalDeleted}");
             
             Log::info('Notification cleanup completed', [
-                'days' => $days,
-                'cutoff_date' => $cutoffDate->format('Y-m-d H:i:s'),
-                'deleted_count' => $deleted
+                'read_days' => $days,
+                'unread_days' => $unreadDays,
+                'read_cutoff_date' => $cutoffDate->format('Y-m-d H:i:s'),
+                'unread_cutoff_date' => $unreadCutoffDate->format('Y-m-d H:i:s'),
+                'deleted_read_count' => $deletedRead,
+                'deleted_unread_count' => $deletedUnread,
+                'total_deleted' => $totalDeleted
             ]);
             
             return Command::SUCCESS;

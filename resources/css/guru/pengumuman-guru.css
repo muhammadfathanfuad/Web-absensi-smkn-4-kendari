@@ -1,0 +1,71 @@
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #dee2e6;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.timeline-text {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+/* Animation for announcement items */
+.announcement-item {
+    transition: all 0.3s ease;
+}
+
+.announcement-item.read {
+    opacity: 0.75;
+    transform: translateY(5px);
+}
+
+/* Smooth transition for read status changes */
+.mark-read-btn {
+    transition: all 0.2s ease;
+}
+
+.mark-read-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.bx-spin {
+    animation: spin 1s linear infinite;
+}
+

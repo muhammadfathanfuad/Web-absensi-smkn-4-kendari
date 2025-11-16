@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Murid;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -50,6 +51,12 @@ class PengaturanController extends Controller
             'password_lama' => 'required',
             'password_baru' => 'required|min:8',
             'konfirmasi_password' => 'required|same:password_baru',
+        ], [
+            'password_lama.required' => 'Password saat ini harus diisi.',
+            'password_baru.required' => 'Password baru harus diisi.',
+            'password_baru.min' => 'Password baru minimal 8 karakter.',
+            'konfirmasi_password.required' => 'Konfirmasi password harus diisi.',
+            'konfirmasi_password.same' => 'Konfirmasi password baru tidak sesuai dengan password baru yang dimasukkan.',
         ]);
 
         if ($validator->fails()) {
@@ -67,13 +74,20 @@ class PengaturanController extends Controller
             if (!Hash::check($request->password_lama, $user->password_hash)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Password lama tidak sesuai.'
+                    'message' => 'Password saat ini yang dimasukkan salah. Silakan periksa kembali password Anda.',
+                    'errors' => ['password_lama' => ['Password saat ini yang dimasukkan salah.']]
                 ], 422);
             }
 
             // Update password
             $user->password_hash = Hash::make($request->password_baru);
             $user->save();
+
+            // Mark change_password notification as read
+            Notification::where('user_id', $user->id)
+                ->where('type', 'change_password')
+                ->where('is_read', false)
+                ->update(['is_read' => true, 'read_at' => now()]);
 
             return response()->json([
                 'success' => true,

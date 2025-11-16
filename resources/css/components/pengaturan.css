@@ -1,0 +1,30 @@
+/* Pengaturan Components CSS */
+/* Shared CSS for all pengaturan components (admin, guru, murid) */
+
+/* Avatar styling */
+.pengaturan-avatar-container {
+    width: 120px;
+    height: 120px;
+}
+
+.pengaturan-avatar-container .avatar-lg {
+    width: 100%;
+    height: 100%;
+}
+
+.pengaturan-avatar-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Photo input hidden */
+.pengaturan-photo-input {
+    display: none;
+}
+
+/* Photo error message */
+.pengaturan-photo-error {
+    display: none;
+}
+

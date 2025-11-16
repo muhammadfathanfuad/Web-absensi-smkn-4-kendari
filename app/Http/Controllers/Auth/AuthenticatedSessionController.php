@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -45,6 +46,30 @@ class AuthenticatedSessionController extends Controller
         if (!$user->roles()->exists()) {
             Auth::logout();
             return redirect('/login')->withErrors(['email' => 'Akun Anda belum diberi peran. Silakan hubungi administrator.']);
+        }
+
+        // Check if user is still using default password ("password")
+        if ($user->isUsingDefaultPassword()) {
+            // Check if notification already exists (regardless of read status)
+            $existingNotification = Notification::where('user_id', $user->id)
+                ->where('type', 'change_password')
+                ->first();
+
+            if (!$existingNotification) {
+                // Create notification to remind user to change password (only once)
+                Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'change_password',
+                    'title' => 'Ganti Password Anda',
+                    'message' => 'Anda masih menggunakan password default. Silakan ganti password Anda untuk keamanan akun.',
+                    'is_read' => false,
+                ]);
+            } elseif ($existingNotification->is_read) {
+                // If notification exists but is read, mark it as unread again
+                // This ensures the notification always appears if user still uses default password
+                $existingNotification->markAsUnread();
+            }
+            // If notification exists and is unread, do nothing (already showing)
         }
 
         if ($user->roles()->where('name', 'admin')->exists()) {

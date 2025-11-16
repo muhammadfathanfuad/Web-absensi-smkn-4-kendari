@@ -8,20 +8,12 @@
 @endsection
 
 @section('content')
-    {{-- Page Title --}}
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Riwayat Absensi</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item">Siswa</li>
-                        <li class="breadcrumb-item active">Riwayat Absensi</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('components.common.page-title-standard', [
+        'title' => 'Siswa',
+        'subtitle' => 'Riwayat Absensi',
+        'breadcrumbParent' => 'Siswa',
+        'breadcrumbActive' => 'Riwayat Absensi'
+    ])
 
     {{-- Attendance History Card --}}
     <div class="row">
@@ -218,131 +210,16 @@
     </div>
 @endsection
 
-@section('scripts')
-    {{-- Menambahkan JS untuk Date Picker --}}
+@push('scripts')
+    {{-- Menambahkan JS untuk Date Picker (CDN) --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-        // Inisialisasi Flatpickr untuk filter rentang tanggal
-        const fp = flatpickr("#date-range", {
-            mode: "range",
-            dateFormat: "Y-m-d",
-            onClose: function(selectedDates, dateStr, instance) {
-                if (selectedDates.length === 2) {
-                    document.getElementById('date-from').value = selectedDates[0].toISOString().slice(0,10);
-                    document.getElementById('date-to').value = selectedDates[1].toISOString().slice(0,10);
-                }
-            }
-        });
 
-        // Show loading indicator
-        function showExportLoading(format = 'pdf', reportType = '', message = '', type = 'info') {
-            const formatText = format.toUpperCase();
-            const iconClass = type === 'success' ? 'bx-check-circle' : type === 'danger' ? 'bx-x-circle' : 'bx-loader-alt';
-            const iconColor = type === 'success' ? '#28a745' : type === 'danger' ? '#dc3545' : '#007bff';
-            const bgColor = type === 'success' ? '#d4edda' : type === 'danger' ? '#f8d7da' : '#d1ecf1';
-            const borderColor = type === 'success' ? '#c3e6cb' : type === 'danger' ? '#f5c6cb' : '#bee5eb';
-            const spinClass = type === 'info' ? 'bx-spin' : '';
-            
-            const iconHtml = type === 'info' 
-                ? `<i class="bx bx-loader-alt ${spinClass}" style="font-size: 24px; color: ${iconColor};"></i>`
-                : `<i class="bx ${iconClass}" style="font-size: 24px; color: ${iconColor};"></i>`;
-            
-            const loadingHtml = `
-                <div id="exportLoading" class="alert alert-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'info'} show" 
-                     style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background-color: ${bgColor}; border-color: ${borderColor};">
-                    <div class="d-flex align-items-center gap-2">
-                        ${iconHtml}
-                        <div>
-                            <strong>${message || `Sedang memproses export ${formatText}${reportType ? ' - ' + reportType : ''}...`}</strong>
-                            ${message ? '' : '<br><small>File akan segera diunduh</small>'}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Remove existing loading if any
-            const existingLoading = document.getElementById('exportLoading');
-            if (existingLoading) {
-                existingLoading.remove();
-            }
-            
-            // Add new loading indicator
-            document.body.insertAdjacentHTML('beforeend', loadingHtml);
-        }
-        
-        // Show success message in loading indicator
-        function showExportSuccess(message = 'Export berhasil! File sedang diunduh.') {
-            showExportLoading('pdf', '', message, 'success');
-            setTimeout(function() {
-                const loadingElement = document.getElementById('exportLoading');
-                if (loadingElement) {
-                    loadingElement.classList.remove('show');
-                    setTimeout(function() {
-                        loadingElement.remove();
-                    }, 150);
-                }
-            }, 3000);
-        }
-        
-        // Show error message in loading indicator
-        function showExportError(message = 'Gagal mengexport data. Silakan coba lagi atau hubungi administrator.') {
-            showExportLoading('pdf', '', message, 'danger');
-            setTimeout(function() {
-                const loadingElement = document.getElementById('exportLoading');
-                if (loadingElement) {
-                    loadingElement.classList.remove('show');
-                    setTimeout(function() {
-                        loadingElement.remove();
-                    }, 3000);
-                }
-            }, 5000);
-        }
-        
-        // Export function for student attendance history
-        function exportAbsensiMurid(format = 'pdf') {
-            try {
-                // Prevent duplicate calls
-                if (window.exportNavigating) {
-                    return;
-                }
-                
-                // Get filter values
-                const fromDate = document.getElementById('date-from')?.value || '';
-                const toDate = document.getElementById('date-to')?.value || '';
-                const subjectId = document.getElementById('subject_id')?.value || '';
-                
-                // Build export URL
-                let exportUrl = '{{ route("murid.absensi.export") }}?format=' + format;
-                if (fromDate) {
-                    exportUrl += '&from=' + encodeURIComponent(fromDate);
-                }
-                if (toDate) {
-                    exportUrl += '&to=' + encodeURIComponent(toDate);
-                }
-                if (subjectId) {
-                    exportUrl += '&subject_id=' + encodeURIComponent(subjectId);
-                }
-                
-                // Show loading indicator
-                showExportLoading(format, 'Riwayat Absensi');
-                
-                // Set flag to prevent duplicate calls
-                window.exportNavigating = true;
-                
-                // Trigger download
-                window.location.href = exportUrl;
-                
-                // Show success message after a delay
-                setTimeout(function() {
-                    showExportSuccess('Export berhasil! File sedang diunduh.');
-                    window.exportNavigating = false;
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Error exporting attendance history:', error);
-                showExportError('Terjadi kesalahan saat mengexport data. Silakan coba lagi.');
-                window.exportNavigating = false;
-            }
-        }
+    {{-- Inject routes ke window object untuk digunakan oleh JavaScript --}}
+    <script>
+        window.riwayatAbsensiRoutes = {
+            export: '{{ route("murid.absensi.export") }}'
+        };
     </script>
-@endsection
+
+    @vite(['resources/js/murid/riwayat-absensi.js'])
+@endpush

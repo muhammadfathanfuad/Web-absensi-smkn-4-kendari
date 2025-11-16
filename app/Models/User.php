@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
@@ -67,5 +68,14 @@ class User extends Authenticatable
     public function student()
     {
         return $this->hasOne(Student::class);
+    }
+
+    /**
+     * Check if user is still using default password ("password")
+     */
+    public function isUsingDefaultPassword(): bool
+    {
+        // Check if password_hash matches the default password "password" (hashed)
+        return Hash::check('password', $this->password_hash);
     }
 }

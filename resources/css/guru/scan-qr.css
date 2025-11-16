@@ -1,0 +1,64 @@
+#stopSession {
+    display: none !important;
+}
+#stopSession.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#stopSession iconify-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+}
+
+#confirmStopSessionButton iconify-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+}
+
+/* General iconify-icon alignment for buttons */
+.btn iconify-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+}
+
+#qrcode canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 8px;
+}
+
+#qrcode {
+    overflow: hidden;
+}
+
+/* Fix dropdown button text overflow on mobile */
+#dropdownmapel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    position: relative;
+}
+
+@media (max-width: 575.98px) {
+    #dropdownmapel {
+        font-size: 0.875rem;
+        padding-left: 0.75rem;
+        padding-right: 2.5rem;
+    }
+    
+    /* Ensure dropdown toggle arrow is visible */
+    .dropdown > #dropdownmapel::after {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 0;
+    }
+}
+

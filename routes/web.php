@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\UserController;
-use Exception;
-
-// Import controller yang baru kita buat
 use App\Http\Controllers\Guru\DashboardController;
 use App\Http\Controllers\Guru\AbsensiController;
 use App\Http\Controllers\Guru\PengumumanController;
@@ -21,6 +18,7 @@ use App\Http\Controllers\Murid\DashboardMuridController;
 use App\Http\Controllers\Murid\JadwalPelajaranController;
 use App\Http\Controllers\Murid\ScanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use Exception;
 
 require __DIR__ . '/auth.php';
 
@@ -221,56 +219,84 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         return response()->json(['success' => true, 'message' => 'Pengaturan keamanan berhasil disimpan']);
     })->name('admin.pengaturan.security');
     Route::post('/admin/pengaturan/profile', function (\Illuminate\Http\Request $request) {
-        $user = Auth::user();
-        
-        // Validation rules
-        $rules = [
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'required|string|max:20',
-            'current_password' => 'required|string'
-        ];
+        try {
+            $user = Auth::user();
+            
+            // Validation rules
+            $rules = [
+                'full_name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+                'phone' => 'nullable|string|max:20',
+                'current_password' => 'required|string'
+            ];
 
-        // Add password validation if new password is provided
-        if ($request->filled('new_password')) {
-            $rules['new_password'] = 'required|string|min:8|confirmed';
-            $rules['new_password_confirmation'] = 'required|string|min:8';
-        }
+            // Add password validation if new password is provided
+            if ($request->filled('new_password')) {
+                $rules['new_password'] = 'required|string|min:8|confirmed';
+                $rules['new_password_confirmation'] = 'required|string|min:8';
+            }
 
-        $request->validate($rules);
+            $validated = $request->validate($rules, [
+                'current_password.required' => 'Password saat ini harus diisi.',
+                'new_password.required' => 'Password baru harus diisi.',
+                'new_password.min' => 'Password baru minimal 8 karakter.',
+                'new_password.confirmed' => 'Konfirmasi password baru tidak sesuai dengan password baru yang dimasukkan.',
+                'new_password_confirmation.required' => 'Konfirmasi password harus diisi.',
+            ]);
 
-        // Verify current password
-        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password_hash)) {
+            // Verify current password
+            if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password_hash)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Password saat ini yang dimasukkan salah. Silakan periksa kembali password Anda.',
+                    'errors' => ['current_password' => ['Password saat ini yang dimasukkan salah.']]
+                ], 422);
+            }
+
+            // Prepare update data
+            $updateData = [
+                'full_name' => $request->full_name,
+                'email' => $request->email,
+                'phone' => $request->phone
+            ];
+
+            // Update password if new password is provided
+            if ($request->filled('new_password')) {
+                $updateData['password_hash'] = \Illuminate\Support\Facades\Hash::make($request->new_password);
+            }
+
+            // Update user profile
+            $user->update($updateData);
+
+            // Mark change_password notification as read if password was changed
+            if ($request->filled('new_password')) {
+                \App\Models\Notification::where('user_id', $user->id)
+                    ->where('type', 'change_password')
+                    ->where('is_read', false)
+                    ->update(['is_read' => true, 'read_at' => now()]);
+            }
+
+            $message = 'Profil berhasil diperbarui';
+            if ($request->filled('new_password')) {
+                $message .= ' dan password berhasil diubah';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Password saat ini tidak sesuai'
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Prepare update data
-        $updateData = [
-            'full_name' => $request->full_name,
-            'email' => $request->email,
-            'phone' => $request->phone
-        ];
-
-        // Update password if new password is provided
-        if ($request->filled('new_password')) {
-            $updateData['password_hash'] = \Illuminate\Support\Facades\Hash::make($request->new_password);
-        }
-
-        // Update user profile
-        $user->update($updateData);
-
-        $message = 'Profil berhasil diperbarui';
-        if ($request->filled('new_password')) {
-            $message .= ' dan password berhasil diubah';
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $message
-        ]);
     })->name('admin.pengaturan.profile');
     
     // Admin upload photo
@@ -529,9 +555,6 @@ Route::get('/storage/users/{filename}', function ($filename) {
     return response()->file($path);
 })->where('filename', '.*')->name('storage.users');
 
-// Catch-all routes
-Route::group(['prefix' => '/', 'middleware' => 'auth'], function () {
-    Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])->name('second');
-    Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])->name('third');
-    Route::get('{any}', [RoutingController::class, 'root'])->name('any');
-});
+// Catch-all routes removed to prevent duplicate URL access
+// All routes should be explicitly defined in routes/web.php
+// If you need catch-all routes, ensure they don't conflict with existing routes

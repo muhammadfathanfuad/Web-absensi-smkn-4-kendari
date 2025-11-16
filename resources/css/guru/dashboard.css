@@ -1,0 +1,19 @@
+/* Guru Dashboard CSS */
+
+/* Presence status box styling */
+.presence-status-box {
+    transition: all 0.3s ease;
+    min-width: 100px;
+    max-width: 130px;
+}
+
+.presence-status-badge {
+    font-size: 0.65rem;
+    margin-top: 2px;
+}
+
+.presence-status-box i {
+    display: block;
+    margin-bottom: 4px;
+}
+

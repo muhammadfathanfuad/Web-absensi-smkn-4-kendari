@@ -1,12 +1,12 @@
 <div class="app-sidebar">
      <!-- Sidebar Logo -->
      <div class="logo-box">
-          <a href="<?php echo e(route('any', 'index')); ?>" class="logo-dark">
+          <a href="<?php echo e(route('guru.dashboard')); ?>" class="logo-dark">
                <img src="/images/logo-sm.png" class="logo-sm" alt="logo sm">
                <img src="/images/logo-dark.png" class="logo-lg" alt="logo dark">
           </a>
 
-          <a href="<?php echo e(route('any', 'index')); ?>" class="logo-light">
+          <a href="<?php echo e(route('guru.dashboard')); ?>" class="logo-light">
                <img src="/images/logo-sm.png" class="logo-sm" alt="logo sm">
                <img src="/images/logo-light.png" class="logo-lg" alt="logo light">
           </a>
@@ -19,25 +19,25 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="<?php echo e(route('any', '/guru/dashboard')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.dashboard')); ?>">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>
                          <span class="nav-text"> Dashboard </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'scan-qr')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.absensi.scan')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-qr-scan'  ></i> 
                          </span>
                          <span class="nav-text"> Absensi </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'jadwal-mengajar')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.jadwal-mengajar')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>
                          <span class="nav-text"> Jadwal Mengajar </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'status-absensi')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.status-absensi')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-history'  ></i>    
                          </span>
@@ -55,19 +55,19 @@
                          </span>
                          <span class="nav-text"> Permohonan Izin </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'pengumuman-guru')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.pengumuman-guru')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-news'></i>
                          </span>
                          <span class="nav-text"> Pengumuman </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'pengaturan-guru')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.pengaturan-guru')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-cog'></i>
                          </span>
                          <span class="nav-text"> Pengaturan </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'bantuan-guru')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('guru.bantuan-guru')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-help-circle'></i>
                          </span>

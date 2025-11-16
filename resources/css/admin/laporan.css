@@ -1,0 +1,92 @@
+/* Admin Laporan CSS */
+.search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.search-box {
+    width: 300px;
+}
+
+#teacherSearchInput {
+    padding-right: 40px;
+}
+
+/* Horizontal scroll for report tabs */
+.report-tabs-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 #f8f9fa;
+    width: 100%;
+}
+
+.report-tabs-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+
+.report-tabs-wrapper::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.report-tabs-wrapper::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.report-tabs-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+.report-tabs-wrapper .btn-group {
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.report-tabs-wrapper .btn-group .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Mobile responsive */
+@media (max-width: 575.98px) {
+    .report-header-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .report-label {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .report-header-controls .btn-group {
+        width: 100%;
+    }
+    
+    .report-header-controls .btn {
+        width: 100%;
+    }
+    
+    .report-tabs-wrapper .btn-group .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Tablet responsive */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .report-tabs-wrapper .btn-group .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.875rem;
+    }
+}
+

@@ -1,0 +1,162 @@
+/* Only basic styling for reader container */
+#reader {
+    background: #000;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Center text content inside reader */
+#reader .text-muted,
+#reader .text-center {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ensure icon and text are centered */
+#reader i,
+#reader .fs-48 {
+    display: block;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Center all text elements */
+#reader div,
+#reader small {
+    text-align: center;
+    width: 100%;
+}
+
+/* 1. Paksa VIDEO untuk tampil dan mengisi kontainer */
+#reader video,
+#reader > div > video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* Mirror/flip video hanya di desktop (bukan mobile) */
+@media (min-width: 768px) {
+    #reader video,
+    #reader > div > video {
+        transform: scaleX(-1) !important; /* Mirror/flip video horizontally hanya di desktop */
+    }
+}
+
+/* 2. Paksa CANVAS (yang dipakai library) untuk SEMBUNYI */
+#reader canvas,
+#reader > div > canvas {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+}
+
+/* Ensure container takes full space */
+#reader > div {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 400px !important;
+}
+
+/* Hide html5-qrcode default buttons, links, and controls */
+/* BUT: Keep camera permission button clickable (we'll click it automatically) */
+/* Target specific IDs and classes from html5-qrcode library */
+#reader #html5-qrcode-button-file-selection,
+#reader #html5-qrcode-anchor-scan-type-change,
+#reader #html5qr-code-full-region__dashboard,
+#reader #html5qr-code-full-region__dashboard_section,
+#reader #html5qr-code-full-region__dashboard_section_csr,
+#reader #html5qr-code-full-region__dashboard_section_swaplink,
+#reader button[id*="file-selection"],
+#reader a[id*="scan-type-change"],
+#reader a[href*="file"],
+#reader a[href*="image"],
+#reader select,
+#reader #html5-qrcode-select-camera,
+#reader #html5-qrcode-button-stop-scan {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* Hide camera permission button visually but keep it functional for auto-click */
+#reader #html5-qrcode-button-camera-permission,
+#reader button[id*="camera-permission"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    /* Keep pointer-events: auto so it can be clicked programmatically */
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+}
+
+/* Hide all select elements inside reader */
+#reader select {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* Hide all buttons inside reader except video controls */
+#reader button:not(#basicVideo) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* Hide text elements that might appear (but keep video/canvas visible) */
+#reader > div > span:not(:empty),
+#reader > div > p:not(:empty),
+#reader > div > label:not(:empty) {
+    display: none !important;
+}
+
+/* Ensure video container is full width */
+#reader > div[style*="display"] {
+    width: 100% !important;
+    height: 100% !important;
+}
+

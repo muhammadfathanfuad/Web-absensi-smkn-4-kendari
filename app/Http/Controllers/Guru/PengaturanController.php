@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -75,21 +76,43 @@ class PengaturanController extends Controller
 
     public function updatePassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Map form field names to validation field names
+        $requestData = $request->all();
+        if ($request->has('new_password')) {
+            $requestData['password'] = $request->new_password;
+        }
+        if ($request->has('new_password_confirmation')) {
+            $requestData['password_confirmation'] = $request->new_password_confirmation;
+        }
+        
+        $validator = Validator::make($requestData, [
             'current_password' => 'required',
             'password' => 'required|min:8|confirmed',
         ], [
-            'current_password.required' => 'Password lama harus diisi.',
+            'current_password.required' => 'Password saat ini harus diisi.',
             'password.required' => 'Password baru harus diisi.',
             'password.min' => 'Password baru minimal 8 karakter.',
-            'password.confirmed' => 'Konfirmasi password tidak sesuai.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sesuai dengan password baru yang dimasukkan.',
         ]);
 
         if ($validator->fails()) {
             if ($request->ajax()) {
+                // Map errors to form field names
+                $errors = $validator->errors();
+                $mappedErrors = [];
+                
+                if ($errors->has('current_password')) {
+                    $mappedErrors['current_password'] = $errors->get('current_password');
+                }
+                if ($errors->has('password')) {
+                    // Map password errors to new_password for form field
+                    $mappedErrors['new_password'] = $errors->get('password');
+                }
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validasi gagal: ' . implode(', ', $validator->errors()->all())
+                    'message' => 'Validasi gagal',
+                    'errors' => $mappedErrors
                 ], 422);
             }
             return back()->withErrors($validator)->withInput();
@@ -103,15 +126,23 @@ class PengaturanController extends Controller
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Password lama tidak sesuai.'
+                        'message' => 'Password saat ini yang dimasukkan salah. Silakan periksa kembali password Anda.',
+                        'errors' => ['current_password' => ['Password saat ini yang dimasukkan salah.']]
                     ], 422);
                 }
-                return back()->withErrors(['current_password' => 'Password lama tidak sesuai.'])->withInput();
+                return back()->withErrors(['current_password' => 'Password saat ini yang dimasukkan salah.'])->withInput();
             }
 
             // Update password
-            $user->password_hash = Hash::make($request->password);
+            $passwordToHash = $request->has('new_password') ? $request->new_password : $request->password;
+            $user->password_hash = Hash::make($passwordToHash);
             $user->save();
+
+            // Mark change_password notification as read
+            Notification::where('user_id', $user->id)
+                ->where('type', 'change_password')
+                ->where('is_read', false)
+                ->update(['is_read' => true, 'read_at' => now()]);
 
             if ($request->ajax()) {
                 return response()->json([

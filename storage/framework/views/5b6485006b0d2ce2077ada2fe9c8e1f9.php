@@ -9,6 +9,8 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 
+<meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(), geolocation=(), interest-cohort=()">
+
 
 <!-- App favicon -->
 <link rel="shortcut icon" href="/images/favicon.png"><?php /**PATH C:\Users\fatha\Herd\website_absensi_smkn_4_kendari\resources\views/layouts/partials/title-meta.blade.php ENDPATH**/ ?>

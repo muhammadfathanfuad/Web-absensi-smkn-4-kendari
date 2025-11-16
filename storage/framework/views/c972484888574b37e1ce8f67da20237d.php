@@ -1,12 +1,12 @@
 <div class="app-sidebar">
      <!-- Sidebar Logo -->
      <div class="logo-box">
-          <a href="<?php echo e(route('any', 'index')); ?>" class="logo-dark">
+          <a href="<?php echo e(route('admin.dashboard')); ?>" class="logo-dark">
                <img src="/images/logo-sm.png" class="logo-sm" alt="logo sm">
                <img src="/images/logo-dark.png" class="logo-lg" alt="logo dark">
           </a>
 
-          <a href="<?php echo e(route('any', 'index')); ?>" class="logo-light">
+          <a href="<?php echo e(route('admin.dashboard')); ?>" class="logo-light">
                <img src="/images/logo-sm.png" class="logo-sm" alt="logo sm">
                <img src="/images/logo-light.png" class="logo-lg" alt="logo light">
           </a>
@@ -19,7 +19,7 @@
                <li class="menu-title">Menu...</li>
 
                <li class="nav-item">
-                    <a class="nav-link" href="<?php echo e(route('any', 'admin/dashboard')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('admin.dashboard')); ?>">
                          <span class="nav-icon">
                               <iconify-icon icon="solar:widget-2-outline"></iconify-icon>
                          </span>
@@ -31,19 +31,19 @@
                          </span>
                          <span class="nav-text"> Manajemen User</span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'admin.jadwal-pelajaran')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('admin.jadwal-pelajaran')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-calendar-alt'  ></i>   
                          </span>
                          <span class="nav-text"> Jadwal Pelajaran </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'admin.laporan')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('admin.laporan')); ?>">
                          <span class="nav-icon">
                               <i class='bx  bx-history'  ></i>    
                          </span>
                          <span class="nav-text"> Laporan </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'admin.pengumuman')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('admin.pengumuman')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-news'></i>    
                          </span>
@@ -55,13 +55,13 @@
                          </span>
                          <span class="nav-text"> Manajemen Pengganti </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'admin.pengaturan')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('admin.pengaturan')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-cog'></i>    
                          </span>
                          <span class="nav-text"> Pengaturan </span>
                     </a>
-                    <a class="nav-link" href="<?php echo e(route('any', 'admin.bantuan')); ?>">
+                    <a class="nav-link" href="<?php echo e(route('admin.bantuan')); ?>">
                          <span class="nav-icon">
                               <i class='bx bx-help-circle'></i>    
                          </span>

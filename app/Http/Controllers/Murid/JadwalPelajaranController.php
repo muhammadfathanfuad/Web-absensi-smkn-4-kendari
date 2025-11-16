@@ -99,6 +99,51 @@ class JadwalPelajaranController extends Controller
 
         // If AJAX request, return JSON
         if ($request->ajax() || $request->wantsJson()) {
+            // Check if request is for all timetables with week filter
+            if ($request->has('week_filter')) {
+                // Return all timetables filtered by week
+                $allTimetablesData = $allTimetables->map(function($tt) {
+                    $days = [
+                        1 => 'Senin',
+                        2 => 'Selasa',
+                        3 => 'Rabu',
+                        4 => 'Kamis',
+                        5 => 'Jumat',
+                        6 => 'Sabtu',
+                        7 => 'Minggu'
+                    ];
+                    
+                    // Format time to HH:mm
+                    $startTime = $tt->start_time;
+                    $endTime = $tt->end_time;
+                    if ($startTime instanceof \DateTime || is_string($startTime)) {
+                        $startTime = \Carbon\Carbon::parse($startTime)->format('H:i');
+                    }
+                    if ($endTime instanceof \DateTime || is_string($endTime)) {
+                        $endTime = \Carbon\Carbon::parse($endTime)->format('H:i');
+                    }
+                    
+                    return [
+                        'day_of_week' => $tt->day_of_week,
+                        'day_name' => $days[$tt->day_of_week] ?? 'Unknown',
+                        'subject_name' => optional($tt->classSubject->subject)->name ?? '—',
+                        'subject_code' => optional($tt->classSubject->subject)->code ?? null,
+                        'class_name' => optional($tt->classSubject->class)->name ?? '—',
+                        'location_type' => $tt->location_type ?? null,
+                        'type' => $tt->type ?? 'teori',
+                        'teacher_name' => optional(optional($tt->classSubject->teacher)->user)->full_name ?? '—',
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                    ];
+                })->values();
+
+                return response()->json([
+                    'success' => true,
+                    'allTimetables' => $allTimetablesData,
+                    'timetables' => $allTimetablesData // Also include as timetables for backward compatibility
+                ]);
+            }
+            
             // For today's timetable (view_day = today or not set)
             if ($viewDay !== 'besok') {
                 $timetablesData = $timetables->map(function($tt) {

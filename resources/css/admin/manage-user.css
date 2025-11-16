@@ -1,0 +1,110 @@
+/* Admin User Management CSS */
+/* Mobile optimization for tabs */
+@media (max-width: 575.98px) {
+    .nav-tabs .nav-link {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .nav-tabs .nav-item {
+        flex: 1;
+    }
+
+    .nav-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+    }
+
+    /* Mobile optimization for action buttons */
+    .card-header .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+
+    /* Override untuk tab Data User - container tetap horizontal */
+    #semua .card-header .d-flex,
+    .tab-pane#semua .card-header .d-flex {
+        align-items: center !important;
+    }
+
+    /* Tambahkan margin top untuk tombol action di tab Data User */
+    #semua #single-actions,
+    .tab-pane#semua #single-actions {
+        margin-top: 1.5rem !important;
+    }
+
+    .card-header .text-muted {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Tab lain tetap seperti sebelumnya */
+    #single-actions-murid {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-left: 0 !important;
+    }
+
+    #single-actions-guru {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-left: 0 !important;
+    }
+
+    #single-actions-murid .btn {
+        flex: 1;
+        min-width: 0;
+    }
+
+    #single-actions-guru .btn {
+        flex: 1;
+        min-width: 0;
+        max-width: 200px;
+    }
+
+    /* Khusus untuk tab Data User - tombol di tengah dan bersampingan */
+    #semua #single-actions,
+    .tab-pane#semua #single-actions,
+    #semua #single-actions.ms-auto,
+    .tab-pane#semua #single-actions.ms-auto {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-inline-start: 0 !important;
+        margin-inline-end: 0 !important;
+    }
+
+    #semua #single-actions .btn,
+    .tab-pane#semua #single-actions .btn,
+    #semua #single-actions .btn-group,
+    .tab-pane#semua #single-actions .btn-group,
+    #semua #single-actions .btn-group .btn,
+    .tab-pane#semua #single-actions .btn-group .btn {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+    }
+
+    #bulk-actions,
+    #bulk-actions-guru,
+    #bulk-actions-murid {
+        width: 100%;
+    }
+
+    #bulk-actions .btn,
+    #bulk-actions-guru .btn,
+    #bulk-actions-murid .btn {
+        width: 100%;
+    }
+}
+

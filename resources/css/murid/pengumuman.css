@@ -1,0 +1,75 @@
+/* Footer sticky di mobile */
+@media (max-width: 575.98px) {
+    .page-content {
+        padding-bottom: 60px;
+    }
+    
+    .footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000;
+        width: 100% !important;
+    }
+}
+
+/* Animation for announcement items */
+.announcement-item {
+    transition: all 0.3s ease;
+}
+
+.announcement-item.read {
+    opacity: 0.75;
+    transform: translateY(5px);
+}
+
+/* Smooth transition for read status changes */
+.mark-read-btn {
+    transition: all 0.2s ease;
+}
+
+.mark-read-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.bx-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Gap utility for buttons */
+.gap-2 {
+    gap: 0.5rem;
+}
+
+/* Modal styles */
+.modal-lg {
+    max-width: 800px;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#modalContent {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.modal-header {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.modal-footer {
+    border-top: 2px solid #e9ecef;
+}
+

@@ -136,6 +136,8 @@ window.handleNotificationRedirect = function(notifType, element) {
                     redirectUrl = '<?php echo e(route("guru.delegasi")); ?>';
                 } else if (notifType === 'leave_request') {
                     redirectUrl = '<?php echo e(route("guru.dashboard")); ?>#list-siswa-izin-hari-ini';
+                } else if (notifType === 'change_password') {
+                    redirectUrl = '<?php echo e(route("guru.pengaturan-guru")); ?>';
                 }
             <?php elseif(auth()->user()->roles()->where('name', 'student')->exists()): ?>
                 // Student routes
@@ -145,6 +147,8 @@ window.handleNotificationRedirect = function(notifType, element) {
                     redirectUrl = '<?php echo e(route("murid.delegasi")); ?>';
                 } else if (notifType === 'leave_request') {
                     redirectUrl = '<?php echo e(route("murid.permohonan-izin")); ?>';
+                } else if (notifType === 'change_password') {
+                    redirectUrl = '<?php echo e(route("murid.pengaturan")); ?>';
                 }
             <?php elseif(auth()->user()->roles()->where('name', 'admin')->exists()): ?>
                 // Admin routes
@@ -154,6 +158,8 @@ window.handleNotificationRedirect = function(notifType, element) {
                     redirectUrl = '<?php echo e(route("admin.delegasi")); ?>';
                 } else if (notifType === 'leave_request') {
                     redirectUrl = '<?php echo e(route("admin.delegasi")); ?>#permohonan-izin'; // Redirect to delegasi page with permohonan izin tab active
+                } else if (notifType === 'change_password') {
+                    redirectUrl = '<?php echo e(route("admin.pengaturan")); ?>';
                 }
             <?php endif; ?>
         <?php endif; ?>

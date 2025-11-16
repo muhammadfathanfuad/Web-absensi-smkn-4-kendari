@@ -1,0 +1,16 @@
+/* Footer sticky di mobile */
+@media (max-width: 575.98px) {
+    .page-content {
+        padding-bottom: 60px;
+    }
+    
+    .footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000;
+        width: 100% !important;
+    }
+}
+

@@ -1,0 +1,136 @@
+/* Custom styling for pie chart legend */
+.apexcharts-legend {
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+
+.apexcharts-legend-series {
+    display: inline-block !important;
+    margin-right: 15px !important;
+    margin-bottom: 8px !important;
+}
+
+.apexcharts-legend-text {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+/* Responsive legend for smaller screens */
+@media (max-width: 768px) {
+    #attendanceTrendsChart .apexcharts-legend,
+    #attendanceTrendsChart .apexcharts-legend.apexcharts-align-left,
+    .apexcharts-legend {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+    }
+
+    #attendanceTrendsChart .apexcharts-legend-series,
+    .apexcharts-legend-series {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        margin-right: 0 !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        clear: both !important;
+    }
+
+    #attendanceTrendsChart .apexcharts-legend-marker,
+    .apexcharts-legend-marker {
+        margin-right: 8px !important;
+        flex-shrink: 0 !important;
+    }
+
+    #attendanceTrendsChart .apexcharts-legend-text,
+    .apexcharts-legend-text {
+        margin-left: 0 !important;
+    }
+
+    /* Teacher Performance Chart - Mobile optimization */
+    #teacherPerformanceChart .apexcharts-yaxis {
+        max-width: 90px !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-yaxis-texts-g {
+        max-width: 90px !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-yaxis-label {
+        max-width: 85px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-inner {
+        margin-left: 95px !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-grid {
+        margin-left: 95px !important;
+    }
+
+    /* Tooltip optimization for mobile */
+    #teacherPerformanceChart .apexcharts-tooltip {
+        font-size: 10px !important;
+        padding: 6px 8px !important;
+        max-width: 200px !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-tooltip-title {
+        font-size: 10px !important;
+        padding: 4px 0 !important;
+        margin-bottom: 4px !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-tooltip-series-group {
+        padding: 2px 0 !important;
+        font-size: 10px !important;
+    }
+
+    #teacherPerformanceChart .apexcharts-tooltip-marker {
+        width: 8px !important;
+        height: 8px !important;
+        margin-right: 4px !important;
+    }
+}
+
+.stat-item {
+    padding: 0.5rem 0;
+}
+
+.equal-height-cards {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.equal-height-cards .card {
+    display: flex;
+    flex-direction: column;
+}
+
+.equal-height-cards .card-body {
+    flex: 1;
+}
+
+/* Pagination Styles */
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+}
+
+.pagination .page-item.active {
+    background-color: #0d6efd !important;
+}
+
+.pagination .page-item.active .page-link:hover {
+    background-color: #0b5ed7 !important;
+    border-color: #0a58ca !important;
+}

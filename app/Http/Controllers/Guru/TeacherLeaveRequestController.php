@@ -89,7 +89,6 @@ class TeacherLeaveRequestController extends Controller
         ->whereHas('classSubject', function($query) use ($teacher) {
             $query->where('teacher_id', $teacher->user_id);
         })
-        ->where('is_active', true)
         ->orderBy('day_of_week')
         ->orderBy('start_time')
         ->get();

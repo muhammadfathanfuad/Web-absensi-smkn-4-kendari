@@ -1,0 +1,399 @@
+/* Admin Jadwal Pelajaran CSS */
+/* Filter field auto-set styles */
+.filter-field-auto-set {
+    border: 2px solid #28a745 !important;
+    background-color: #f8f9fa !important;
+    transition: all 0.3s ease;
+}
+
+.filter-field-auto-set:focus {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+}
+
+.auto-set-indicator {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #28a745;
+    margin-top: 2px;
+    display: block;
+}
+
+/* Enhanced filter field auto-set styles (from second style block) */
+.filter-field-auto-set {
+    border-color: #28a745 !important;
+    background-color: #d4edda !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+}
+
+.auto-set-indicator {
+    color: #28a745;
+    font-weight: 500;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.auto-set-indicator::before {
+    content: "✓ ";
+    font-weight: bold;
+}
+
+/* Horizontal scroll for tabs */
+.nav-tabs-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 #f8f9fa;
+}
+
+.nav-tabs-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+
+.nav-tabs-wrapper::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.nav-tabs-wrapper::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.nav-tabs-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+.nav-tabs-wrapper .nav-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.nav-tabs-wrapper .nav-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.nav-tabs-wrapper .nav-link {
+    white-space: nowrap;
+}
+
+/* Active tab border color - blue to match text color */
+.nav-tabs-wrapper .nav-tabs .nav-item .nav-link.active {
+    border-bottom: 3px solid #1a80f8 !important;
+    border-bottom-color: #1a80f8 !important;
+    border-bottom-width: 3px !important;
+    border-bottom-style: solid !important;
+}
+
+/* Responsive layout for jadwal header controls */
+.jadwal-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.jadwal-actions-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.semester-filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+#single-actions-jadwal {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 575.98px) {
+    .jadwal-header-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .jadwal-description {
+        width: 100%;
+        text-align: center;
+    }
+
+    .jadwal-actions-wrapper {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .semester-filter-wrapper {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .semester-filter-wrapper label {
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .semester-filter-wrapper select {
+        width: 100% !important;
+    }
+
+    .semester-filter-item {
+        width: 100%;
+    }
+
+    .semester-filter-item label {
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .semester-filter-item select {
+        width: 100% !important;
+    }
+
+    .kelas-hari-filter-wrapper {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+
+    .kelas-filter-item,
+    .hari-filter-item {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kelas-filter-item label,
+    .hari-filter-item label {
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .kelas-filter-item select,
+    .hari-filter-item select {
+        width: 100% !important;
+    }
+
+    #single-actions-jadwal {
+        width: 100%;
+        margin-left: 0 !important;
+    }
+
+    #single-actions-jadwal .btn {
+        width: 100%;
+    }
+
+    #bulk-actions-jadwal {
+        width: 100%;
+    }
+
+    #bulk-actions-jadwal .btn {
+        width: 100%;
+    }
+
+    /* Kelas XI specific mobile styles */
+    #single-actions-jadwal-xi {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-left: 0 !important;
+    }
+
+    #single-actions-jadwal-xi .btn {
+        flex: 1;
+        min-width: calc(50% - 0.25rem);
+        margin: 0 !important;
+    }
+
+    #single-actions-jadwal-xi .btn-group {
+        flex: 1;
+        min-width: calc(50% - 0.25rem);
+    }
+
+    #single-actions-jadwal-xi .btn-group .btn {
+        width: 100%;
+    }
+
+    #bulk-actions-jadwal-xi {
+        width: 100%;
+    }
+
+    #bulk-actions-jadwal-xi .btn {
+        width: 100%;
+    }
+
+    /* Kelas XII specific mobile styles */
+    #single-actions-jadwal-xii {
+        width: 100%;
+    }
+
+    #single-actions-jadwal-xii .btn {
+        width: 100%;
+    }
+
+    /* Info Akademik cards mobile styles */
+    #single-actions-terms {
+        width: 100%;
+    }
+
+    #single-actions-terms .btn {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    #bulk-actions-terms {
+        width: 100%;
+    }
+
+    #bulk-actions-terms .btn {
+        width: 100%;
+    }
+
+    #single-actions-classes {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    #single-actions-classes .btn {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    #bulk-actions-classes {
+        width: 100%;
+    }
+
+    #bulk-actions-classes .btn {
+        width: 100%;
+    }
+
+    #single-actions-subjects {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    #single-actions-subjects .btn {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    #bulk-actions-subjects {
+        width: 100%;
+    }
+
+    #bulk-actions-subjects .btn {
+        width: 100%;
+    }
+
+    /* Tab Manual mobile styles */
+    #single-actions-manual {
+        width: 100%;
+    }
+
+    #single-actions-manual .btn {
+        width: 100%;
+        margin: 0 !important;
+    }
+}
+
+/* Tablet responsive */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .jadwal-header-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .jadwal-actions-wrapper {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .semester-filter-wrapper select {
+        min-width: 200px;
+    }
+
+    /* Kelas XI tablet styles */
+    #single-actions-jadwal-xi {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    #single-actions-jadwal-xi .btn {
+        flex: 1;
+    }
+
+    /* Kelas XII tablet styles */
+    #single-actions-jadwal-xii {
+        width: 100%;
+    }
+
+    #single-actions-jadwal-xii .btn {
+        width: auto;
+        min-width: 150px;
+    }
+
+    /* Info Akademik cards tablet styles */
+    #single-actions-terms .btn {
+        width: auto;
+        min-width: 150px;
+    }
+
+    #single-actions-classes {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    #single-actions-classes .btn {
+        flex: 1;
+    }
+
+    #single-actions-subjects {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    #single-actions-subjects .btn {
+        flex: 1;
+    }
+
+    /* Tab Manual tablet styles */
+    #single-actions-manual {
+        width: 100%;
+    }
+
+    #single-actions-manual .btn {
+        width: auto;
+        min-width: 150px;
+    }
+}
+

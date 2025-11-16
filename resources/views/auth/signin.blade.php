@@ -14,11 +14,11 @@
                         <div class="card-body p-5">
                             <div class="text-center">
                                 <div class="mx-auto mb-4 text-center auth-logo">
-                                    <a href="{{ route('any', 'index') }}" class="logo-dark">
+                                    <a href="{{ url('/') }}" class="logo-dark">
                                         <img src="/images/logo-dark.png" height="32" alt="logo dark">
                                     </a>
 
-                                    <a href="{{ route('any', 'index') }}" class="logo-light">
+                                    <a href="{{ url('/') }}" class="logo-light">
                                         <img src="/images/logo-light.png" height="28" alt="logo light">
                                     </a>
                                 </div>
@@ -33,6 +33,14 @@
                                     <input type="email" class="form-control @error('email') is-invalid @enderror"
                                         id="email" name="email" value="{{ old('email') }}"
                                         placeholder="Masukkan Email Anda">
+                                    @error('email')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <div id="email-warning" class="invalid-feedback" style="display: none;">
+                                        <i class="bx bx-error-circle"></i> Harap isi email terlebih dahulu
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
@@ -40,12 +48,20 @@
                                         <label for="password" class="form-label">Password</label>
                                     </div>
                                     <div class="position-relative">
-                                        <input type="password" class="form-control pe-5" id="password" name="password"
+                                        <input type="password" class="form-control pe-5 @error('password') is-invalid @enderror" id="password" name="password"
                                                placeholder="Masukkan Password anda" autocomplete="current-password">
                                         <button type="button" class="btn btn-outline-secondary position-absolute end-0 top-50 translate-middle-y" id="toggle-password"
                                                 aria-label="Tampilkan password" aria-pressed="false" onclick="togglePassword()">
                                             <i class="bx bx-show" aria-hidden="true"></i>
                                         </button>
+                                    </div>
+                                    @error('password')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <div id="password-warning" class="invalid-feedback" style="display: none;">
+                                        <i class="bx bx-error-circle"></i> Harap isi password terlebih dahulu
                                     </div>
                                 </div>
 
@@ -82,6 +98,9 @@
 
 @section('scripts')
     <script>
+        // ===========================================
+        // FUNGSI TOGGLE PASSWORD (INI SUDAH BAGUS)
+        // ===========================================
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const nextType = (passwordInput.type === 'password') ? 'text' : 'password';
@@ -103,28 +122,39 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Inisialisasi ikon sesuai state awal
+            // Inisialisasi ikon
+            if (document.getElementById('password')) {
             setIcon(document.getElementById('password').type);
+            }
 
-            // Modal notifikasi
-            const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+            // =========================================================
+            // FUNGSI MODAL NOTIFIKASI (INI JAUH LEBIH SEDERHANA)
+            // =========================================================
+            const notificationModalEl = document.getElementById('notificationModal');
+            
+            if (notificationModalEl) {
+                const notificationModal = new bootstrap.Modal(notificationModalEl);
 
-            function showNotification(message, isSuccess = true) {
-                document.getElementById('notificationModalLabel').innerText = isSuccess ? 'Berhasil' : 'Gagal';
+                function showNotification(message, title = 'Gagal') {
+                    document.getElementById('notificationModalLabel').innerText = title;
                 document.getElementById('notificationMessage').innerText = message;
                 notificationModal.show();
             }
+
             // Pastikan backdrop dihapus saat modal ditutup
-            document.getElementById('notificationModal').addEventListener('hidden.bs.modal', function() {
+                notificationModalEl.addEventListener('hidden.bs.modal', function() {
                 // Hapus backdrop yang tersisa
                 document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
                 // Hapus class modal-open dari body jika masih ada
                 document.body.classList.remove('modal-open');
             });
 
-            @if ($errors->has('email'))
-                showNotification("{{ $errors->first('email') }}", false);
+                // Cek jika ada error dari Laravel
+                @if ($errors->any())
+                    // Ambil pesan error PERTAMA dari Laravel untuk ditampilkan
+                    showNotification("{{ $errors->first() }}", "Gagal Login");
             @endif
+            }
         });
     </script>
 @endsection

@@ -381,11 +381,23 @@ class GridDatatable {
                 const singleActions = document.getElementById("single-actions");
                 const bulkActions = document.getElementById("bulk-actions");
                 if (checkedBoxes.length > 0) {
-                    if (singleActions) singleActions.style.display = "none";
-                    if (bulkActions) bulkActions.style.display = "block";
+                    if (singleActions) {
+                        singleActions.style.setProperty("display", "none", "important");
+                        singleActions.style.setProperty("visibility", "hidden", "important");
+                    }
+                    if (bulkActions) {
+                        bulkActions.style.setProperty("display", "block", "important");
+                        bulkActions.style.setProperty("visibility", "visible", "important");
+                    }
                 } else {
-                    if (singleActions) singleActions.style.display = "block";
-                    if (bulkActions) bulkActions.style.display = "none";
+                    if (singleActions) {
+                        singleActions.style.setProperty("display", "flex", "important");
+                        singleActions.style.setProperty("visibility", "visible", "important");
+                    }
+                    if (bulkActions) {
+                        bulkActions.style.setProperty("display", "none", "important");
+                        bulkActions.style.setProperty("visibility", "hidden", "important");
+                    }
                 }
             });
         }
@@ -457,11 +469,23 @@ class GridDatatable {
                 }
 
                 if (checkedBoxes.length > 0) {
-                    if (singleActions) singleActions.style.display = "none";
-                    if (bulkActions) bulkActions.style.display = "block";
+                    if (singleActions) {
+                        singleActions.style.setProperty("display", "none", "important");
+                        singleActions.style.setProperty("visibility", "hidden", "important");
+                    }
+                    if (bulkActions) {
+                        bulkActions.style.setProperty("display", "block", "important");
+                        bulkActions.style.setProperty("visibility", "visible", "important");
+                    }
                 } else {
-                    if (singleActions) singleActions.style.display = "block";
-                    if (bulkActions) bulkActions.style.display = "none";
+                    if (singleActions) {
+                        singleActions.style.setProperty("display", "flex", "important");
+                        singleActions.style.setProperty("visibility", "visible", "important");
+                    }
+                    if (bulkActions) {
+                        bulkActions.style.setProperty("display", "none", "important");
+                        bulkActions.style.setProperty("visibility", "hidden", "important");
+                    }
                 }
             }
         });
