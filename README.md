@@ -1,66 +1,104 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📚 PresenZ (Sistem Absensi Digital SMK Negeri 4 Kendari)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Absensi Digital berbasis web yang dirancang khusus untuk **SMK Negeri 4 Kendari**. Aplikasi ini mentransformasi proses kehadiran konvensional menjadi digital menggunakan teknologi **QR Code**, memudahkan manajemen jadwal, serta menyediakan pelaporan yang akurat bagi Admin, Guru, dan Siswa.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🎯 Fitur Unggulan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 👨‍💼 Panel Admin
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+* **Dashboard Statistik:** Visualisasi data total guru, siswa, kelas, dan aktivitas sistem.
+* **Manajemen User:** Fitur import data dari Excel untuk guru dan siswa, serta manajemen foto profil.
+* **Manajemen Akademik:** Pengaturan jadwal pelajaran, mata pelajaran, kelas, dan semester (term).
+* **Sistem Delegasi:** Fitur untuk memberikan tugas pengganti kepada guru atau siswa lain saat guru utama berhalangan hadir.
 
-## Learning Laravel
+### 👨‍🏫 Panel Guru
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+* **Absensi QR Code:** Fitur *Generate QR Code* dinamis dengan sistem *timer countdown* dan *auto-refresh*.
+* **Catat Kehadiran:** Tombol kehadiran mandiri yang aktif pada jam operasional (07:00 - 14:45).
+* **Laporan & Riwayat:** Rekapitulasi kehadiran siswa per mata pelajaran dengan filter periode semester.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 👨‍🎓 Panel Siswa
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* **Scan Kehadiran:** Melakukan absensi melalui scan QR Code dari guru di dalam kelas.
+* **Pengajuan Izin:** Form pengajuan izin/sakit dengan fitur upload dokumen pendukung.
+* **Jadwal Real-time:** Tampilan jadwal pelajaran harian yang informatif.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🛠️ Teknologi yang Digunakan
 
-### Premium Partners
+* **Framework Utama:** Laravel 11.31.
+* **Frontend:** Bootstrap 5.3, Vite, & jQuery.
+* **Database:** MySQL/SQLite dengan Eloquent ORM.
+* **Library Pendukung:**
+* `DomPDF` untuk ekspor laporan ke PDF.
+* `Maatwebsite Excel` untuk manajemen data Excel.
+* `HTML5-QRCode` & `Pusher` untuk fitur scan dan notifikasi real-time.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## 🚀 Cara Instalasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. **Clone Repositori:**
+```bash
+git clone https://github.com/muhammadfathanfuad/web-absensi-smkn-4-kendari.git
+cd web-absensi-smkn-4-kendari
 
-## Code of Conduct
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+2. **Instalasi Dependensi:**
+```bash
+composer install
+npm install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```
 
-## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+3. **Konfigurasi Environment:**
+Salin file `.env.example` ke `.env` dan sesuaikan kredensial database Anda.
+4. **Migrasi & Seed Data:**
+```bash
+php artisan migrate --seed
+
+```
+
+
+5. **Jalankan Aplikasi:**
+```bash
+php artisan serve
+npm run dev
+
+```
+
+
+
+---
+
+## ⚖️ Lisensi & HAKI
+
+### **Pernyataan Hak Cipta**
+
+Seluruh kode sumber dan aset dalam proyek ini dilindungi oleh Undang-Undang No. 28 Tahun 2014 tentang Hak Cipta.
+
+* **Pencipta:** Muhammad Fathan Fuad.
+* **Judul Ciptaan:** PresenZ.
+* **Jenis Ciptaan:** Program Komputer.
+* **Nomor Pencatatan:** 001011218.
+* **Lisensi:** Terbuka di bawah MIT License. Hak moral dan hak ekonomi atas ciptaan ini dilindungi oleh Undang-Undang No. 28 Tahun 2014 tentang Hak Cipta.
+
+### **Lisensi Perangkat Lunak**
+
+Proyek ini dilisensikan di bawah **MIT License**. Anda diperbolehkan untuk menggunakan, memodifikasi, dan mendistribusikan perangkat lunak ini dengan syarat tetap menyertakan atribusi pencipta asli.
+
+---
+
+## 📝 Catatan Penting: Time Override
+
+Sistem ini menyertakan `TimeOverrideService` untuk keperluan pengujian fungsionalitas berbasis waktu (seperti absensi otomatis), yang memungkinkan pengguna mengatur waktu sistem secara kustom melalui dashboard.
+
+---
+
+**Dibuat oleh Muhammad Fathan Fuad**
